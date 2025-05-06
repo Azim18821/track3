@@ -65,6 +65,8 @@ For detailed documentation, see:
 - [Directory Structure](./docs/DIRECTORY_STRUCTURE.md)
 - [Integration Guide](./docs/INTEGRATION_GUIDE.md)
 - [WebSocket Documentation](./utils/WEBSOCKET.md)
+- [iOS Environment Setup](./docs/IOS_ENV_SETUP.md)
+- [PWA & Capacitor Guide](./docs/PWA_CAPACITOR_GUIDE.md)
 
 ## Getting Started
 
@@ -118,15 +120,19 @@ The application is configured as a Progressive Web App (PWA) and can be installe
 
 For native mobile deployment using Capacitor:
 
-1. Build the web application: `./capacitor-build.sh`
+1. Set up environment variables:
+   - For production: `./scripts/build-ios-with-env.sh prod`
+   - For development: `./scripts/build-ios-with-env.sh dev`
+   
 2. For Android:
    - Run `npx cap open android` to open in Android Studio
    - Build and deploy from Android Studio
+   
 3. For iOS:
    - Run `npx cap open ios` to open in Xcode
    - Build and deploy from Xcode
 
-Make sure to update the `capacitor.config.ts` file with your specific configuration before building.
+Environment variables will be properly configured for each platform. See [iOS Environment Setup](./docs/IOS_ENV_SETUP.md) for detailed instructions on managing environment variables for iOS builds.
 
 ## User Roles
 

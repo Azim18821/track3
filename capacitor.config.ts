@@ -1,21 +1,38 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
+// Determine if we're in production build or dev build
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Dynamically set server configuration based on environment
+const serverConfig = isProduction 
+  ? {
+      // Production configuration
+      androidScheme: 'https',
+      iosScheme: 'https',
+      hostname: 'app',
+    }
+  : {
+      // Development configuration - for local testing
+      // Comment out url to use hostname, uncomment to use specific URL
+      // url: 'http://localhost:3000',
+      androidScheme: 'https',
+      iosScheme: 'https',
+      hostname: 'app',
+      // If needed for local development:
+      // cleartext: true,
+    };
+
 const config: CapacitorConfig = {
   appId: 'com.trackmadeease.app',
   appName: 'TrackMadeEazE',
   webDir: 'dist',
-  server: {
-    // For development, use localhost if testing locally
-    // url: 'https://www.trackmadeaze.com', 
-    // For development and testing, you can use this instead:
-    androidScheme: 'https',
-    iosScheme: 'https',
-    hostname: 'app',
-  },
+  server: serverConfig,
   ios: {
     contentInset: 'always',
     backgroundColor: '#1e3a8a',
     allowsLinkPreview: true,
+    // Include resource files that may contain configuration
+    limitsNavigationsToAppBoundDomains: true,
   },
   plugins: {
     SplashScreen: {
