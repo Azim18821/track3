@@ -5,6 +5,32 @@
  * across both web and mobile (iOS/Android) builds.
  */
 
+// Helper to detect device/platform type
+function detectPlatform() {
+  if (typeof window === 'undefined') {
+    return {
+      isIOS: false,
+      isAndroid: false,
+      isNative: false,
+      isWeb: true
+    };
+  }
+  
+  const isIOS = window.navigator.userAgent.includes('iPhone') || 
+                window.navigator.userAgent.includes('iPad') || 
+                /FxiOS/.test(window.navigator.userAgent);
+  
+  const isAndroid = /android/i.test(window.navigator.userAgent);
+  const isNative = isIOS || isAndroid;
+  const isWeb = !isNative;
+  
+  return { isIOS, isAndroid, isNative, isWeb };
+}
+
+// Export platform detection values
+const { isIOS, isAndroid, isNative, isWeb } = detectPlatform();
+export { isIOS, isAndroid, isNative, isWeb };
+
 // Helper to get environment variables with fallbacks
 export function getEnv(key: string, fallback: string = ''): string {
   // For Vite builds (web and Capacitor)
@@ -16,8 +42,24 @@ export function getEnv(key: string, fallback: string = ''): string {
   return fallback;
 }
 
+// Get base URL for API calls
+function getBaseUrl(): string {
+  // For native environments
+  if (isNative) {
+    return 'https://www.trackmadeaze.com';
+  }
+  
+  // For web environments
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // Fallback (server-side rendering)
+  return '';
+}
+
 // API environment
-export const API_URL = getEnv('VITE_API_URL', 'https://www.trackmadeaze.com');
+export const API_URL = getEnv('VITE_API_URL', getBaseUrl());
 export const ENV = getEnv('VITE_ENV', 'production');
 
 // API keys
@@ -25,12 +67,6 @@ export const NUTRITIONIX_APP_ID = getEnv('VITE_NUTRITIONIX_APP_ID', '');
 export const NUTRITIONIX_API_KEY = getEnv('VITE_NUTRITIONIX_API_KEY', '');
 export const GOOGLE_CLOUD_VISION_API_KEY = getEnv('VITE_GOOGLE_CLOUD_VISION_API_KEY', '');
 
-// Environment detection helpers
+// Additional environment helpers
 export const isDevelopment = ENV === 'development';
 export const isProduction = ENV === 'production';
-export const isIOS = window.navigator.userAgent.includes('iPhone') || 
-                     window.navigator.userAgent.includes('iPad') || 
-                     /FxiOS/.test(window.navigator.userAgent);
-export const isAndroid = /android/i.test(window.navigator.userAgent);
-export const isNative = isIOS || isAndroid;
-export const isWeb = !isNative;

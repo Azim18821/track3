@@ -80,6 +80,8 @@ export async function offlineApiRequest(
   // If we're online, try to perform the request online first
   if (navigator.onLine) {
     try {
+      console.log(`Making online request: ${method} ${url}`);
+      
       const response = await fetch(url, {
         method,
         headers: data ? { 'Content-Type': 'application/json' } : {},
@@ -88,7 +90,25 @@ export async function offlineApiRequest(
       });
       
       if (!response.ok) {
-        const errorMessage = response.statusText;
+        let errorMessage = response.statusText;
+        
+        try {
+          // Try to get more detailed error information
+          const errorData = await response.json();
+          if (errorData && (errorData.message || errorData.error)) {
+            errorMessage = errorData.message || errorData.error;
+          }
+        } catch (e) {
+          // If we can't parse JSON, try to get error as text
+          try {
+            errorMessage = await response.text();
+          } catch (textError) {
+            // Fallback to status text if all else fails
+            console.error("Could not parse error response:", textError);
+          }
+        }
+        
+        console.error(`API error (${response.status}): ${errorMessage}`);
         throw new Error(`${errorMessage} (Status: ${response.status})`);
       }
       
@@ -102,10 +122,16 @@ export async function offlineApiRequest(
       
       return result;
     } catch (error) {
+      console.error("Network error:", error);
+      
       // If online request fails and offline handling is enabled, fall back to offline mode
       if (shouldHandleOffline(method, url)) {
+        console.log("Falling back to offline mode");
         return handleOfflineRequest(method, url, data);
       }
+      
+      // Log the detailed error for debugging
+      console.error("Offline API error:", error);
       throw error;
     }
   } else {
