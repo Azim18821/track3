@@ -5,7 +5,7 @@
 
 # Default values
 LOCAL_IP="localhost"
-LOCAL_PORT="3000"
+LOCAL_PORT="5000"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
