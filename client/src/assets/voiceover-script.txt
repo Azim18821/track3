@@ -1,0 +1,17 @@
+TrackMadeEazE Exercise and Meal Library Walkthrough
+
+Welcome to TrackMadeEazE, your all-in-one fitness companion. Let's explore two powerful features to help you reach your fitness goals - the Exercise Library and Meal Library.
+
+The Exercise Library provides a comprehensive collection of workouts organized by muscle groups and difficulty levels. Browse through professionally designed exercises complete with detailed instructions and proper form guidance. You can easily add these exercises to your personalized workout routines or follow complete pre-designed workout plans.
+
+Each exercise includes details like recommended sets, reps, and rest periods. The smart filtering system helps you find exactly what you need based on equipment availability and your fitness level.
+
+Now, let's look at the Meal Library. This feature offers a variety of nutritious recipes tailored to your fitness goals. Whether you're focusing on weight loss, muscle gain, or maintaining a balanced diet, our meal library has you covered.
+
+Each meal comes with a detailed nutritional breakdown, including calories, protein, carbs, and fats, helping you make informed choices about your nutrition. You can easily track your meals throughout the day and stay on top of your nutritional goals.
+
+The Meal Library also includes customizable meal plans that integrate with your workout routine, ensuring you get the right nutrition to support your physical activity.
+
+With both libraries seamlessly integrated with our tracking features, you can enjoy a comprehensive approach to fitness. The TrackMadeEazE app makes managing your health and fitness journey simple and effective.
+
+Thank you for choosing TrackMadeEazE as your fitness partner. Start exploring the libraries today to enhance your fitness journey!

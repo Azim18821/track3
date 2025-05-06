@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Male Mesomorph Body Type -->
+  
+  <!-- Head -->
+  <circle cx="100" cy="40" r="30" fill="#555555" />
+  
+  <!-- Neck -->
+  <rect x="88" y="70" width="24" height="15" fill="#555555" />
+  
+  <!-- Shoulders - broad for mesomorph -->
+  <rect x="45" y="85" width="110" height="20" rx="10" fill="#555555" />
+  
+  <!-- Arms - muscular -->
+  <path d="M45,90 C35,120 35,160 45,210" stroke="#555555" stroke-width="18" fill="none" />
+  <path d="M155,90 C165,120 165,160 155,210" stroke="#555555" stroke-width="18" fill="none" />
+  
+  <!-- Hands -->
+  <circle cx="45" cy="220" r="10" fill="#555555" />
+  <circle cx="155" cy="220" r="10" fill="#555555" />
+  
+  <!-- Torso - V-shaped, muscular -->
+  <path d="M65,85 L65,220 Q100,230 135,220 L135,85 Z" fill="#555555" />
+  
+  <!-- Chest definition -->
+  <path d="M85,120 C100,130 100,130 115,120" stroke="#444444" stroke-width="2" fill="none" />
+  
+  <!-- Abs definition -->
+  <path d="M90,150 L110,150" stroke="#444444" stroke-width="2" />
+  <path d="M90,165 L110,165" stroke="#444444" stroke-width="2" />
+  <path d="M90,180 L110,180" stroke="#444444" stroke-width="2" />
+  
+  <!-- Waist - defined -->
+  <rect x="75" y="220" width="50" height="15" rx="7" fill="#555555" />
+  
+  <!-- Legs - muscular -->
+  <rect x="75" y="235" width="20" height="145" rx="10" fill="#555555" />
+  <rect x="105" y="235" width="20" height="145" rx="10" fill="#555555" />
+  
+  <!-- Feet -->
+  <ellipse cx="85" cy="385" rx="15" ry="7" fill="#555555" />
+  <ellipse cx="115" cy="385" rx="15" ry="7" fill="#555555" />
+</svg>

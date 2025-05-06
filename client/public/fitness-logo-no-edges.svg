@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Create a background with definite color and no transparency -->
+  <rect x="0" y="0" width="512" height="512" rx="128" fill="#1e3a8a"/>
+  
+  <!-- Use a path with no stroke to avoid anti-aliasing issues -->
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M76 239H436V273H306V273H266L306 153L266 333L206 153L166 273H76V239Z" fill="white"/>
+</svg>

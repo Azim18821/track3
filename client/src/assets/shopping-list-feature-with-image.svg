@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="imageBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a237e" />
+      <stop offset="100%" stop-color="#283593" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2196F3" />
+      <stop offset="100%" stop-color="#00BCD4" />
+    </linearGradient>
+    <filter id="imageShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" />
+      <feOffset dx="0" dy="8" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <!-- Create a clip path for the image placeholder -->
+    <clipPath id="imageClip">
+      <rect x="150" y="300" width="450" height="450" rx="10" />
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="1080" fill="url(#imageBg)" />
+  
+  <!-- Decorative elements -->
+  <circle cx="900" cy="150" r="60" fill="#ffffff" fill-opacity="0.05" />
+  <circle cx="970" cy="950" r="100" fill="#ffffff" fill-opacity="0.05" />
+  <path d="M0,800 Q300,700 600,800 T1080,700" stroke="#ffffff" stroke-opacity="0.07" stroke-width="50" fill="none" />
+  
+  <!-- Main headline -->
+  <text x="540" y="120" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#ffffff" text-anchor="middle">Shopping Lists That Work</text>
+  <text x="540" y="170" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" fill-opacity="0.9" text-anchor="middle">AI-Powered Shopping for Perfect Nutrition</text>
+  
+  <!-- Image placeholder - LEFT SIDE -->
+  <!-- This is where you can place your custom image -->
+  <rect x="150" y="300" width="450" height="450" rx="10" fill="#f0f0f0" stroke="#ffffff" stroke-width="2" />
+  
+  <!-- Image placeholder text and guide -->
+  <text x="375" y="520" font-family="Arial, sans-serif" font-size="18" fill="#555555" text-anchor="middle">Place Your Image Here</text>
+  <text x="375" y="550" font-family="Arial, sans-serif" font-size="14" fill="#777777" text-anchor="middle">Recommended size: 450x450px</text>
+  
+  <!-- RIGHT SIDE: Feature list -->
+  <g>
+    <rect x="650" y="300" width="280" height="450" rx="20" fill="#ffffff" filter="url(#imageShadow)" />
+    
+    <!-- Shopping list title -->
+    <rect x="650" y="300" width="280" height="60" rx="20" fill="url(#accentGrad)" />
+    <text x="790" y="340" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">Smart Shopping List</text>
+    
+    <!-- List items -->
+    <g>
+      <rect x="670" y="380" width="240" height="60" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+      <circle cx="695" cy="410" r="12" fill="#2196F3" fill-opacity="0.1" stroke="#2196F3" stroke-width="2" />
+      <path d="M690,410 L696,416 L702,404" stroke="#2196F3" stroke-width="2" fill="none" />
+      <text x="720" y="405" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">AI-Generated</text>
+      <text x="720" y="425" font-family="Arial, sans-serif" font-size="13" fill="#666666">From your meal plans</text>
+      
+      <rect x="670" y="450" width="240" height="60" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+      <circle cx="695" cy="480" r="12" fill="#2196F3" fill-opacity="0.1" stroke="#2196F3" stroke-width="2" />
+      <path d="M690,480 L696,486 L702,474" stroke="#2196F3" stroke-width="2" fill="none" />
+      <text x="720" y="475" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Macro Perfect</text>
+      <text x="720" y="495" font-family="Arial, sans-serif" font-size="13" fill="#666666">Exact portions calculated</text>
+      
+      <rect x="670" y="520" width="240" height="60" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+      <circle cx="695" cy="550" r="12" fill="#2196F3" fill-opacity="0.1" stroke="#2196F3" stroke-width="2" />
+      <path d="M690,550 L696,556 L702,544" stroke="#2196F3" stroke-width="2" fill="none" />
+      <text x="720" y="545" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Budget-Friendly</text>
+      <text x="720" y="565" font-family="Arial, sans-serif" font-size="13" fill="#666666">Cost estimates included</text>
+      
+      <rect x="670" y="590" width="240" height="60" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+      <circle cx="695" cy="620" r="12" fill="#ffffff" stroke="#cccccc" stroke-width="2" />
+      <text x="720" y="615" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Health Optimized</text>
+      <text x="720" y="635" font-family="Arial, sans-serif" font-size="13" fill="#666666">For your fitness goals</text>
+    </g>
+    
+    <!-- Action text -->
+    <rect x="650" y="670" width="280" height="80" rx="10" fill="url(#accentGrad)" />
+    <text x="790" y="710" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff" text-anchor="middle">Shopping Made Simple</text>
+    <text x="790" y="735" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">Download the App Today</text>
+  </g>
+  
+  <!-- Bottom quotes -->
+  <text x="540" y="840" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle">"Saved me hours of meal planning every week!"</text>
+  <text x="540" y="870" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" fill-opacity="0.9" text-anchor="middle">- Jessica K., Lost 24lbs in 3 months</text>
+  
+  <!-- App store buttons -->
+  <rect x="440" y="910" width="200" height="60" rx="30" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="2" />
+  <text x="540" y="948" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">Download Now</text>
+  
+  <!-- Bottom branding -->
+  <text x="540" y="1020" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">TrackMadeEazE</text>
+  <text x="540" y="1050" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" fill-opacity="0.8" text-anchor="middle">Your Complete Fitness Solution</text>
+</svg>

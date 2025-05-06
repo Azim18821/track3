@@ -1,0 +1,518 @@
+import { Router } from 'express';
+import { storage } from './storage';
+import { z } from 'zod';
+import { 
+  insertTrainerNutritionPlanSchema, 
+  insertTrainerFitnessPlanSchema 
+} from '@shared/schema';
+import { ensureAuthenticated, ensureTrainer } from './auth';
+
+const router = Router();
+
+// Apply authentication middleware to all trainer routes
+router.use(ensureAuthenticated);
+router.use(ensureTrainer);
+
+// === NUTRITION PLANS ROUTES ===
+
+// Get all nutrition plans created by a trainer
+router.get('/nutrition-plans', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const plans = await storage.getTrainerNutritionPlans(trainerId);
+    res.json(plans);
+  } catch (error) {
+    console.error('Error getting trainer nutrition plans:', error);
+    res.status(500).json({ message: 'Failed to retrieve nutrition plans' });
+  }
+});
+
+// Get a specific nutrition plan by ID
+router.get('/nutrition-plans/:id', async (req, res) => {
+  try {
+    const planId = parseInt(req.params.id);
+    const plan = await storage.getTrainerNutritionPlan(planId);
+    
+    if (!plan) {
+      return res.status(404).json({ message: 'Nutrition plan not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the plan
+    if (plan.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to view this plan' });
+    }
+    
+    res.json(plan);
+  } catch (error) {
+    console.error('Error getting nutrition plan:', error);
+    res.status(500).json({ message: 'Failed to retrieve nutrition plan' });
+  }
+});
+
+// Create a new nutrition plan
+router.post('/nutrition-plans', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    
+    // Validate request body
+    const validatedData = insertTrainerNutritionPlanSchema.parse({
+      ...req.body,
+      trainerId
+    });
+    
+    // Create nutrition plan
+    const newPlan = await storage.createTrainerNutritionPlan(validatedData);
+    res.status(201).json(newPlan);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid nutrition plan data', errors: error.errors });
+    }
+    console.error('Error creating nutrition plan:', error);
+    res.status(500).json({ message: 'Failed to create nutrition plan' });
+  }
+});
+
+// Update a nutrition plan
+router.patch('/nutrition-plans/:id', async (req, res) => {
+  try {
+    const planId = parseInt(req.params.id);
+    const existingPlan = await storage.getTrainerNutritionPlan(planId);
+    
+    if (!existingPlan) {
+      return res.status(404).json({ message: 'Nutrition plan not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the plan
+    if (existingPlan.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to update this plan' });
+    }
+    
+    // Partial validation of request body
+    const validatedData = insertTrainerNutritionPlanSchema.partial().parse(req.body);
+    
+    // Update nutrition plan
+    const updatedPlan = await storage.updateTrainerNutritionPlan(planId, validatedData);
+    res.json(updatedPlan);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid nutrition plan data', errors: error.errors });
+    }
+    console.error('Error updating nutrition plan:', error);
+    res.status(500).json({ message: 'Failed to update nutrition plan' });
+  }
+});
+
+// Delete a nutrition plan
+router.delete('/nutrition-plans/:id', async (req, res) => {
+  try {
+    const planId = parseInt(req.params.id);
+    const existingPlan = await storage.getTrainerNutritionPlan(planId);
+    
+    if (!existingPlan) {
+      return res.status(404).json({ message: 'Nutrition plan not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the plan
+    if (existingPlan.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to delete this plan' });
+    }
+    
+    // Delete nutrition plan
+    const success = await storage.deleteTrainerNutritionPlan(planId);
+    
+    if (success) {
+      res.status(204).end();
+    } else {
+      res.status(500).json({ message: 'Failed to delete nutrition plan' });
+    }
+  } catch (error) {
+    console.error('Error deleting nutrition plan:', error);
+    res.status(500).json({ message: 'Failed to delete nutrition plan' });
+  }
+});
+
+// Get nutrition plans for a specific client
+router.get('/clients/:clientId/nutrition-plans', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const clientId = parseInt(req.params.clientId);
+    
+    // Verify that the client is assigned to this trainer
+    const trainerClients = await storage.getTrainerClients(trainerId);
+    const isClientOfTrainer = trainerClients.some(tc => tc.client.id === clientId);
+    
+    if (!isClientOfTrainer) {
+      return res.status(403).json({ message: 'You are not authorized to view plans for this client' });
+    }
+    
+    // Get nutrition plans for this client created by this trainer
+    const plans = await storage.getTrainerNutritionPlans(trainerId);
+    const clientPlans = plans.filter(plan => plan.clientId === clientId);
+    
+    res.json(clientPlans);
+  } catch (error) {
+    console.error('Error getting client nutrition plans:', error);
+    res.status(500).json({ message: 'Failed to retrieve client nutrition plans' });
+  }
+});
+
+// === FITNESS PLANS ROUTES ===
+
+// Get all fitness plans created by a trainer
+router.get('/fitness-plans', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const plans = await storage.getTrainerFitnessPlans(trainerId);
+    res.json(plans);
+  } catch (error) {
+    console.error('Error getting trainer fitness plans:', error);
+    res.status(500).json({ message: 'Failed to retrieve fitness plans' });
+  }
+});
+
+// Get a specific fitness plan by ID
+router.get('/fitness-plans/:id', async (req, res) => {
+  try {
+    const planId = parseInt(req.params.id);
+    const plan = await storage.getTrainerFitnessPlan(planId);
+    
+    if (!plan) {
+      return res.status(404).json({ message: 'Fitness plan not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the plan
+    if (plan.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to view this plan' });
+    }
+    
+    res.json(plan);
+  } catch (error) {
+    console.error('Error getting fitness plan:', error);
+    res.status(500).json({ message: 'Failed to retrieve fitness plan' });
+  }
+});
+
+// Create a new fitness plan
+router.post('/fitness-plans', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    
+    // Validate request body
+    const validatedData = insertTrainerFitnessPlanSchema.parse({
+      ...req.body,
+      trainerId
+    });
+    
+    // Create fitness plan
+    const newPlan = await storage.createTrainerFitnessPlan(validatedData);
+    res.status(201).json(newPlan);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid fitness plan data', errors: error.errors });
+    }
+    console.error('Error creating fitness plan:', error);
+    res.status(500).json({ message: 'Failed to create fitness plan' });
+  }
+});
+
+// Update a fitness plan
+router.patch('/fitness-plans/:id', async (req, res) => {
+  try {
+    const planId = parseInt(req.params.id);
+    const existingPlan = await storage.getTrainerFitnessPlan(planId);
+    
+    if (!existingPlan) {
+      return res.status(404).json({ message: 'Fitness plan not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the plan
+    if (existingPlan.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to update this plan' });
+    }
+    
+    // Partial validation of request body
+    const validatedData = insertTrainerFitnessPlanSchema.partial().parse(req.body);
+    
+    // Update fitness plan
+    const updatedPlan = await storage.updateTrainerFitnessPlan(planId, validatedData);
+    res.json(updatedPlan);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid fitness plan data', errors: error.errors });
+    }
+    console.error('Error updating fitness plan:', error);
+    res.status(500).json({ message: 'Failed to update fitness plan' });
+  }
+});
+
+// Delete a fitness plan
+router.delete('/fitness-plans/:id', async (req, res) => {
+  try {
+    const planId = parseInt(req.params.id);
+    const existingPlan = await storage.getTrainerFitnessPlan(planId);
+    
+    if (!existingPlan) {
+      return res.status(404).json({ message: 'Fitness plan not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the plan
+    if (existingPlan.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to delete this plan' });
+    }
+    
+    // Delete fitness plan
+    const success = await storage.deleteTrainerFitnessPlan(planId);
+    
+    if (success) {
+      res.status(204).end();
+    } else {
+      res.status(500).json({ message: 'Failed to delete fitness plan' });
+    }
+  } catch (error) {
+    console.error('Error deleting fitness plan:', error);
+    res.status(500).json({ message: 'Failed to delete fitness plan' });
+  }
+});
+
+// Get fitness plans for a specific client
+router.get('/clients/:clientId/fitness-plans', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const clientId = parseInt(req.params.clientId);
+    
+    // Verify that the client is assigned to this trainer
+    const trainerClients = await storage.getTrainerClients(trainerId);
+    const isClientOfTrainer = trainerClients.some(tc => tc.client.id === clientId);
+    
+    if (!isClientOfTrainer) {
+      return res.status(403).json({ message: 'You are not authorized to view plans for this client' });
+    }
+    
+    // Get fitness plans for this client created by this trainer
+    const plans = await storage.getTrainerFitnessPlans(trainerId);
+    const clientPlans = plans.filter(plan => plan.clientId === clientId);
+    
+    res.json(clientPlans);
+  } catch (error) {
+    console.error('Error getting client fitness plans:', error);
+    res.status(500).json({ message: 'Failed to retrieve client fitness plans' });
+  }
+});
+
+// Get workouts for a specific client
+router.get('/clients/:clientId/workouts', async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const trainerId = req.user!.id;
+    
+    // Get the trainer's clients to verify relationship
+    const clients = await storage.getTrainerClients(trainerId);
+    const clientRelationship = clients.some(tc => tc.client.id === clientId);
+    
+    if (!clientRelationship) {
+      return res.status(403).json({ message: "This client is not assigned to you" });
+    }
+    
+    // Get client workouts
+    const clientWorkouts = await storage.getWorkouts(clientId);
+    
+    // Get exercises for each workout
+    const workoutsWithExercises = await Promise.all(
+      clientWorkouts.map(async (workout) => {
+        const exercises = await storage.getExercisesByWorkout(workout.id);
+        return {
+          ...workout,
+          exercises
+        };
+      })
+    );
+    
+    res.status(200).json(workoutsWithExercises);
+  } catch (error) {
+    console.error("Error fetching client workouts:", error);
+    res.status(500).json({ message: "Failed to fetch client workouts" });
+  }
+});
+
+// Create workout for a specific client
+router.post('/clients/:clientId/workouts', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const clientId = parseInt(req.params.clientId);
+    
+    console.log(`Trainer ${trainerId} creating workout for client ${clientId}`);
+    console.log("Request body:", JSON.stringify(req.body));
+    
+    // Verify that this client is assigned to this trainer
+    const clients = await storage.getTrainerClients(trainerId);
+    const clientRelationship = clients.some(tc => tc.client.id === clientId);
+    
+    if (!clientRelationship) {
+      return res.status(403).json({ message: "This client is not assigned to you" });
+    }
+    
+    // Extract workout data and exercises from request body
+    const { exercises = [], ...workoutData } = req.body;
+    
+    console.log("Extracted workout data:", JSON.stringify(workoutData));
+    console.log("Extracted exercises:", JSON.stringify(exercises));
+    console.log("Client ID:", clientId, "Type:", typeof clientId);
+    console.log("Workout data with proper types:", {
+      name: workoutData.name,
+      date: new Date(workoutData.date),
+      duration: parseInt(workoutData.duration.toString()),
+      notes: workoutData.notes || ""
+    });
+    
+    // Create the workout with properly formatted data
+    try {
+      // Properly parse the date
+      let dateObj;
+      try {
+        dateObj = new Date(workoutData.date);
+        console.log("Date conversion successful:", dateObj.toISOString());
+      } catch (e) {
+        console.error("Error converting date:", e);
+        dateObj = new Date(); // Use current date as fallback
+      }
+
+      // Ensure we have a valid date object
+      const workout = await storage.createWorkout(clientId, {
+        name: workoutData.name,
+        date: dateObj,
+        duration: parseInt(workoutData.duration.toString()),
+        notes: workoutData.notes || ""
+      });
+      console.log("Created workout:", JSON.stringify(workout));
+      
+      // Create exercises for the workout
+      const createdExercises = await Promise.all(
+        exercises.map(async (exercise: any) => {
+          return storage.createExercise({
+            ...exercise,
+            workoutId: workout.id
+          });
+        })
+      );
+      
+      // Return the workout with exercises
+      res.status(201).json({
+        ...workout,
+        exercises: createdExercises
+      });
+      
+      // Broadcast to client via WebSocket
+      // TODO: Use the WebSocket broadcast function from routes.ts
+  } catch (error) {
+    console.error("Error creating workout for client:", error);
+    res.status(500).json({ message: "Failed to create workout" });
+  }
+});
+
+// Update workout for a specific client
+router.put('/clients/:clientId/workouts/:workoutId', async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const workoutId = parseInt(req.params.workoutId);
+    const trainerId = req.user!.id;
+    
+    // Get the trainer's clients to verify relationship
+    const clients = await storage.getTrainerClients(trainerId);
+    const clientRelationship = clients.some(tc => tc.client.id === clientId);
+    
+    if (!clientRelationship) {
+      return res.status(403).json({ message: "This client is not assigned to you" });
+    }
+    
+    // Verify the workout belongs to this client
+    const workout = await storage.getWorkout(workoutId);
+    if (!workout || workout.userId !== clientId) {
+      return res.status(404).json({ message: "Workout not found for this client" });
+    }
+    
+    // Extract workout data and exercises from request body
+    const { exercises = [], ...workoutUpdate } = req.body;
+    
+    // Update the workout
+    const updatedWorkout = await storage.updateWorkout(workoutId, workoutUpdate);
+    
+    // Get existing exercises for comparison
+    const existingExercises = await storage.getExercisesByWorkout(workoutId);
+    
+    // Track created/updated exercise IDs
+    const processedExerciseIds: number[] = [];
+    
+    // Update or create exercises
+    const updatedExercises = await Promise.all(
+      exercises.map(async (exercise: any) => {
+        if (exercise.id) {
+          // Update existing exercise
+          const existingExercise = existingExercises.find(e => e.id === exercise.id);
+          if (existingExercise) {
+            processedExerciseIds.push(exercise.id);
+            return storage.updateExercise(exercise.id, exercise);
+          }
+        }
+        
+        // Create new exercise
+        return storage.createExercise({
+          ...exercise,
+          workoutId
+        });
+      })
+    );
+    
+    // Delete exercises that weren't in the update
+    await Promise.all(
+      existingExercises
+        .filter(exercise => !processedExerciseIds.includes(exercise.id))
+        .map(exercise => storage.deleteExercise(exercise.id))
+    );
+    
+    // Return the updated workout with exercises
+    res.status(200).json({
+      ...updatedWorkout,
+      exercises: updatedExercises
+    });
+  } catch (error) {
+    console.error("Error updating workout for client:", error);
+    res.status(500).json({ message: "Failed to update workout" });
+  }
+});
+
+// Delete workout for a specific client
+router.delete('/clients/:clientId/workouts/:workoutId', async (req, res) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    const workoutId = parseInt(req.params.workoutId);
+    const trainerId = req.user!.id;
+    
+    // Get the trainer's clients to verify relationship
+    const clients = await storage.getTrainerClients(trainerId);
+    const clientRelationship = clients.some(tc => tc.client.id === clientId);
+    
+    if (!clientRelationship) {
+      return res.status(403).json({ message: "This client is not assigned to you" });
+    }
+    
+    // Verify the workout belongs to this client
+    const workout = await storage.getWorkout(workoutId);
+    if (!workout || workout.userId !== clientId) {
+      return res.status(404).json({ message: "Workout not found for this client" });
+    }
+    
+    // Delete the workout (exercises will be deleted automatically due to CASCADE)
+    const success = await storage.deleteWorkout(workoutId);
+    
+    if (!success) {
+      return res.status(500).json({ message: "Failed to delete workout" });
+    }
+    
+    res.status(204).end();
+  } catch (error) {
+    console.error("Error deleting workout for client:", error);
+    res.status(500).json({ message: "Failed to delete workout" });
+  }
+});
+
+export default router;

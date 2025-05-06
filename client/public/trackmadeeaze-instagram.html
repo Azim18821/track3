@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrackMadeEaze Instagram Image</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+    .image-container {
+      width: 1080px;
+      height: 1080px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    .download-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #4ade80;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+    }
+    .download-button:hover {
+      background-color: #38c96e;
+    }
+  </style>
+</head>
+<body>
+  <div class="image-container">
+    <img src="/trackmadeeaze-instagram.svg" alt="TrackMadeEaze Instagram Post" width="1080" height="1080">
+  </div>
+  
+  <button class="download-button" id="downloadBtn">Download PNG</button>
+
+  <script>
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+      const svgImage = document.querySelector('img');
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      
+      // Create a new image to draw on canvas once loaded
+      const img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0, 1080, 1080);
+        
+        // Convert to PNG and download
+        const dataURL = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = dataURL;
+        downloadLink.download = 'trackmadeeaze-instagram.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
+      img.src = svgImage.src;
+    });
+  </script>
+</body>
+</html>

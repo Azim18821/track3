@@ -1,0 +1,9 @@
+//Replace Line 1268
+          </AdaptiveDialogHeader>
+
+//Replace 
+        </DialogContent>
+      </Dialog>
+//with
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>

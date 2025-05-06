@@ -1,0 +1,199 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import ExerciseProgress from "@/components/workout/ExerciseProgress";
+import WorkoutList from "@/components/workout/WorkoutList";
+import AddWorkoutDialog from "@/components/workout/AddWorkoutDialog";
+import WorkoutDetailDialog from "@/components/workout/WorkoutDetailDialog";
+import WeeklyWorkoutView from "@/components/workout/WeeklyWorkoutView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlusCircle, Calendar, ListChecks } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Define interfaces for our types
+interface Exercise {
+  id?: number;
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  unit?: string;
+  completedSets?: number[];
+}
+
+interface Workout {
+  id: number;
+  name: string;
+  date: string;
+  duration: number;
+  notes?: string;
+  completed?: boolean;
+  isCompleted?: boolean;
+  exercises: Exercise[];
+}
+
+const WorkoutTracker = () => {
+  const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [activeTab, setActiveTab] = useState("weekly");
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  // Fetch all workouts
+  const { data: workouts = [], isLoading } = useQuery<Workout[]>({
+    queryKey: ['/api/workouts'],
+  });
+
+  // Delete workout mutation
+  const deleteWorkoutMutation = useMutation({
+    mutationFn: async (workoutId: number) => {
+      return await fetch(`/api/workouts/${workoutId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      toast({
+        title: "Workout deleted",
+        description: "The workout has been successfully deleted",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete the workout",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDeleteWorkout = (workoutId: number) => {
+    deleteWorkoutMutation.mutate(workoutId);
+  };
+
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+
+  const handleViewWorkout = (workout: Workout) => {
+    // Fetch the complete workout data with exercises before showing details
+    fetch(`/api/workouts/${workout.id}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch workout details');
+        }
+        return response.json();
+      })
+      .then(completeWorkout => {
+        setSelectedWorkout(completeWorkout);
+        toast({
+          title: "Workout details",
+          description: `Viewing: ${completeWorkout.name} (${completeWorkout.exercises.length} exercises)`,
+        });
+      })
+      .catch(error => {
+        console.error('Error fetching workout details:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load workout details. Please try again.",
+          variant: "destructive",
+        });
+      });
+  };
+
+  const handleAddWorkout = (date: string) => {
+    setSelectedDate(date);
+    setIsAddWorkoutOpen(true);
+  };
+
+  const handleStartWorkout = (workout: Workout) => {
+    // Instead of showing the workout mode as a modal, navigate to the dedicated workout mode page
+    navigate(`/workout-mode/${workout.id}`);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold leading-7 sm:text-3xl sm:truncate">
+            Workout Tracker
+          </h2>
+        </div>
+        <div className="mt-4 flex sm:mt-0 sm:ml-4">
+          <Button
+            onClick={() => {
+              setSelectedDate(format(new Date(), "yyyy-MM-dd"));
+              setIsAddWorkoutOpen(true);
+            }}
+            className="flex items-center gap-1"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Add Workout
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="weekly" value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="weekly" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">Weekly View</span>
+            <span className="inline sm:hidden">Weekly</span>
+          </TabsTrigger>
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <ListChecks className="h-4 w-4" />
+            <span className="hidden sm:inline">List View</span>
+            <span className="inline sm:hidden">List</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="weekly" className="space-y-6">
+          <WeeklyWorkoutView 
+            workouts={workouts} 
+            onViewWorkout={handleViewWorkout}
+            onAddWorkout={handleAddWorkout}
+            onStartWorkout={handleStartWorkout}
+            onDeleteWorkout={handleDeleteWorkout}
+          />
+        </TabsContent>
+
+        <TabsContent value="list" className="space-y-6">
+          {/* Workout Progress */}
+          <ExerciseProgress workouts={workouts} />
+
+          {/* Recent Workouts */}
+          <WorkoutList 
+            workouts={workouts} 
+            isLoading={isLoading} 
+            onDeleteWorkout={handleDeleteWorkout}
+            onStartWorkout={handleStartWorkout}
+            onViewWorkout={handleViewWorkout}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Add Workout Dialog */}
+      <AddWorkoutDialog 
+        isOpen={isAddWorkoutOpen}
+        initialDate={selectedDate}
+        onClose={() => {
+          setIsAddWorkoutOpen(false);
+          // After adding a workout, switch to weekly view
+          setActiveTab("weekly");
+        }} 
+      />
+
+      {/* Workout Detail Dialog */}
+      <WorkoutDetailDialog
+        workout={selectedWorkout}
+        isOpen={!!selectedWorkout}
+        onClose={() => setSelectedWorkout(null)}
+        onStartWorkout={handleStartWorkout}
+      />
+    </div>
+  );
+};
+
+export default WorkoutTracker;

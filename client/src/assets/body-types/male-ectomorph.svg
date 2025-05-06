@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Male Ectomorph Body Type -->
+  
+  <!-- Head -->
+  <circle cx="100" cy="40" r="30" fill="#555555" />
+  
+  <!-- Neck -->
+  <rect x="90" y="70" width="20" height="15" fill="#555555" />
+  
+  <!-- Shoulders - narrow for ectomorph -->
+  <rect x="60" y="85" width="80" height="15" rx="5" fill="#555555" />
+  
+  <!-- Arms - thin -->
+  <rect x="50" y="85" width="10" height="120" rx="5" fill="#555555" />
+  <rect x="140" y="85" width="10" height="120" rx="5" fill="#555555" />
+  
+  <!-- Hands -->
+  <circle cx="55" cy="215" r="8" fill="#555555" />
+  <circle cx="145" cy="215" r="8" fill="#555555" />
+  
+  <!-- Torso - narrow, straight -->
+  <path d="M70,100 L70,220 Q100,230 130,220 L130,100 Z" fill="#555555" />
+  
+  <!-- Waist - thin -->
+  <rect x="80" y="220" width="40" height="15" rx="5" fill="#555555" />
+  
+  <!-- Legs - thin and long -->
+  <rect x="80" y="235" width="15" height="145" rx="5" fill="#555555" />
+  <rect x="105" y="235" width="15" height="145" rx="5" fill="#555555" />
+  
+  <!-- Feet -->
+  <ellipse cx="87" cy="385" rx="15" ry="7" fill="#555555" />
+  <ellipse cx="113" cy="385" rx="15" ry="7" fill="#555555" />
+</svg>

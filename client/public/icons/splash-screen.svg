@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <rect width="512" height="512" fill="url(#paint0_linear)" />
+  
+  <!-- Central icon -->
+  <g transform="translate(156, 96)">
+    <!-- Outer circle -->
+    <circle cx="100" cy="100" r="100" stroke="white" stroke-width="8" fill="none" />
+    
+    <!-- Heart rate monitor line -->
+    <path d="M20 100 L60 100 L70 80 L90 130 L110 70 L130 150 L150 100 L180 100" 
+          stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Stopwatch -->
+    <circle cx="100" cy="70" r="24" stroke="white" stroke-width="4" fill="none"/>
+    <path d="M100 55 L100 70 L112 78" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Dumbbell -->
+    <rect x="70" y="140" width="60" height="10" rx="5" fill="white"/>
+    <circle cx="60" cy="145" r="8" fill="white"/>
+    <circle cx="140" cy="145" r="8" fill="white"/>
+    <rect x="52" y="137" width="8" height="16" rx="4" fill="white"/>
+    <rect x="140" y="137" width="8" height="16" rx="4" fill="white"/>
+  </g>
+  
+  <!-- App name -->
+  <text x="256" y="340" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle">TrackMadeEazE</text>
+  
+  <!-- Tagline -->
+  <text x="256" y="380" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">Your Fitness Journey, Simplified</text>
+  
+  <!-- Loading indicator -->
+  <g transform="translate(206, 410)">
+    <circle cx="0" cy="0" r="8" fill="white" opacity="0.3">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="0s" />
+    </circle>
+    <circle cx="25" cy="0" r="8" fill="white" opacity="0.3">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="0.3s" />
+    </circle>
+    <circle cx="50" cy="0" r="8" fill="white" opacity="0.3">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="0.6s" />
+    </circle>
+    <circle cx="75" cy="0" r="8" fill="white" opacity="0.3">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" begin="0.9s" />
+    </circle>
+  </g>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#3c35b5"/>
+    </linearGradient>
+  </defs>
+</svg>

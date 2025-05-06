@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo Generator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      background-color: #f5f5f5;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .canvas-container {
+      margin: 20px;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow: hidden;
+      border-radius: 20px;
+    }
+    h1 {
+      color: #1e3a8a;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #1e3a8a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #1e4a9a;
+    }
+    .sizes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .size-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .size-canvas {
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <h1>Logo Generator - No White Edges</h1>
+  
+  <div class="canvas-container">
+    <canvas id="logoCanvas" width="512" height="512"></canvas>
+  </div>
+  
+  <button id="downloadBtn">Download Logo</button>
+  
+  <div class="sizes">
+    <div class="size-container">
+      <h3>192x192</h3>
+      <div class="size-canvas">
+        <canvas id="canvas192" width="192" height="192"></canvas>
+      </div>
+      <button onclick="downloadSize(192)">Download</button>
+    </div>
+    <div class="size-container">
+      <h3>180x180</h3>
+      <div class="size-canvas">
+        <canvas id="canvas180" width="180" height="180"></canvas>
+      </div>
+      <button onclick="downloadSize(180)">Download</button>
+    </div>
+    <div class="size-container">
+      <h3>167x167</h3>
+      <div class="size-canvas">
+        <canvas id="canvas167" width="167" height="167"></canvas>
+      </div>
+      <button onclick="downloadSize(167)">Download</button>
+    </div>
+    <div class="size-container">
+      <h3>152x152</h3>
+      <div class="size-canvas">
+        <canvas id="canvas152" width="152" height="152"></canvas>
+      </div>
+      <button onclick="downloadSize(152)">Download</button>
+    </div>
+    <div class="size-container">
+      <h3>48x48</h3>
+      <div class="size-canvas">
+        <canvas id="canvas48" width="48" height="48"></canvas>
+      </div>
+      <button onclick="downloadSize(48)">Download</button>
+    </div>
+    <div class="size-container">
+      <h3>32x32</h3>
+      <div class="size-canvas">
+        <canvas id="canvas32" width="32" height="32"></canvas>
+      </div>
+      <button onclick="downloadSize(32)">Download</button>
+    </div>
+    <div class="size-container">
+      <h3>16x16</h3>
+      <div class="size-canvas">
+        <canvas id="canvas16" width="16" height="16"></canvas>
+      </div>
+      <button onclick="downloadSize(16)">Download</button>
+    </div>
+  </div>
+  
+  <script>
+    function drawLogo(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+      
+      // Draw blue rounded square background
+      ctx.fillStyle = '#1e3a8a';
+      const radius = size * 0.25; // 25% of size
+      
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(size - radius, 0);
+      ctx.quadraticCurveTo(size, 0, size, radius);
+      ctx.lineTo(size, size - radius);
+      ctx.quadraticCurveTo(size, size, size - radius, size);
+      ctx.lineTo(radius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Calculate coordinates based on canvas size
+      const lineWidth = size * 0.078; // ~8% of size
+      const leftX = size * 0.15;
+      const rightX = size * 0.85;
+      const middleY = size * 0.5;
+      const firstThirdX = size * 0.325;
+      const upPeakX = size * 0.4;
+      const upPeakY = size * 0.325;
+      const downPeakX = size * 0.6;
+      const downPeakY = size * 0.675;
+      const lastThirdX = size * 0.675;
+      
+      // Draw white heartbeat line
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(leftX, middleY);
+      ctx.lineTo(firstThirdX, middleY);
+      ctx.lineTo(upPeakX, upPeakY);
+      ctx.lineTo(downPeakX, downPeakY);
+      ctx.lineTo(lastThirdX, middleY);
+      ctx.lineTo(rightX, middleY);
+      ctx.stroke();
+    }
+    
+    // Draw all sizes
+    drawLogo('logoCanvas', 512);
+    drawLogo('canvas192', 192);
+    drawLogo('canvas180', 180);
+    drawLogo('canvas167', 167);
+    drawLogo('canvas152', 152);
+    drawLogo('canvas48', 48);
+    drawLogo('canvas32', 32);
+    drawLogo('canvas16', 16);
+    
+    // Download main logo (512x512)
+    document.getElementById('downloadBtn').addEventListener('click', function() {
+      const canvas = document.getElementById('logoCanvas');
+      const dataURL = canvas.toDataURL('image/png');
+      
+      const link = document.createElement('a');
+      link.download = 'icon-512x512.png';
+      link.href = dataURL;
+      link.click();
+    });
+    
+    // Download specific size
+    function downloadSize(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const dataURL = canvas.toDataURL('image/png');
+      
+      const link = document.createElement('a');
+      link.download = size === 192 ? 'icon-192x192.png' : `apple-icon-${size}.png`;
+      if (size <= 48) {
+        link.download = `favicon-${size}x${size}.png`;
+      }
+      link.href = dataURL;
+      link.click();
+    }
+  </script>
+</body>
+</html>

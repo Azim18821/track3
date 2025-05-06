@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SVG to PNG Converter</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #preview {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .preview-container {
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      border: 1px dashed #ccc;
+      margin-top: 10px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #4338CA;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #3B82F6;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    p {
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <h1>SVG to PNG Converter</h1>
+  <p>This tool converts the new app icons from SVG to PNG. Click the buttons below to generate and download the PNG files.</p>
+  
+  <div id="preview">
+    <div class="preview-container">
+      <h3>192x192 Icon</h3>
+      <img src="/icons/icon-192x192.svg" width="192" height="192" id="svg192">
+      <canvas id="canvas192" width="192" height="192"></canvas>
+      <button onclick="convertAndDownload(192)">Generate & Download PNG</button>
+    </div>
+    
+    <div class="preview-container">
+      <h3>512x512 Icon</h3>
+      <img src="/icons/icon-512x512.svg" width="256" height="256" id="svg512">
+      <canvas id="canvas512" width="512" height="512"></canvas>
+      <button onclick="convertAndDownload(512)">Generate & Download PNG</button>
+    </div>
+  </div>
+  
+  <script>
+    function convertAndDownload(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const ctx = canvas.getContext('2d');
+      const img = document.getElementById(`svg${size}`);
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw SVG to canvas
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      // Convert to PNG and trigger download
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `icon-${size}x${size}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  </script>
+</body>
+</html>

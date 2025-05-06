@@ -1,0 +1,3207 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useLocation } from 'wouter';
+import { motion, AnimatePresence } from 'framer-motion';
+// Import shopping types and utilities from the central type definitions
+import { 
+  processShoppingItems,
+  groupShoppingItemsByDay,
+  type ShoppingItem,
+  type DailyShoppingGroup
+} from '@/utils/shopping/shoppingUtils';
+import { ShoppingList, StoreRecommendationCard } from '@/components/shopping/ShoppingList';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Select, 
+  SelectContent, 
+  SelectGroup, 
+  SelectItem, 
+  SelectLabel,
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Check, CalendarIcon, X, Plus, Minus, Edit, Download, Info as InfoIcon, Clock } from 'lucide-react';
+import { useUser } from '../hooks/use-user';
+import { cn } from '../lib/utils';
+import useMobileDetect from '../hooks/use-mobile-detect';
+import { apiRequest, queryClient } from '../lib/queryClient';
+import { usePlanGeneration } from '../contexts/PlanGenerationContext';
+import { ProgressTracker } from '../components/ui/progress-tracker';
+
+// Zod schema for form validation
+const fitnessPrefsSchema = z.object({
+  goal: z.enum(["weight_loss", "muscle_gain", "improve_fitness", "increase_strength", "increase_endurance"]),
+  currentWeight: z.coerce.number().min(30).max(500),
+  targetWeight: z.coerce.number().min(30).max(500).optional(),
+  unit: z.enum(["kg", "lbs"]),
+  age: z.coerce.number().min(16).max(90).optional(),
+  height: z.coerce.number().min(120).max(250).optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  workoutDaysPerWeek: z.coerce.number().min(1).max(7),
+  dietaryRestrictions: z.array(z.string()).default([]),
+  preferredFoods: z.array(z.string()).default([]),
+  fitnessLevel: z.enum(["beginner", "intermediate", "advanced"]),
+  budget: z.union([z.coerce.number(), z.enum(["low", "medium", "high"])]).optional(),
+  budgetType: z.enum(["low", "medium", "high"]).optional(),
+  // Workout schedule preferences
+  preferredWorkoutDays: z.array(z.string()).optional(),
+  workoutDuration: z.coerce.number().min(15).max(180).optional(),
+  workoutNames: z.record(z.string(), z.string()).optional(),
+  // Email notification preferences
+  notifyByEmail: z.boolean().default(false),
+  email: z.string().email().optional(),
+});
+
+type FitnessPrefs = z.infer<typeof fitnessPrefsSchema>;
+
+export default function FitnessCoach() {
+  const { user } = useUser();
+  const { toast } = useToast();
+  const isMobile = useMobileDetect();
+  const [step, setStep] = useState<number>(1);
+  
+  // Additional form state
+  const [dietaryRestrictionInput, setDietaryRestrictionInput] = useState<string>('');
+  const [preferredFoodInput, setPreferredFoodInput] = useState<string>('');
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [eligibilityStatus, setEligibilityStatus] = useState<{
+    canCreate: boolean;
+    daysRemaining?: number;
+    message?: string;
+    hasTrainer?: boolean;
+    globallyDisabled?: boolean;
+  }>({
+    canCreate: true
+  });
+  const [redirecting, setRedirecting] = useState<boolean>(false);
+  
+  // State to track plan generation progress
+  const [generationProgress, setGenerationProgress] = useState<{
+    isGenerating: boolean;
+    step: number;
+    statusMessage: string;
+    estimatedTimeRemaining: number;
+  }>({
+    isGenerating: false,
+    step: 0,
+    statusMessage: '',
+    estimatedTimeRemaining: 0,
+  });
+  
+  // Use the plan generation context for global state management
+  const { isPlanGenerating, setPlanGenerating } = usePlanGeneration();
+  
+  // Get active fitness plan if it exists
+  const { 
+    data: activePlan,
+    isLoading: planLoading,
+    error: planError 
+  } = useQuery({
+    queryKey: ['/api/fitness-plans/active'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/fitness-plans/active', {
+          credentials: "include"
+        });
+        
+        if (res.status === 404) {
+          return null;  // No active plan found
+        }
+        if (!res.ok) throw new Error('Failed to fetch fitness plan');
+        return await res.json();
+      } catch (err: any) {
+        if (err.message !== 'Failed to fetch fitness plan') {
+          // Handle expected 404s gracefully but throw other errors
+          return null;
+        }
+        throw err;
+      }
+    },
+    retry: (failureCount, error: any) => {
+      // Don't retry on 404s
+      if (error?.response?.status === 404) return false;
+      return failureCount < 3;
+    }
+  });
+  
+  // Effect to reset the plan generation state in certain conditions
+  useEffect(() => {
+    if (!planLoading) {
+      if (activePlan) {
+        // If we have an active plan, any ongoing generation should be complete
+        if (isPlanGenerating) {
+          console.log('Found active plan - resetting generation flag');
+          setPlanGenerating(false);
+          localStorage.removeItem('fitness_plan_generating');
+        }
+      } else if (isPlanGenerating) {
+        // If there's no active plan, verify against how long it's been generating
+        const generationStartTime = parseInt(localStorage.getItem('fitness_plan_generating') || '0');
+        if (generationStartTime) {
+          const currentTime = Date.now();
+          const generationTime = currentTime - generationStartTime;
+          const MAX_GENERATION_TIME = 10 * 60 * 1000; // 10 minutes
+          
+          if (generationTime > MAX_GENERATION_TIME) {
+            console.log('Generation taking too long - resetting flag');
+            setPlanGenerating(false);
+            localStorage.removeItem('fitness_plan_generating');
+          }
+        }
+      }
+    }
+  }, [planLoading, activePlan, isPlanGenerating, setPlanGenerating]);
+  
+  // Used to track progress timers for cleanup
+  const progressTimerRefs = useRef<NodeJS.Timeout[]>([]);
+  
+  // Navigation hook
+  const [, setLocation] = useLocation();
+  
+  // Effect to handle redirection
+  useEffect(() => {
+    // If not loading and no active plan, check eligibility
+    if (!planLoading && !activePlan && !redirecting) {
+      // Case 1: Check if AI coach is globally disabled
+      if (eligibility && !eligibilityLoading && eligibility.globallyDisabled && 
+          user && !user.hasOwnProperty('isAdmin') && !user.hasOwnProperty('isTrainer')) {
+        setRedirecting(true);
+        toast({
+          title: "AI Coach Disabled",
+          description: "The AI Coach feature is currently disabled. Redirecting to coach page...",
+          variant: "default",
+        });
+        
+        // Redirect to coach page
+        setTimeout(() => {
+          setLocation("/coach");
+        }, 1500);
+      }
+      // Case 2: No active plan (just redirect to coach page as requested)
+      else if (!isPlanGenerating && !eligibilityLoading) {
+        setRedirecting(true);
+        toast({
+          title: "No Active Plan",
+          description: "You don't have an active fitness plan. Redirecting to coach page...",
+          variant: "default",
+        });
+        
+        // Redirect to coach page
+        setTimeout(() => {
+          setLocation("/coach");
+        }, 1500);
+      }
+    }
+  }, [planLoading, activePlan, eligibility, eligibilityLoading, user, setLocation, toast, redirecting, isPlanGenerating]);
+  
+  // Define form with default values
+  const form = useForm<FitnessPrefs>({
+    resolver: zodResolver(fitnessPrefsSchema),
+    defaultValues: {
+      goal: "muscle_gain",
+      currentWeight: 71,
+      unit: "kg",  // Default to kg for more accurate calculations
+      age: 30, // Default age
+      height: 175, // Default height in cm
+      gender: "male", // Default gender
+      workoutDaysPerWeek: 4,
+      dietaryRestrictions: [],
+      preferredFoods: [],
+      fitnessLevel: "intermediate",
+      budget: "medium", // Default to medium budget as string for legacy support
+      budgetType: "medium", // Default budget type
+      // Email notification defaults
+      notifyByEmail: false,
+      email: "",
+    },
+  });
+  
+  // Check plan generation eligibility
+  const {
+    data: eligibility,
+    isLoading: eligibilityLoading,
+  } = useQuery({
+    queryKey: ['/api/fitness-plans/eligibility'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/fitness-plans/eligibility', {
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          // If endpoint doesn't exist (404) or server error, assume can create
+          if (res.status === 404 || res.status >= 500) {
+            return { canCreate: true };
+          }
+          
+          // If 403 Forbidden, check for specific reasons
+          if (res.status === 403) {
+            // Handle trainer assignment or globally disabled cases
+            return { 
+              canCreate: false, 
+              message: errorData.message,
+              daysRemaining: errorData.daysRemaining,
+              hasTrainer: errorData.hasTrainer || false,
+              globallyDisabled: errorData.globallyDisabled || false
+            };
+          }
+          
+          // If too many requests (429), cannot create
+          if (res.status === 429) {
+            return { 
+              canCreate: false, 
+              daysRemaining: errorData.daysRemaining,
+              message: errorData.message
+            };
+          }
+          
+          throw new Error(errorData.message || 'Failed to check plan eligibility');
+        }
+        return await res.json();
+      } catch (err: any) {
+        console.error('Error checking eligibility:', err);
+        // Default to allowing plan creation if there's an error
+        return { canCreate: true };
+      }
+    },
+    // Only check eligibility if there's no active plan
+    enabled: !planLoading && !activePlan,
+  });
+  
+  // Mutation to generate a new fitness plan using the coach endpoint
+  const generatePlanMutation = useMutation({
+    mutationFn: async (preferences: FitnessPrefs) => {
+      // Check if a plan is already being generated
+      if (isPlanGenerating) {
+        throw new Error("A plan is already being generated. Please wait for it to complete.");
+      }
+      
+      // Set the global flag to indicate a plan is generating
+      setPlanGenerating(true);
+      
+      // Save the start time to localStorage for timeout tracking
+      localStorage.setItem('fitness_plan_generating', Date.now().toString());
+      
+      // Clear any existing timers
+      progressTimerRefs.current.forEach(timer => clearTimeout(timer));
+      progressTimerRefs.current = [];
+      
+      // Initialize progress tracking
+      setGenerationProgress({
+        isGenerating: true,
+        step: 1,
+        statusMessage: "Analyzing your preferences...",
+        estimatedTimeRemaining: 60
+      });
+      
+      // Define progress steps
+      const progressSteps = [
+        { step: 2, message: "Calculating nutrition requirements...", time: 45, delay: 8000 },
+        { step: 3, message: "Creating personalized workout plan...", time: 30, delay: 20000 },
+        { step: 4, message: "Designing your meal plan...", time: 15, delay: 35000 },
+        { step: 5, message: "Finalizing your plan...", time: 5, delay: 50000 }
+      ];
+      
+      // Schedule all progress updates
+      progressSteps.forEach(({ step, message, time, delay }) => {
+        const timer = setTimeout(() => {
+          setGenerationProgress({
+            isGenerating: true,
+            step,
+            statusMessage: message,
+            estimatedTimeRemaining: time
+          });
+        }, delay);
+        progressTimerRefs.current.push(timer);
+      });
+      // Convert FitnessPrefs to CoachInput format
+      const budgetValue = typeof preferences.budget === 'number' 
+        ? preferences.budget 
+        : preferences.budget === 'low' ? 40 : preferences.budget === 'medium' ? 70 : 100;
+      
+      // Map activity level from fitnessLevel to activityLevel values
+      let activityLevel: 'sedentary' | 'light' | 'moderate' | 'very_active' | 'extra_active';
+      switch (preferences.fitnessLevel) {
+        case 'beginner':
+          activityLevel = 'light';
+          break;
+        case 'intermediate':
+          activityLevel = 'moderate';
+          break;
+        case 'advanced':
+          activityLevel = 'very_active';
+          break;
+        default:
+          activityLevel = 'moderate';
+      }
+      
+      // Map fitness goal
+      const fitnessGoal = preferences.goal as 'weight_loss' | 'muscle_gain' | 'strength' | 'stamina' | 'endurance';
+      
+      // Combine dietary restrictions and preferred foods
+      const dietaryPreferences = [
+        ...preferences.dietaryRestrictions,
+        ...preferences.preferredFoods
+      ];
+      
+      // Convert height to cm if in inches
+      const height = preferences.unit === 'inches' && preferences.height 
+        ? Math.round(preferences.height * 2.54) 
+        : preferences.height || 175;
+      
+      // Convert weight to kg if in pounds
+      const weight = preferences.unit === 'lb' && preferences.currentWeight 
+        ? Math.round(preferences.currentWeight / 2.2) 
+        : preferences.currentWeight;
+      
+      // Create coach input
+      const coachInput: CoachInput = {
+        age: preferences.age || 30,
+        sex: (preferences.gender === 'male' || preferences.gender === 'female') 
+          ? preferences.gender 
+          : 'male',
+        height,
+        weight,
+        activityLevel,
+        fitnessGoal,
+        dietaryPreferences,
+        weeklyBudget: budgetValue,
+        // Include workout schedule preferences
+        workoutDaysPerWeek: preferences.workoutDaysPerWeek,
+        // Use the user-selected workout days from the form (fallback to generated ones if empty)
+        preferredWorkoutDays: preferences.preferredWorkoutDays && preferences.preferredWorkoutDays.length > 0 
+            ? preferences.preferredWorkoutDays 
+            : generatePreferredWorkoutDays(preferences.workoutDaysPerWeek),
+        workoutDuration: preferences.workoutDuration || 60, 
+        // Let the AI generate workout names
+        // No workout names are sent - AI will generate them
+        // Include email notification preferences
+        notifyByEmail: preferences.notifyByEmail,
+        email: preferences.email,
+      };
+      
+      console.log("Sending coach input:", coachInput);
+      
+      // Progress updates already scheduled above
+      
+      try {
+        // Call the new coach endpoint
+        const res = await apiRequest('POST', '/api/coach', coachInput);
+        
+        // Clear progress tracking on completion
+        progressTimerRefs.current.forEach(timer => clearTimeout(timer));
+        progressTimerRefs.current = [];
+        setGenerationProgress({
+          isGenerating: false,
+          step: 0,
+          statusMessage: '',
+          estimatedTimeRemaining: 0,
+        });
+        
+        // Reset the global plan generation flag
+        setPlanGenerating(false);
+        // Clear generation tracking from localStorage
+        localStorage.removeItem('fitness_plan_generating');
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          
+          // Special handling for frequency limit errors (429 Too Many Requests)
+          if (res.status === 429 && errorData.daysRemaining) {
+            // Instead of throwing an error, update the eligibility status directly
+            setEligibilityStatus({
+              canCreate: false,
+              daysRemaining: errorData.daysRemaining,
+              message: errorData.message || `You can only generate a fitness plan every ${errorData.daysRemaining} days.`
+            });
+            
+            // Close the dialog to show the updated eligibility status card
+            setIsDialogOpen(false);
+            
+            // Show a friendly toast message
+            toast({
+              title: "Plan Generation Limited",
+              description: `You can create a new plan in ${errorData.daysRemaining} days.`,
+              variant: "destructive"
+            });
+            
+            // Return a value to prevent the onError handler from running
+            return { limitReached: true };
+          }
+          
+          // Handle other errors
+          throw new Error(errorData.message || 'Failed to generate fitness plan');
+        }
+        
+        // Process the coach response
+        const coachResponse = await res.json();
+        
+        // Log the complete response to inspect its structure
+        console.log("Received coach response:", JSON.stringify(coachResponse, null, 2));
+        
+        // Create a compatibility layer with the old fitness plan API
+        // This allows us to continue using the existing UI without major changes
+        const adaptedResponse = {
+          ...coachResponse,
+          id: Date.now(), // Generate a temporary ID
+          nutritionGoal: {
+            caloriesTarget: coachResponse.nutritionData?.calorieTarget || 0,
+            proteinTarget: coachResponse.nutritionData?.proteinTarget || 0,
+            carbsTarget: coachResponse.nutritionData?.carbsTarget || 0,
+            fatTarget: coachResponse.nutritionData?.fatTarget || 0
+          },
+          preferences: {
+            goal: coachInput.fitnessGoal,
+            currentWeight: coachInput.weight,
+            unit: 'kg',
+            age: coachInput.age,
+            gender: coachInput.sex,
+            dietaryRestrictions: coachInput.dietaryPreferences,
+            // Add workout preferences to maintain consistency
+            workoutDaysPerWeek: coachInput.workoutDaysPerWeek || 4,
+            preferredWorkoutDays: coachInput.preferredWorkoutDays || [],
+            workoutDuration: coachInput.workoutDuration || 60,
+            workoutNames: coachInput.workoutNames || {},
+          },
+          mealPlan: {
+            weeklySchedule: coachResponse.weeklyMealPlan || {}
+          },
+          workoutPlan: {
+            weeklySchedule: coachResponse.weeklyWorkoutPlan || {}
+          },
+          shoppingList: coachResponse.shoppingList || [],
+          createdAt: new Date().toISOString(),
+          active: true
+        };
+        
+        // Log the adapted response before returning
+        console.log("Adapted response structure:", {
+          nutritionGoal: adaptedResponse.nutritionGoal,
+          hasWorkoutPlan: !!adaptedResponse.workoutPlan?.weeklySchedule && 
+                         Object.keys(adaptedResponse.workoutPlan.weeklySchedule || {}).length > 0,
+          workoutPlanDays: Object.keys(adaptedResponse.workoutPlan?.weeklySchedule || {}),
+          hasMealPlan: !!adaptedResponse.mealPlan?.weeklySchedule && 
+                     Object.keys(adaptedResponse.mealPlan.weeklySchedule || {}).length > 0,
+          mealPlanDays: Object.keys(adaptedResponse.mealPlan?.weeklySchedule || {}),
+          hasShoppingList: Array.isArray(adaptedResponse.shoppingList) && adaptedResponse.shoppingList.length > 0,
+          shoppingListCount: Array.isArray(adaptedResponse.shoppingList) ? adaptedResponse.shoppingList.length : 0
+        });
+        
+        return adaptedResponse;
+      } catch (error) {
+        // Clear progress tracking in case of error
+        progressTimerRefs.current.forEach(timer => clearTimeout(timer));
+        progressTimerRefs.current = [];
+        setGenerationProgress({
+          isGenerating: false,
+          step: 0,
+          statusMessage: '',
+          estimatedTimeRemaining: 0,
+        });
+        
+        // Reset the global plan generation flag
+        setPlanGenerating(false);
+        // Clear generation tracking from localStorage
+        localStorage.removeItem('fitness_plan_generating');
+        
+        // Re-throw the error to be handled by onError
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      // If we returned early due to limit reached, don't show success message
+      if (data && 'limitReached' in data) {
+        return;
+      }
+      
+      toast({
+        title: "Success!",
+        description: "Your personalized fitness and nutrition plan has been created!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/fitness-plans/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nutrition/goals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      setIsDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error generating plan",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Function to add a dietary restriction
+  const addDietaryRestriction = () => {
+    if (!dietaryRestrictionInput.trim()) return;
+    
+    const currentRestrictions = form.getValues("dietaryRestrictions");
+    if (!currentRestrictions.includes(dietaryRestrictionInput)) {
+      form.setValue("dietaryRestrictions", [...currentRestrictions, dietaryRestrictionInput]);
+    }
+    setDietaryRestrictionInput('');
+  };
+  
+  // Function to remove a dietary restriction
+  const removeDietaryRestriction = (item: string) => {
+    const currentRestrictions = form.getValues("dietaryRestrictions");
+    form.setValue("dietaryRestrictions", currentRestrictions.filter(i => i !== item));
+  };
+  
+  // Function to add a preferred food
+  const addPreferredFood = () => {
+    if (!preferredFoodInput.trim()) return;
+    
+    const currentFoods = form.getValues("preferredFoods");
+    if (!currentFoods.includes(preferredFoodInput)) {
+      form.setValue("preferredFoods", [...currentFoods, preferredFoodInput]);
+    }
+    setPreferredFoodInput('');
+  };
+  
+  // Function to remove a preferred food
+  const removePreferredFood = (item: string) => {
+    const currentFoods = form.getValues("preferredFoods");
+    form.setValue("preferredFoods", currentFoods.filter(i => i !== item));
+  };
+  
+  // Function to submit the form
+  const onSubmit = (data: FitnessPrefs) => {
+    console.log("Form submitted with data:", data);
+    // Ensure budget is properly formatted before sending to server
+    const formattedData = {
+      ...data,
+      // Handle the budget field properly:
+      // 1. If budget is a numeric value, keep it as a number
+      // 2. If budgetType is specified, use that as a string
+      // 3. Otherwise, default to "medium"
+      budget: (typeof data.budget === 'number' && !isNaN(data.budget)) 
+        ? data.budget  // Keep numeric budget as is
+        : data.budgetType  // Use budgetType if specified
+          ? data.budgetType  
+          : (typeof data.budget === 'string' && data.budget)  // Use string budget if it exists
+            ? data.budget
+            : "medium"  // Default to medium if nothing is specified
+    };
+    
+    // If we're using a budgetType, ensure we clean up any undefined budget values
+    if (formattedData.budgetType && formattedData.budget === undefined) {
+      formattedData.budget = formattedData.budgetType;
+    }
+    
+    console.log("Submitting form with data:", formattedData);
+    console.log("Budget value:", formattedData.budget, "type:", typeof formattedData.budget);
+    
+    // Show plan generation toast with time estimate
+    toast({
+      title: "Generating Your Plan",
+      description: "Creating your personalized plan may take up to 5 minutes." + 
+                  (data.notifyByEmail && data.email ? " You'll receive an email when it's ready." : " You'll be notified when it's ready."),
+      duration: 10000, // Show for 10 seconds
+    });
+    
+    // Set generation progress to show the user that work is happening
+    setGenerationProgress({
+      isGenerating: true,
+      step: 1,
+      statusMessage: 'Analyzing your fitness goals and preferences...',
+      estimatedTimeRemaining: 300, // 5 minutes in seconds
+    });
+    
+    // Only include email if notifications are enabled and email is provided
+    // If user has disabled email notifications, proceed without validation
+    const hasValidEmail = data.notifyByEmail && data.email;
+    
+    // If user has enabled notifications but not provided email, show alert and stop
+    if (data.notifyByEmail && !data.email) {
+      toast({
+        title: "Email Required",
+        description: "Please provide an email address or disable email notifications.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Submit with email notification preference
+    generatePlanMutation.mutate({
+      ...formattedData,
+      notifyByEmail: hasValidEmail ? true : false,
+      email: hasValidEmail ? data.email : undefined
+    });
+  };
+  
+  // Navigation between steps
+  const nextStep = () => {
+    const currentValues = form.getValues();
+    const currentSchema = step === 1
+      ? fitnessPrefsSchema.pick({ 
+          goal: true, 
+          currentWeight: true, 
+          targetWeight: true, 
+          unit: true,
+          age: true,
+          height: true,
+          gender: true
+        })
+      : step === 2
+      ? fitnessPrefsSchema.pick({ workoutDaysPerWeek: true, fitnessLevel: true, budget: true })
+      : step === 3
+      ? fitnessPrefsSchema.pick({ dietaryRestrictions: true, preferredFoods: true })
+      : step === 4
+      ? fitnessPrefsSchema.pick({ preferredWorkoutDays: true, workoutDuration: true })
+      : fitnessPrefsSchema; // Final step
+    
+    const result = currentSchema.safeParse(currentValues);
+    if (!result.success) {
+      // Trigger validation for the fields in the current step
+      if (step === 1) {
+        form.trigger(["goal", "currentWeight", "targetWeight", "unit", "age", "height", "gender"]);
+      } else if (step === 2) {
+        form.trigger(["workoutDaysPerWeek", "fitnessLevel", "budget"]);
+      } else if (step === 3) {
+        form.trigger(["dietaryRestrictions", "preferredFoods"]);
+      } else if (step === 4) {
+        form.trigger(["preferredWorkoutDays", "workoutDuration"]);
+      }
+      return;
+    }
+    
+    // Generate workout schedule preferences when moving from step 2 to step 3
+    if (step === 2) {
+      const { workoutDaysPerWeek, goal } = form.getValues();
+      const fitnessGoal = goal as 'weight_loss' | 'muscle_gain' | 'strength' | 'stamina' | 'endurance';
+      
+      // Generate the workout days and names based on current preferences
+      const preferredWorkoutDays = generatePreferredWorkoutDays(workoutDaysPerWeek);
+      const workoutNames = generateWorkoutNames(workoutDaysPerWeek, fitnessGoal);
+      
+      // Store these values in form state
+      form.setValue("preferredWorkoutDays", preferredWorkoutDays);
+      form.setValue("workoutNames", workoutNames);
+    }
+    
+    // Validate workout days selection at step 4
+    if (step === 4) {
+      const { preferredWorkoutDays, workoutDaysPerWeek } = form.getValues();
+      
+      // Ensure user has selected enough workout days
+      if (!preferredWorkoutDays || preferredWorkoutDays.length < workoutDaysPerWeek) {
+        toast({
+          title: "Workout days required",
+          description: `Please select ${workoutDaysPerWeek} workout days to continue.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    setStep(step + 1);
+  };
+  
+  const prevStep = () => {
+    setStep(step - 1);
+  };
+  
+  // Update eligibility status when data changes
+  useEffect(() => {
+    if (eligibility && !eligibilityLoading) {
+      setEligibilityStatus(eligibility);
+    }
+  }, [eligibility, eligibilityLoading]);
+  
+  // Set email from user data when available
+  useEffect(() => {
+    if (user?.email) {
+      // Set the email value in the form when the user has an email and checkbox is checked
+      if (form.getValues("notifyByEmail")) {
+        form.setValue("email", user.email);
+      }
+    }
+  }, [user, form]);
+  
+  // Cleanup timers when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear any pending timers when component unmounts
+      progressTimerRefs.current.forEach(timer => clearTimeout(timer));
+      progressTimerRefs.current = [];
+    };
+  }, []);
+
+  // If loading, show spinner
+  if (planLoading || (eligibilityLoading && !activePlan)) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-border" />
+      </div>
+    );
+  }
+  
+  // If an active plan exists, show it
+  if (activePlan) {
+    return <ActivePlanView plan={activePlan} isMobile={isMobile} />;
+  }
+
+  return (
+    <div className={isMobile ? "px-4 py-4" : "container py-6"}>
+      <h1 className={`${isMobile ? "text-2xl" : "text-3xl"} font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`}>
+        Fitness Coach
+      </h1>
+      
+      <p className={`${isMobile ? "text-base" : "text-lg"} mb-5`}>
+        Get a personalized workout and nutrition plan tailored to your specific goals, preferences, and fitness level.
+      </p>
+      
+      {/* Show plan generation in progress indicator */}
+      {isPlanGenerating && !planLoading && !activePlan && (
+        <Card className="mb-6 border-blue-500">
+          <CardHeader>
+            <CardTitle className="text-blue-500">
+              Plan Generation in Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin text-blue-500" />
+                <p>Your plan is currently being created. This may take up to 5 minutes.</p>
+              </div>
+              
+              <ProgressTracker 
+                isGenerating={true}
+                step={generationProgress.step || 1} 
+                statusMessage="Creating your fitness plan..."
+                estimatedTimeRemaining={30}
+                totalSteps={5}
+              />
+              
+              <p className="text-sm text-muted-foreground">
+                Please wait for the process to complete. You'll be able to view your plan when it's ready.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {!eligibilityStatus.canCreate && (
+        <Card className={`mb-6 ${eligibilityStatus.hasTrainer ? 'border-blue-500' : eligibilityStatus.globallyDisabled ? 'border-gray-500' : 'border-amber-500'}`}>
+          <CardHeader>
+            <CardTitle className={`${eligibilityStatus.hasTrainer ? 'text-blue-500' : eligibilityStatus.globallyDisabled ? 'text-gray-500' : 'text-amber-500'}`}>
+              {eligibilityStatus.hasTrainer 
+                ? 'Personal Trainer Assigned' 
+                : eligibilityStatus.globallyDisabled 
+                  ? 'Feature Disabled'
+                  : 'Plan Generation Limited'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>{eligibilityStatus.message || `You can only generate a fitness plan every 30 days.`}</p>
+            {eligibilityStatus.daysRemaining && (
+              <p className="mt-2 font-medium">
+                You can create a new plan in {eligibilityStatus.daysRemaining} days.
+              </p>
+            )}
+            {eligibilityStatus.hasTrainer && (
+              <div className="mt-4">
+                <p className="font-medium">What to do instead:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Check your messages to communicate with your trainer</li>
+                  <li>Follow the workout and nutrition plan your trainer creates for you</li>
+                  <li>Track your progress regularly to share with your trainer</li>
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      <Dialog 
+        open={isDialogOpen} 
+        onOpenChange={(open) => {
+          // Add check before opening the dialog
+          if (open && isPlanGenerating) {
+            // Prevent opening if a plan is generating
+            toast({
+              title: "Plan Generation in Progress",
+              description: "A plan is already being generated. Please wait for it to complete.",
+              variant: "destructive",
+            });
+            return;
+          }
+          setIsDialogOpen(open);
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button 
+            variant="default" 
+            size="lg" 
+            className={`${isMobile ? "w-full text-base py-5" : ""} mb-6`}
+            disabled={!eligibilityStatus.canCreate || generatePlanMutation.isPending || isPlanGenerating}
+            onClick={() => {
+              // Additional check right before attempting to open dialog
+              if (isPlanGenerating) {
+                toast({
+                  title: "Plan Generation in Progress",
+                  description: "A plan is already being generated. Please wait for it to complete.",
+                  variant: "destructive",
+                });
+                return;
+              }
+            }}
+          >
+            {generatePlanMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin inline-block" />
+                Generating...
+              </>
+            ) : (
+              isMobile ? "Create Your Plan" : "Create Your Personalized Plan"
+            )}
+          </Button>
+        </DialogTrigger>
+        
+        <DialogContent className="max-w-full md:max-w-3xl max-h-[95vh] w-[95%] overflow-y-auto p-4 md:p-6 rounded-lg">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Create Your Fitness Plan
+            </DialogTitle>
+            <DialogDescription className="text-base mt-2">
+              Answer a few questions to get a customized workout and nutrition plan.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Progress tracker during plan generation */}
+          {generationProgress.isGenerating && (
+            <div className="mb-4">
+              <ProgressTracker 
+                isGenerating={generationProgress.isGenerating}
+                step={generationProgress.step}
+                statusMessage={generationProgress.statusMessage}
+                estimatedTimeRemaining={generationProgress.estimatedTimeRemaining}
+                totalSteps={5}
+              />
+            </div>
+          )}
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              {/* Show either form steps or progress based on generation state */}
+              {generationProgress.isGenerating ? (
+                /* Show nothing here - progress is already displayed above */
+                null
+              ) : (
+                <>
+                  {/* Step 1: Basic Information */}
+                  {step === 1 && (
+                <div className="space-y-4 py-4">
+                  <h3 className="text-lg font-medium">Step 1: Tell us about your goals</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="goal"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your Primary Goal</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a goal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="weight_loss">Weight Loss</SelectItem>
+                            <SelectItem value="muscle_gain">Muscle Gain</SelectItem>
+                            <SelectItem value="improve_fitness">Improve Overall Fitness</SelectItem>
+                            <SelectItem value="increase_strength">Increase Strength</SelectItem>
+                            <SelectItem value="increase_endurance">Increase Endurance</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="currentWeight"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Weight</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              inputMode="numeric"
+                              {...field} 
+                              className="mobile-input"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="unit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unit</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="lbs">Pounds (lbs)</SelectItem>
+                              <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="targetWeight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Weight (optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            inputMode="numeric"
+                            {...field} 
+                            value={field.value || ''} 
+                            className="mobile-input"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Leave blank if you don't have a specific target weight
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="age"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              inputMode="numeric"
+                              {...field} 
+                              min="16" 
+                              max="90"
+                              step="1"
+                              value={field.value || ''}
+                              className="mobile-input"
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs sm:text-sm">
+                            Used for more accurate calorie calculations
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="height"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Height (cm)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number"
+                              inputMode="numeric"
+                              {...field} 
+                              min="120" 
+                              max="220"
+                              step="1"
+                              value={field.value || ''}
+                              className="mobile-input"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Your height in centimeters
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Gender</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="mobile-select-trigger">
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Used for more accurate BMR calculations
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+              
+              {/* Step 2: Workout Preferences */}
+              {step === 2 && (
+                <div className="space-y-4 py-4">
+                  <h3 className="text-lg font-medium">Step 2: Workout Preferences</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="workoutDaysPerWeek"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>How many days per week can you workout?</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value.toString()}>
+                          <FormControl>
+                            <SelectTrigger className="mobile-select-trigger">
+                              <SelectValue placeholder="Select days per week" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                              <SelectItem key={day} value={day.toString()}>
+                                {day} {day === 1 ? 'day' : 'days'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="fitnessLevel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your Fitness Level</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="mobile-select-trigger">
+                              <SelectValue placeholder="Select your fitness level" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="beginner">Beginner (New to working out)</SelectItem>
+                            <SelectItem value="intermediate">Intermediate (Some experience)</SelectItem>
+                            <SelectItem value="advanced">Advanced (Experienced)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-base font-medium">Meal Plan Budget</h4>
+                    
+                    <FormField
+                      control={form.control}
+                      name="budgetType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Your Weekly Food Budget</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              // Update both budget and budgetType
+                              field.onChange(value);
+                              // Clear the numeric budget when using budget type
+                              form.setValue('budget', value);
+                            }} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="mobile-select-trigger">
+                                <SelectValue placeholder="Select your budget" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="low">Economy (£30-50/week)</SelectItem>
+                              <SelectItem value="medium">Standard (£50-90/week)</SelectItem>
+                              <SelectItem value="high">Premium (£90+/week)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            This helps us suggest meals and ingredients within your price range
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Alternative: Exact budget amount */}
+                    <FormField
+                      control={form.control}
+                      name="budget"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Specific Weekly Budget (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              inputMode="numeric"
+                              placeholder="Enter exact amount (£)"
+                              onChange={(e) => {
+                                // If input is empty, set to undefined to use budgetType instead
+                                if (e.target.value === "") {
+                                  // Send undefined instead of empty string
+                                  field.onChange(undefined);
+                                  return;
+                                }
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value)) {
+                                  field.onChange(value);
+                                }
+                              }}
+                              value={typeof field.value === 'number' ? field.value : ''}
+                              min="20"
+                              max="200"
+                              className="mobile-input"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            If you prefer, enter your exact weekly grocery budget in £
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Step 3: Dietary Preferences */}
+              {step === 3 && (
+                <div className="space-y-4 py-4">
+                  <h3 className="text-lg font-medium">Step 3: Dietary Preferences</h3>
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-base font-medium">Dietary Restrictions</h4>
+                    
+                    <FormField
+                      control={form.control}
+                      name="dietaryRestrictions"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Add any dietary restrictions or allergies</FormLabel>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., gluten, nuts, dairy" 
+                                value={dietaryRestrictionInput}
+                                onChange={(e) => setDietaryRestrictionInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addDietaryRestriction();
+                                  }
+                                }}
+                                className="mobile-input"
+                              />
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              variant="secondary" 
+                              onClick={addDietaryRestriction}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {field.value?.map(item => (
+                              <Badge key={item} variant="secondary" className="px-3 py-1">
+                                {item}
+                                <X 
+                                  className="ml-2 h-4 w-4 cursor-pointer" 
+                                  onClick={() => removeDietaryRestriction(item)}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                          <FormDescription>
+                            Include any foods you can't or don't eat (e.g., vegetarian, vegan, gluten-free)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="space-y-4 pt-4">
+                    <h4 className="text-base font-medium">Food Preferences</h4>
+                    
+                    <FormField
+                      control={form.control}
+                      name="preferredFoods"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Add foods or ingredients you prefer</FormLabel>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g., chicken, rice, avocado" 
+                                value={preferredFoodInput}
+                                onChange={(e) => setPreferredFoodInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    addPreferredFood();
+                                  }
+                                }}
+                                className="mobile-input"
+                              />
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              variant="secondary" 
+                              onClick={addPreferredFood}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {field.value?.map(item => (
+                              <Badge key={item} variant="outline" className="px-3 py-1 bg-blue-50">
+                                {item}
+                                <X 
+                                  className="ml-2 h-4 w-4 cursor-pointer" 
+                                  onClick={() => removePreferredFood(item)}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                          <FormDescription>
+                            Include foods you enjoy eating to improve meal plan suggestions
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Step 4: Schedule */}
+              {step === 4 && (
+                <div className="space-y-4 py-4">
+                  <h3 className="text-lg font-medium">Step 4: Workout Schedule</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="preferredWorkoutDays"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Which days of the week can you workout?</FormLabel>
+                        <FormDescription>
+                          Select {form.getValues("workoutDaysPerWeek")} day(s) for your training plan
+                        </FormDescription>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                          {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
+                            <FormItem key={day} className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value?.includes(day)}
+                                  onCheckedChange={(checked) => {
+                                    // Update workoutNames when selecting a day
+                                    const currentNames = form.getValues("workoutNames") || {};
+                                    if (checked) {
+                                      // Limit to the selected number of days
+                                      const newValue = [...(field.value || []), day].slice(0, form.getValues("workoutDaysPerWeek"));
+                                      field.onChange(newValue);
+                                      
+                                      // Set a default name for this day
+                                      if (!currentNames[day]) {
+                                        // Create a default name based on goal
+                                        const goal = form.getValues("goal");
+                                        const fitnessGoal = goal as 'weight_loss' | 'muscle_gain' | 'strength' | 'stamina' | 'endurance';
+                                        const defaultName = suggestWorkoutName(day, fitnessGoal);
+                                        
+                                        form.setValue("workoutNames", {
+                                          ...currentNames,
+                                          [day]: defaultName
+                                        });
+                                      }
+                                    } else {
+                                      // Remove the day
+                                      field.onChange(field.value?.filter(d => d !== day));
+                                      
+                                      // Remove from workout names
+                                      const { [day]: _, ...rest } = currentNames;
+                                      form.setValue("workoutNames", rest);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="cursor-pointer font-normal">
+                                {day}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="workoutDuration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Workout Duration (minutes)</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          defaultValue={field.value?.toString() || "60"}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="mobile-select-trigger">
+                              <SelectValue placeholder="Select workout length" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="45">45 minutes</SelectItem>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                            <SelectItem value="75">75 minutes</SelectItem>
+                            <SelectItem value="90">90 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          How long you can spend per workout session
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Workout names will be generated automatically by AI */}
+                  <div className="mt-6">
+                    <Alert className="bg-muted/50">
+                      <InfoIcon className="h-4 w-4 mr-2" />
+                      <AlertTitle>AI Workout Names</AlertTitle>
+                      <AlertDescription>
+                        The AI will automatically generate appropriate workout names based on your fitness goals and schedule
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                </div>
+              )}
+              
+              {/* Step 5: Email Notifications */}
+              {step === 5 && (
+                <div className="space-y-6 py-4">
+                  <h3 className="text-lg font-medium">Step 5: Notification Preferences</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="notifyByEmail"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base cursor-pointer">
+                            Email Notifications
+                          </FormLabel>
+                          <FormDescription>
+                            Receive your plan by email when it's ready (recommended)
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              // If user just enabled email notifications and has an email
+                              if (checked && user?.email) {
+                                form.setValue("email", user.email);
+                              }
+                            }}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch("notifyByEmail") && (
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="your@email.com" 
+                              type="email"
+                              inputMode="email"
+                              {...field} 
+                              value={field.value || ''}
+                              readOnly={user?.email ? true : false}
+                              className={`mobile-input h-12 rounded-xl px-4 text-base ${user?.email ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            We'll send your completed fitness plan to this email
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  
+                  {/* Note: Email notifications are optional */}
+                  {!form.watch("notifyByEmail") && (
+                    <div className="text-xs text-muted-foreground mt-2 italic">
+                      Email notifications are optional. You can continue without enabling them.
+                    </div>
+                  )}
+                  
+                  <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="text-base font-medium mb-2">Ready to Create Your Plan</h4>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Our AI will generate a personalized fitness and nutrition plan based on:
+                    </p>
+                    <ul className="text-sm space-y-1 list-disc pl-4">
+                      <li>Your {form.getValues("goal")?.replace("_", " ")} goal</li>
+                      <li>{form.getValues("workoutDaysPerWeek")} workout days per week</li>
+                      <li>{form.getValues("fitnessLevel")} fitness level</li>
+                      <li>{form.getValues("dietaryRestrictions")?.length || 0} dietary restrictions</li>
+                      <li>{form.getValues("preferredFoods")?.length || 0} food preferences</li>
+                    </ul>
+                    <p className="text-sm mt-4">
+                      Please review your selections before creating your plan.
+                    </p>
+                  </div>
+                </div>
+              )}
+                </>
+              )}
+              
+              <DialogFooter className="flex items-center justify-between mt-6 sm:space-x-2">
+                {step > 1 && !generationProgress.isGenerating && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={prevStep}
+                    className="border-blue-300 hover:bg-blue-50 text-blue-600 h-12 rounded-xl text-base px-6 font-medium transition-all"
+                  >
+                    Back
+                  </Button>
+                )}
+                <div className="grow"></div>
+                {step < 5 && !generationProgress.isGenerating ? (
+                  <Button 
+                    type="button" 
+                    onClick={nextStep}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-base px-6 font-medium transition-all"
+                  >
+                    Next
+                  </Button>
+                ) : !generationProgress.isGenerating ? (
+                  <Button 
+                    type="button" 
+                    variant="default"
+                    disabled={generatePlanMutation.isPending}
+                    onClick={() => {
+                      console.log("Button clicked, submitting form manually");
+                      form.handleSubmit(onSubmit)();
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl text-base px-6 font-medium min-w-[160px] transition-all"
+                  >
+                    {generatePlanMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Create My Plan"
+                    )}
+                  </Button>
+                ) : null}
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Personalized Workout Plan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 list-disc list-inside">
+              <li>Customized for your fitness level</li>
+              <li>Tailored to your schedule</li>
+              <li>Progressive overload for results</li>
+              <li>Exercise demos and instructions</li>
+              <li>Track your progress in the app</li>
+            </ul>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Custom Nutrition Plan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 list-disc list-inside">
+              <li>Meals based on your preferences</li>
+              <li>Macro-optimized for your goals</li>
+              <li>Easy recipe instructions</li>
+              <li>Automatic shopping list</li>
+              <li>Adaptable for busy schedules</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Function to generate preferred workout days for the user based on the number of days
+function generatePreferredWorkoutDays(workoutDaysPerWeek: number): string[] {
+  // Default workout schedules based on days per week
+  const defaultSchedules: Record<number, string[]> = {
+    1: ["Monday"],
+    2: ["Monday", "Thursday"],
+    3: ["Monday", "Wednesday", "Friday"],
+    4: ["Monday", "Tuesday", "Thursday", "Friday"],
+    5: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    6: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    7: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  };
+  
+  return defaultSchedules[workoutDaysPerWeek] || [];
+}
+
+// Function to generate workout names based on fitness goal
+function generateWorkoutNames(workoutDaysPerWeek: number, fitnessGoal: 'weight_loss' | 'muscle_gain' | 'strength' | 'stamina' | 'endurance'): Record<string, string> {
+  const days = generatePreferredWorkoutDays(workoutDaysPerWeek);
+  const workoutNames: Record<string, string> = {};
+  
+  days.forEach(day => {
+    workoutNames[day] = suggestWorkoutName(day, fitnessGoal);
+  });
+  
+  return workoutNames;
+}
+
+// Function to suggest a workout name based on the day and goal
+function suggestWorkoutName(day: string, fitnessGoal: 'weight_loss' | 'muscle_gain' | 'strength' | 'stamina' | 'endurance'): string {
+  // Split-style workouts for muscle gain and strength
+  if (fitnessGoal === 'muscle_gain' || fitnessGoal === 'strength') {
+    switch (day) {
+      case 'Monday': return 'Chest & Triceps';
+      case 'Tuesday': return 'Back & Biceps';
+      case 'Wednesday': return 'Core & Cardio';
+      case 'Thursday': return 'Shoulders & Arms';
+      case 'Friday': return 'Legs & Lower Body';
+      case 'Saturday': return 'Full Body';
+      case 'Sunday': return 'Active Recovery';
+      default: return `${day} Workout`;
+    }
+  }
+  
+  // HIIT and cardio focus for weight loss
+  if (fitnessGoal === 'weight_loss') {
+    switch (day) {
+      case 'Monday': return 'HIIT Cardio';
+      case 'Tuesday': return 'Strength Circuit';
+      case 'Wednesday': return 'Steady State Cardio';
+      case 'Thursday': return 'Upper Body Circuit';
+      case 'Friday': return 'Lower Body Circuit';
+      case 'Saturday': return 'Full Body Burn';
+      case 'Sunday': return 'Active Recovery';
+      default: return `${day} Workout`;
+    }
+  }
+  
+  // Endurance and stamina focused
+  if (fitnessGoal === 'stamina' || fitnessGoal === 'endurance') {
+    switch (day) {
+      case 'Monday': return 'Interval Training';
+      case 'Tuesday': return 'Strength Endurance';
+      case 'Wednesday': return 'Zone 2 Cardio';
+      case 'Thursday': return 'Circuit Training';
+      case 'Friday': return 'Tempo Training';
+      case 'Saturday': return 'Long Duration';
+      case 'Sunday': return 'Active Recovery';
+      default: return `${day} Workout`;
+    }
+  }
+  
+  // Default for general fitness
+  switch (day) {
+    case 'Monday': return 'Upper Body';
+    case 'Tuesday': return 'Lower Body';
+    case 'Wednesday': return 'Core & Cardio';
+    case 'Thursday': return 'Full Body';
+    case 'Friday': return 'Functional Fitness';
+    case 'Saturday': return 'HIIT Training';
+    case 'Sunday': return 'Active Recovery';
+    default: return `${day} Workout`;
+  }
+}
+
+// Helper function to process shopping list items
+
+// Active plan view component
+function ActivePlanView({ plan, isMobile }: { plan: EnhancedPlan, isMobile: boolean }) {
+  const [activeTab, setActiveTab] = useState<string>("workout");
+  const [selectedDay, setSelectedDay] = useState<string>("");
+  // Using imported queryClient instead of useQueryClient
+  const { toast } = useToast();
+  const [calculatingBudget, setCalculatingBudget] = useState(false);
+  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
+  const [deactivationDescription, setDeactivationDescription] = useState("");
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [adminOverrideCode, setAdminOverrideCode] = useState("");
+  const [removeMealLogs, setRemoveMealLogs] = useState(false);
+  const [removeWorkoutLogs, setRemoveWorkoutLogs] = useState(false);
+  
+  // Extract plan details
+  const { workoutPlan, mealPlan, preferences, nutritionGoal, nutritionData } = plan;
+  const { weeklySchedule: workoutSchedule } = workoutPlan;
+  
+  // Fix: Access the correct property for meal schedules - try multiple paths
+  console.log("Meal plan data structure:", mealPlan);
+  console.log("Plan preferences:", preferences);
+  const mealSchedule = mealPlan.weeklyMeals || mealPlan.weeklySchedule || mealPlan.dailyMeals || {};
+  
+  // Look for shopping list in different places with proper fallbacks
+  // Check all possible locations and formats of shopping list data
+  let shoppingItems = [];
+  
+  // Check for shopping items in all possible locations
+  if (preferences?.shoppingList && Array.isArray(preferences.shoppingList)) {
+    console.log("Found shopping list in preferences.shoppingList");
+    shoppingItems = preferences.shoppingList;
+  } else if (plan.shoppingList && Array.isArray(plan.shoppingList)) {
+    console.log("Found shopping list in plan.shoppingList");
+    shoppingItems = plan.shoppingList;
+  } else if (preferences?.shoppingList && typeof preferences.shoppingList === 'object' && !Array.isArray(preferences.shoppingList)) {
+    // Sometimes the API returns a nested object instead of an array
+    console.log("Found shopping list in preferences.shoppingList as object, checking inner properties");
+    // Check for common attributes that might contain the array
+    const possibleArrayProps = Object.values(preferences.shoppingList).filter(val => Array.isArray(val));
+    if (possibleArrayProps.length > 0) {
+      // Use the longest array found (most likely the complete list)
+      const longestArray = possibleArrayProps.reduce((a, b) => a.length > b.length ? a : b, []);
+      console.log("Found nested shopping list array with", longestArray.length, "items");
+      shoppingItems = longestArray;
+    }
+  }
+  
+  console.log("Final shopping items array:", shoppingItems);
+
+  // Process shopping list data
+  console.log("Shopping items before processing:", shoppingItems);
+  const groupedShoppingData = groupShoppingItemsByDay(shoppingItems);
+  const dailyGroups = groupedShoppingData.dailyGroups;
+  const totalCost = groupedShoppingData.totalCost;
+  const hasShoppingList = shoppingItems.length > 0;
+  
+  // State for frequency limitation error
+  const [frequencyError, setFrequencyError] = useState<{
+    message: string;
+    daysRemaining: number;
+  } | null>(null);
+  const [isAdminOverrideDialogOpen, setIsAdminOverrideDialogOpen] = useState(false);
+  
+  // Mutation to deactivate fitness plan
+  const deactivatePlanMutation = useMutation({
+    mutationFn: async ({ 
+      planId, 
+      description, 
+      bypassFrequencyCheck = false,
+      adminCode = "",
+      removeMealLogs = false,
+      removeWorkoutLogs = false
+    }: { 
+      planId: number, 
+      description: string,
+      bypassFrequencyCheck?: boolean,
+      adminCode?: string,
+      removeMealLogs?: boolean,
+      removeWorkoutLogs?: boolean
+    }) => {
+      const res = await fetch(`/api/fitness-plans/${planId}/deactivate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          description, 
+          bypassFrequencyCheck, 
+          adminCode,
+          removeMealLogs,
+          removeWorkoutLogs
+        }),
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        
+        // Check if this is a frequency limitation error
+        if (res.status === 429 && errorData.daysRemaining) {
+          setFrequencyError({
+            message: errorData.message,
+            daysRemaining: errorData.daysRemaining
+          });
+          throw new Error('frequency_limitation');
+        }
+        
+        throw new Error(errorData.message || 'Failed to deactivate fitness plan');
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Plan Deactivated",
+        description: "Your fitness plan has been deactivated. You can now create a new one.",
+      });
+      
+      // Invalidate all related queries to clear any cached data
+      queryClient.invalidateQueries({ queryKey: ['/api/fitness-plans/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/exercises'] });
+      
+      // Clear local data
+      localStorage.removeItem('nutritionData');
+      localStorage.removeItem('mealPlan');
+      localStorage.removeItem('workoutPlan');
+      
+      // Reset all related state
+      setIsDeactivateDialogOpen(false);
+      setIsDeactivating(false);
+      setFrequencyError(null);
+      setIsAdminOverrideDialogOpen(false);
+      
+      // Force refresh after short delay to ensure UI is updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    },
+    onError: (error: Error) => {
+      if (error.message !== 'frequency_limitation') {
+        toast({
+          title: "Error deactivating plan",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      setIsDeactivating(false);
+    },
+  });
+  
+  // Mutation to calculate meal plan budget
+  const calculateBudgetMutation = useMutation({
+    mutationFn: async ({ planId }: { planId: number }) => {
+      const res = await fetch(`/api/fitness-plans/${planId}/calculate-budget`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to calculate meal plan budget');
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Budget Updated",
+        description: "Your meal plan budget has been calculated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/fitness-plans/active'] });
+      setCalculatingBudget(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error calculating budget",
+        description: error.message,
+        variant: "destructive",
+      });
+      setCalculatingBudget(false);
+    },
+  });
+  
+  // Function to handle budget calculation
+  const handleCalculateBudget = () => {
+    if (!plan.id) return;
+    
+    setCalculatingBudget(true);
+    calculateBudgetMutation.mutate({ planId: plan.id });
+  };
+
+  // Helper function to get total macros for a day
+  const getDailyMealTotals = (day: string) => {
+    const dayMeals = mealSchedule && mealSchedule[day] ? mealSchedule[day] : null;
+    console.log(`Getting meal totals for ${day}:`, dayMeals);
+    
+    if (!dayMeals) return { 
+      calories: 0, 
+      protein: 0, 
+      carbs: 0, 
+      fat: 0 
+    };
+    
+    // Initialize totals
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    
+    // Sum all meal nutrients including pre/post workout meals
+    const mealTypes = ['breakfast', 'lunch', 'dinner', 'morning_snack', 'afternoon_snack', 'evening_snack', 'pre_workout', 'post_workout'];
+    
+    mealTypes.forEach(mealType => {
+      if (dayMeals[mealType]) {
+        const meal = dayMeals[mealType];
+        console.log(`Meal ${mealType} for ${day}:`, meal);
+        
+        // Support both formats (direct values or nutrition object)
+        if (meal.nutrition) {
+          console.log(`Using nutrition object for ${mealType}:`, meal.nutrition);
+          totalCalories += meal.nutrition.calories || 0;
+          totalProtein += meal.nutrition.protein || 0;
+          totalCarbs += meal.nutrition.carbs || 0;
+          totalFat += meal.nutrition.fat || 0;
+        } else {
+          console.log(`Using direct values for ${mealType}:`, {
+            calories: meal.calories, 
+            protein: meal.protein, 
+            carbs: meal.carbs, 
+            fat: meal.fat
+          });
+          totalCalories += meal.calories || 0;
+          totalProtein += meal.protein || 0;
+          totalCarbs += meal.carbs || 0;
+          totalFat += meal.fat || 0;
+        }
+      }
+    });
+    
+    return {
+      calories: totalCalories,
+      protein: totalProtein,
+      carbs: totalCarbs,
+      fat: totalFat
+    };
+  };
+  
+  // Calculate the nutrition goals (using newly structured data if available)
+  console.log("Nutrition data and goal from fitness plan:", { 
+    nutritionData,
+    nutritionGoal,
+    workoutPlan,
+    mealPlan,
+    preferences
+  });
+  
+  // Extract nutrition data from preferences if available - this is where it's now stored
+  const preferencesNutritionData = preferences?.nutritionData;
+  
+  const nutritionGoals = {
+    calories: nutritionData?.calorieTarget || nutritionData?.dailyCalories || 
+              preferencesNutritionData?.dailyCalories || nutritionGoal?.caloriesTarget || 
+              (mealPlan?.nutritionTargets?.calorieTarget) || 0,
+    protein: nutritionData?.proteinTarget || nutritionData?.targetProtein || 
+             preferencesNutritionData?.targetProtein || nutritionGoal?.proteinTarget || 
+             (mealPlan?.nutritionTargets?.proteinTarget) || 0,
+    carbs: nutritionData?.carbsTarget || nutritionData?.targetCarbs || 
+           preferencesNutritionData?.targetCarbs || nutritionGoal?.carbsTarget || 
+           (mealPlan?.nutritionTargets?.carbsTarget) || 0,
+    fat: nutritionData?.fatTarget || nutritionData?.targetFat || 
+         preferencesNutritionData?.targetFat || nutritionGoal?.fatTarget || 
+         (mealPlan?.nutritionTargets?.fatTarget) || 0
+  };
+  
+  // State to track expanded meal details
+  const [expandedMeals, setExpandedMeals] = useState<Record<string, boolean>>({});
+  
+  // Toggle meal expansion
+  const toggleMealExpansion = (mealId: string) => {
+    setExpandedMeals(prev => ({
+      ...prev,
+      [mealId]: !prev[mealId]
+    }));
+  };
+  
+  // Function to render meal items with improved styling and clickable details
+  const renderMealItems = (mealData: any, mealType: string, day: string) => {
+    // Different meal types might have different structures
+    if (!mealData) return null;
+    
+    // Create a unique ID for this meal
+    const mealId = `${day}-${mealType}-${mealData.name || 'meal'}`;
+    const isExpanded = expandedMeals[mealId] || false;
+    
+    // If the meal type has items, render them
+    if (mealData.items && Array.isArray(mealData.items)) {
+      return (
+        <div className="space-y-2">
+          {mealData.items.map((item: any, idx: number) => (
+            <div key={idx} className="text-sm py-1 border-b border-gray-100 last:border-0 flex items-center">
+              <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+              <span className="font-medium">{item.name || item}</span>
+              {item.portion && <span className="text-gray-500 ml-1">({item.portion})</span>}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    // If the meal has ingredients array (from the data we found in database)
+    if (mealData.ingredients && Array.isArray(mealData.ingredients)) {
+      return (
+        <div className="space-y-3">
+          <div 
+            onClick={() => toggleMealExpansion(mealId)}
+            className="cursor-pointer transition-colors hover:bg-gray-50 rounded-md p-2 -mx-2"
+          >
+            <div className="flex justify-between items-center">
+              <div className="text-base font-medium text-gray-800">{mealData.name}</div>
+              <svg 
+                className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+            
+            {mealData.description && (
+              <div className="text-sm text-gray-600 italic">{mealData.description}</div>
+            )}
+            
+            {/* Show macros if available */}
+            {(mealData.calories || mealData.protein || mealData.carbs || mealData.fat) && (
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <div className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                  {mealData.calories && `${mealData.calories} kcal`}
+                </div>
+                <div className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                  {mealData.protein && `${mealData.protein}g P`}
+                </div>
+                <div className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                  {mealData.carbs && `${mealData.carbs}g C`}
+                </div>
+                <div className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                  {mealData.fat && `${mealData.fat}g F`}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                  <div className="text-sm font-semibold mb-2 text-gray-700 flex items-center">
+                    <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    Ingredients
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {mealData.ingredients.map((ingredient: any, idx: number) => (
+                      <div key={idx} className="text-sm flex items-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-1.5"></div>
+                        <span className="font-medium">{ingredient.name}</span>
+                        {ingredient.quantity && <span className="text-gray-500 ml-1">({ingredient.quantity})</span>}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {mealData.cookingInstructions && mealData.cookingInstructions.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-sm font-semibold mb-1 text-gray-700 flex items-center">
+                        <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        Cooking Instructions
+                      </div>
+                      <ol className="list-decimal text-sm pl-5 space-y-1 text-gray-600">
+                        {mealData.cookingInstructions.map((instruction: string, idx: number) => (
+                          <li key={idx}>{instruction}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+    
+    // If the meal has a snacks array
+    if (mealType.includes('snack') && mealData.snacks && Array.isArray(mealData.snacks)) {
+      return (
+        <div className="space-y-2">
+          {mealData.snacks.map((snack, index) => (
+            <div key={index} className="text-sm py-1 border-b border-gray-100 last:border-0 flex items-center">
+              <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
+              <span className="font-medium">{typeof snack === 'string' ? snack : snack.name}</span>
+              {snack.portion && <span className="text-gray-500 ml-1">({snack.portion})</span>}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    // If it's a simple string
+    if (typeof mealData === 'string') {
+      return <div className="text-sm bg-gray-50 p-2 rounded">{mealData}</div>;
+    }
+    
+    // If it has a name property (for object-based meals)
+    if (mealData.name) {
+      return (
+        <div 
+          className="space-y-3 cursor-pointer transition-colors hover:bg-gray-50 rounded-md p-2 -mx-2"
+          onClick={() => toggleMealExpansion(mealId)}
+        >
+          <div className="flex justify-between items-center">
+            <div className="text-base font-medium text-gray-800">{mealData.name}</div>
+            {(mealData.description || mealData.ingredients) && (
+              <svg 
+                className={`w-5 h-5 text-gray-500 transition-transform ${isExpanded ? 'transform rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            )}
+          </div>
+          
+          {mealData.description && (
+            <div className="text-sm text-gray-600 italic">{mealData.description}</div>
+          )}
+          
+          {/* Show macros if available */}
+          {(mealData.calories || mealData.protein || mealData.carbs || mealData.fat) && (
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <div className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                {mealData.calories && `${mealData.calories} kcal`}
+              </div>
+              <div className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                {mealData.protein && `${mealData.protein}g P`}
+              </div>
+              <div className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                {mealData.carbs && `${mealData.carbs}g C`}
+              </div>
+              <div className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                {mealData.fat && `${mealData.fat}g F`}
+              </div>
+            </div>
+          )}
+          
+          {/* Show expanded details if available */}
+          <AnimatePresence>
+            {isExpanded && mealData.ingredients && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                  <div className="text-sm font-semibold mb-2 text-gray-700 flex items-center">
+                    <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    Ingredients
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {mealData.ingredients.map((ingredient: any, idx: number) => (
+                      <div key={idx} className="text-sm flex items-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-1.5"></div>
+                        <span className="font-medium">{ingredient.name}</span>
+                        {ingredient.quantity && <span className="text-gray-500 ml-1">({ingredient.quantity})</span>}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {mealData.cookingInstructions && mealData.cookingInstructions.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-sm font-semibold mb-1 text-gray-700 flex items-center">
+                        <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        Cooking Instructions
+                      </div>
+                      <ol className="list-decimal text-sm pl-5 space-y-1 text-gray-600">
+                        {mealData.cookingInstructions.map((instruction: string, idx: number) => (
+                          <li key={idx}>{instruction}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+    
+    // Fallback for other formats
+    return <div className="text-sm bg-gray-50 p-2 rounded italic">Meal details not available</div>;
+  };
+  
+  // Format macros for display
+  const formatMacro = (value: number) => {
+    return Math.round(value);
+  };
+
+  // Standard days of the week for ordering
+  const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  
+  // Create a sorting function for consistent day ordering
+  const sortByDayOfWeek = (a: string, b: string): number => {
+    const aIndex = dayOrder.indexOf(a.charAt(0).toUpperCase() + a.slice(1).toLowerCase());
+    const bIndex = dayOrder.indexOf(b.charAt(0).toUpperCase() + b.slice(1).toLowerCase());
+    
+    // Handle case variations and unexpected day formats
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+    if (aIndex === -1) return 1;  // Unknown days after known days
+    if (bIndex === -1) return -1; // Known days before unknown days
+    
+    return aIndex - bIndex;
+  };
+  
+  // Get days of the week that have meal and workout plans
+  const mealDays = Object.keys(mealSchedule || {});
+  const workoutDays = Object.keys(workoutSchedule || {});
+  
+  // Sort meal days in weekday order
+  const sortedMealDays = [...mealDays].sort(sortByDayOfWeek);
+  
+  // Sort workout days in weekday order
+  const sortedWorkoutDays = [...workoutDays].sort(sortByDayOfWeek);
+  
+  // If we have no meal days, default to showing all days
+  const daysToDisplay = sortedMealDays.length > 0 ? sortedMealDays : dayOrder;
+  
+  return (
+    <div className={`${isMobile ? "px-4 py-4" : "container py-6"} space-y-6`}>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className={`${isMobile ? "text-2xl" : "text-3xl"} font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent`}>
+            Your Fitness Plan
+          </h1>
+          <p className="text-muted-foreground">
+            {preferences?.goal ? (
+              <>
+                Goal: <span className="font-medium">{preferences.goal.replace('_', ' ')}</span>
+              </>
+            ) : 'Personalized workout and nutrition plan'}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsDeactivateDialogOpen(true)}
+            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Deactivate Plan
+          </Button>
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Plan
+          </Button>
+        </div>
+        
+        {/* Main Deactivation Dialog */}
+        <Dialog 
+          open={isDeactivateDialogOpen} 
+          onOpenChange={(open) => {
+            setIsDeactivateDialogOpen(open);
+            if (!open) setFrequencyError(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Deactivate Fitness Plan</DialogTitle>
+              <DialogDescription>
+                Describe why you're deactivating this plan before creating a new one.
+                Your feedback helps us improve future plans.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="deactivation-reason">Reason for deactivating (optional)</Label>
+                <Textarea
+                  id="deactivation-reason"
+                  value={deactivationDescription}
+                  onChange={(e) => setDeactivationDescription(e.target.value)}
+                  placeholder="E.g., Achieved my goals, changing focus, plan was too difficult, etc."
+                  className="resize-none"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="space-y-4 pt-2">
+                <Label className="text-base font-medium">Manage Plan Data:</Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remove-meal-logs" 
+                    checked={removeMealLogs}
+                    onCheckedChange={(checked) => setRemoveMealLogs(checked === true)}
+                  />
+                  <Label 
+                    htmlFor="remove-meal-logs" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Remove automatically created meal logs
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="remove-workout-logs" 
+                    checked={removeWorkoutLogs}
+                    onCheckedChange={(checked) => setRemoveWorkoutLogs(checked === true)}
+                  />
+                  <Label 
+                    htmlFor="remove-workout-logs" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Remove automatically created workout logs
+                  </Label>
+                </div>
+              </div>
+            </div>
+            
+            {/* Show frequency error message if present */}
+            {frequencyError && (
+              <Alert variant="destructive" className="mb-2">
+                <AlertTitle className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Plan deactivation limited
+                </AlertTitle>
+                <AlertDescription>
+                  {frequencyError.message}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <DialogFooter>
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setIsDeactivateDialogOpen(false);
+                  setFrequencyError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              {frequencyError ? (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setIsAdminOverrideDialogOpen(true);
+                  }}
+                >
+                  Contact Support
+                </Button>
+              ) : (
+                <Button 
+                  variant="destructive"
+                  onClick={() => {
+                    if (!plan.id) return;
+                    
+                    setIsDeactivating(true);
+                    deactivatePlanMutation.mutate({
+                      planId: plan.id,
+                      description: deactivationDescription,
+                      removeMealLogs,
+                      removeWorkoutLogs
+                    });
+                  }}
+                  disabled={isDeactivating}
+                >
+                  {isDeactivating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Deactivating...
+                    </>
+                  ) : (
+                    "Deactivate Plan"
+                  )}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Admin Override Dialog */}
+        <Dialog open={isAdminOverrideDialogOpen} onOpenChange={setIsAdminOverrideDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Contact Support</DialogTitle>
+              <DialogDescription>
+                If you need to deactivate your plan sooner than the allowed time, please contact support with your reason.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="admin-password">Admin Override Code</Label>
+                <Input 
+                  id="admin-password" 
+                  type="password" 
+                  placeholder="Enter admin code" 
+                  value={adminOverrideCode}
+                  onChange={(e) => setAdminOverrideCode(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This code can be provided by support for special circumstances
+                </p>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="ghost" 
+                onClick={() => setIsAdminOverrideDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (!plan.id) return;
+                  
+                  setIsDeactivating(true);
+                  deactivatePlanMutation.mutate({
+                    planId: plan.id,
+                    description: deactivationDescription,
+                    bypassFrequencyCheck: true, // Use the bypass flag
+                    adminCode: adminOverrideCode,
+                    removeMealLogs,
+                    removeWorkoutLogs
+                  });
+                }}
+                disabled={!adminOverrideCode.trim()} // Disable if no code is entered
+              >
+                Override and Deactivate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      {/* Tab navigation */}
+      <Tabs 
+        defaultValue="workout" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="space-y-4"
+      >
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="workout">Workouts</TabsTrigger>
+          <TabsTrigger value="meal">Meal Plan</TabsTrigger>
+          <TabsTrigger value="shopping">Shopping List</TabsTrigger>
+        </TabsList>
+        
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* Nutrition Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Daily Nutrition Targets</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Calories:</span>
+                    <span className="font-medium">{formatMacro(nutritionGoals.calories)} kcal</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Protein:</span>
+                    <span className="font-medium">{formatMacro(nutritionGoals.protein)}g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Carbs:</span>
+                    <span className="font-medium">{formatMacro(nutritionGoals.carbs)}g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fat:</span>
+                    <span className="font-medium">{formatMacro(nutritionGoals.fat)}g</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Workout Schedule Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Workout Schedule</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {workoutDays.length > 0 ? (
+                    workoutDays.map(day => (
+                      <div key={day} className="flex justify-between items-center">
+                        <span>{day}:</span>
+                        <span className="font-medium">
+                          {workoutSchedule[day].name || 'Workout'}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No workout schedule found.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Weekly Budget Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Meal Plan Budget</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {hasShoppingList ? (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span>Total Budget:</span>
+                        <span className="font-medium">£{Math.round(totalCost)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Based on {shoppingItems.length} items in your shopping list
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground text-sm mb-2">Budget estimates not available.</p>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={handleCalculateBudget}
+                        disabled={calculatingBudget}
+                      >
+                        {calculatingBudget ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" /> 
+                            Calculating...
+                          </>
+                        ) : (
+                          "Calculate Budget"
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Nutrition Chart */}
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Daily Nutrition</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                {/* Chart would go here */}
+                <div className="flex items-center justify-center h-full bg-muted/20 rounded-md">
+                  <p className="text-muted-foreground">Nutrition tracking chart will appear here</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Workout Tab */}
+        <TabsContent value="workout" className="space-y-4">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {workoutDays.length > 0 ? (
+              sortedWorkoutDays.map(day => {
+                const workout = workoutSchedule[day];
+                if (!workout) return null;
+                
+                return (
+                  <Card key={day} className="overflow-hidden transition-all hover:shadow-md">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b">
+                      <CardTitle className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-blue-600">
+                          {/* Properly capitalize the day name */}
+                          {day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()}
+                        </span>
+                        <Badge variant="secondary" className="bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                          {workout.name}
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="p-4 space-y-3">
+                        {workout.exercises?.map((exercise, idx) => (
+                          <div 
+                            key={idx} 
+                            className="border rounded-md p-4 shadow-sm bg-white dark:bg-gray-800 hover:shadow-md transition-shadow"
+                          >
+                            <div className="font-semibold text-base mb-2 flex items-center">
+                              <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                              </svg>
+                              {exercise.name}
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16"></path>
+                                </svg>
+                                {exercise.sets} sets
+                              </div>
+                              
+                              <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                                </svg>
+                                {exercise.reps} reps
+                              </div>
+                              
+                              <div className="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                {exercise.rest}s rest
+                              </div>
+                              
+                              {exercise.weight !== undefined && exercise.weight !== null && (
+                                <div className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                  </svg>
+                                  {exercise.weight > 0 ? `${exercise.weight} kg` : "Bodyweight"}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {exercise.notes && (
+                              <div className="mt-3 text-sm italic text-gray-600 bg-gray-50 p-2 rounded border-l-2 border-gray-300">
+                                {exercise.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <Card className="col-span-full">
+                <CardContent className="py-8">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-4">No workout plan found.</p>
+                    <Button variant="outline">Create Workout Plan</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          {/* Show notes if available */}
+          {workoutPlan?.notes && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  <span className="flex items-center">
+                    <svg className="h-5 w-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Workout Notes
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-gray-700 whitespace-pre-line">
+                  {workoutPlan.notes.split('\n').map((note, idx) => (
+                    <p key={idx} className="mb-2">{note}</p>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        {/* Meal Plan Tab */}
+        <TabsContent value="meal" className="space-y-4">
+          {mealDays.length > 0 ? (
+            <>
+              {/* Day selector dropdown */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="font-medium text-lg">Select Day</div>
+                
+                {/* Professional styled dropdown */}
+                <div className="relative">
+                  <div className="relative">
+                    <select 
+                      className="w-[180px] px-4 py-2.5 appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-base font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={selectedDay || daysToDisplay[0] || "Monday"}
+                      onChange={(e) => {
+                        const day = e.target.value;
+                        setSelectedDay(day);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('selectedMealDay', day);
+                        }
+                      }}
+                    >
+                      {daysToDisplay.map(day => {
+                        // Capitalize first letter of each day
+                        const displayDay = day.charAt(0).toUpperCase() + day.slice(1);
+                        return (
+                          <option key={day} value={day}>{displayDay}</option>
+                        );
+                      })}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Render selected day only */}
+              {(() => {
+                // Initialize the selectedDay state if not set yet
+                useEffect(() => {
+                  if (!selectedDay) {
+                    // Try to get from localStorage first, then fallback to first day
+                    const storedDay = typeof window !== 'undefined' && localStorage.getItem('selectedMealDay');
+                    setSelectedDay(storedDay || daysToDisplay[0] || "Monday");
+                  }
+                }, [selectedDay, daysToDisplay]);
+                
+                const day = selectedDay || daysToDisplay[0] || "Monday";
+                const dayMeals = mealSchedule[day];
+                
+                if (!dayMeals) return (
+                  <Card>
+                    <CardContent className="py-8">
+                      <div className="text-center">
+                        <p className="text-muted-foreground">No meals found for {day}.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+                
+                const { calories, protein, carbs, fat } = getDailyMealTotals(day);
+                
+                return (
+                  <Card key={day}>
+                    <CardHeader>
+                      <CardTitle className="flex justify-between items-center">
+                        <span className="text-lg font-semibold text-blue-600">
+                          {/* Properly capitalize the day name */}
+                          {day.charAt(0).toUpperCase() + day.slice(1)}
+                        </span>
+                        <div className="flex flex-wrap items-center text-sm bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {formatMacro(calories)} kcal
+                          </span>
+                          <span className="mx-2 text-gray-400">|</span>
+                          <span className="text-green-600 font-medium">P: {formatMacro(protein)}g</span>
+                          <span className="mx-1.5 text-gray-400">•</span>
+                          <span className="text-blue-600 font-medium">C: {formatMacro(carbs)}g</span>
+                          <span className="mx-1.5 text-gray-400">•</span>
+                          <span className="text-amber-600 font-medium">F: {formatMacro(fat)}g</span>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* Breakfast */}
+                        {dayMeals.breakfast && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Breakfast
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.breakfast, 'breakfast', day)}
+                          </div>
+                        )}
+                        
+                        {/* Morning Snack */}
+                        {dayMeals.morning_snack && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                </svg>
+                                Morning Snack
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.morning_snack, 'morning_snack', day)}
+                          </div>
+                        )}
+                        
+                        {/* Lunch */}
+                        {dayMeals.lunch && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                                Lunch
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.lunch, 'lunch', day)}
+                          </div>
+                        )}
+                        
+                        {/* Pre-Workout */}
+                        {dayMeals.pre_workout && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Pre-Workout
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.pre_workout, 'pre_workout', day)}
+                          </div>
+                        )}
+                        
+                        {/* Post-Workout */}
+                        {dayMeals.post_workout && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                                Post-Workout
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.post_workout, 'post_workout', day)}
+                          </div>
+                        )}
+                        
+                        {/* Dinner */}
+                        {dayMeals.dinner && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                                </svg>
+                                Dinner
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.dinner, 'dinner', day)}
+                          </div>
+                        )}
+                        
+                        {/* Evening Snack */}
+                        {dayMeals.evening_snack && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
+                                Evening Snack
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {renderMealItems(dayMeals.evening_snack, 'evening_snack', day)}
+                          </div>
+                        )}
+                        
+                        {/* Snacks (from snacks array) */}
+                        {dayMeals.snacks && Array.isArray(dayMeals.snacks) && dayMeals.snacks.length > 0 && (
+                          <div className="border rounded-md p-4 shadow-sm bg-white hover:shadow-md transition-shadow">
+                            <div className="font-semibold text-base mb-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                </svg>
+                                Snacks
+                              </div>
+                              <div className="text-xs text-blue-600 font-medium flex items-center">
+                                <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Tap for details
+                              </div>
+                            </div>
+                            {/* Render each snack item in the array */}
+                            <div className="space-y-3">
+                              {dayMeals.snacks.map((snack, index) => (
+                                <div key={`snack-${index}`} className="border-t pt-2 mt-2 first:border-t-0 first:pt-0 first:mt-0">
+                                  <h4 className="font-medium text-sm mb-1">{snack.name || `Snack ${index + 1}`}</h4>
+                                  {snack.description && <p className="text-sm text-gray-600 mb-1">{snack.description}</p>}
+                                  
+                                  {/* Show macros if available */}
+                                  {(snack.calories || snack.protein || snack.carbs || snack.fat) && (
+                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                      {snack.calories && (
+                                        <div className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                                          {snack.calories} kcal
+                                        </div>
+                                      )}
+                                      {snack.protein && (
+                                        <div className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                                          {snack.protein}g P
+                                        </div>
+                                      )}
+                                      {snack.carbs && (
+                                        <div className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                                          {snack.carbs}g C
+                                        </div>
+                                      )}
+                                      {snack.fat && (
+                                        <div className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                                          {snack.fat}g F
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show ingredients if available */}
+                                  {snack.ingredients && Array.isArray(snack.ingredients) && snack.ingredients.length > 0 && (
+                                    <div className="mt-2 text-sm">
+                                      <span className="font-medium">Ingredients: </span>
+                                      {snack.ingredients.map((ingredient, idx) => (
+                                        <span key={idx} className="text-gray-600">
+                                          {typeof ingredient === 'string' 
+                                            ? ingredient 
+                                            : `${ingredient.name}${ingredient.quantity ? ` (${ingredient.quantity})` : ''}`}
+                                          {idx < snack.ingredients.length - 1 ? ', ' : ''}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Note for the day if available */}
+                        {dayMeals._notes && Array.isArray(dayMeals._notes) && dayMeals._notes.length > 0 && (
+                          <div className="mt-4 text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded p-3">
+                            <div className="font-medium text-amber-800 mb-1">Notes:</div>
+                            <ul className="space-y-1 list-disc pl-4">
+                              {dayMeals._notes.map((note, idx) => (
+                                <li key={idx}>{note}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center">
+                  <p className="text-muted-foreground mb-4">No meal plan found.</p>
+                  <Button variant="outline">Create Meal Plan</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        {/* Shopping List Tab */}
+        <TabsContent value="shopping" className="space-y-4">
+          {hasShoppingList ? (
+            <div className="space-y-4">
+              {/* Use the dedicated ShoppingList component */}
+              <ShoppingList 
+                shoppingItems={shoppingItems}
+                budgetLimit={typeof preferences.budget === 'number' ? preferences.budget : 70}
+                isMobile={isMobile}
+              />
+              
+              {/* Store Recommendations */}
+              {plan.suggestedStores && plan.suggestedStores.length > 0 && (
+                <StoreRecommendationCard stores={plan.suggestedStores} />
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center">
+                  <p className="text-muted-foreground mb-4">No shopping list found.</p>
+                  <Button 
+                    variant="outline"
+                    onClick={handleCalculateBudget}
+                    disabled={calculatingBudget}
+                  >
+                    {calculatingBudget ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> 
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Shopping List"
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+interface CoachInput {
+  age: number;
+  sex: 'male' | 'female';
+  height: number; // in cm
+  weight: number; // in kg
+  activityLevel: 'sedentary' | 'light' | 'moderate' | 'very_active' | 'extra_active';
+  fitnessGoal: 'weight_loss' | 'muscle_gain' | 'strength' | 'stamina' | 'endurance';
+  dietaryPreferences: string[]; // e.g., ['vegetarian', 'halal', 'no seafood']
+  weeklyBudget: number; // in GBP
+  location?: string; // optional postcode or city
+  // Workout schedule preferences
+  workoutDaysPerWeek?: number; // Number of days to work out (1-7)
+  preferredWorkoutDays?: string[]; // e.g., ['Monday', 'Wednesday', 'Friday']
+  workoutDuration?: number; // Preferred workout duration in minutes
+  workoutNames?: Record<string, string>; // e.g., { "Monday": "Chest Day", "Tuesday": "Leg Day" }
+  // Email notification preferences
+  notifyByEmail?: boolean; // Whether to send email notifications
+  email?: string; // User's email address for notifications
+}
+
+// StoreRecommendation type definition
+
+interface StoreRecommendation {
+  name: string;
+  recommendation: string;
+  bestDeals?: string;
+}
+
+interface NutritionData {
+  bmr: number;
+  tdee: number;
+  calorieTarget: number;  // renamed from dailyCalories
+  proteinTarget: number;  // renamed from targetProtein
+  carbsTarget: number;    // renamed from targetCarbs
+  fatTarget: number;      // renamed from targetFat
+  // These are optional fields for backward compatibility
+  dailyCalories?: number;
+  targetProtein?: number;
+  targetCarbs?: number;
+  targetFat?: number;
+  proteinPercent?: number;
+  carbsPercent?: number;
+  fatPercent?: number;
+}
+
+interface EnhancedPlan extends FitnessPlan {
+  nutritionData?: NutritionData;
+  shoppingList?: ShoppingItem[];
+  suggestedStores?: StoreRecommendation[];
+}
+
+interface FitnessPlan {
+  id: number;
+  userId: number;
+  preferences: {
+    goal: string;
+    currentWeight: number;
+    targetWeight?: number;
+    unit: string;
+    age?: number;
+    height?: number;
+    gender?: string;
+    workoutDaysPerWeek: number;
+    dietaryRestrictions: string[];
+    preferredFoods: string[];
+    fitnessLevel: string;
+    budget?: number | string;
+    budgetType?: string;
+    // Workout schedule preferences
+    workoutNames?: Record<string, string>; // e.g., { "Monday": "Chest Day", "Tuesday": "Leg Day" }
+    // New properties for enhanced coach data
+    nutritionData?: NutritionData;
+    shoppingList?: ShoppingItem[];
+    suggestedStores?: StoreRecommendation[];
+  };
+  workoutPlan: {
+    weeklySchedule: Record<string, {
+      name: string;
+      exercises: Array<{
+        name: string;
+        sets: number;
+        reps: number;
+        rest: number;
+        weight?: number | null;
+      }>;
+    }>;
+    notes: string;
+  };
+  mealPlan: {
+    weeklySchedule?: Record<string, any>;
+    dailyMeals?: any;
+    notes: string;
+  };
+  nutritionGoal?: {
+    caloriesTarget: number;
+    proteinTarget: number;
+    carbsTarget: number;
+    fatTarget: number;
+  };
+  createdAt: Date;
+}

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="minimalBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#000428" />
+      <stop offset="100%" stop-color="#004e92" />
+    </linearGradient>
+    <linearGradient id="accentColor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF416C" />
+      <stop offset="100%" stop-color="#FF4B2B" />
+    </linearGradient>
+    <filter id="phoneFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" />
+      <feOffset dx="0" dy="15" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.2" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1080" height="1080" fill="url(#minimalBg)" />
+  
+  <!-- Abstract lines -->
+  <line x1="50" y1="180" x2="250" y2="180" stroke="#ffffff" stroke-opacity="0.1" stroke-width="4" />
+  <line x1="830" y1="900" x2="1030" y2="900" stroke="#ffffff" stroke-opacity="0.1" stroke-width="4" />
+  <line x1="100" y1="920" x2="100" y2="1000" stroke="#ffffff" stroke-opacity="0.1" stroke-width="4" />
+  
+  <!-- Main heading -->
+  <text x="540" y="120" font-family="Arial, sans-serif" font-size="45" font-weight="bold" fill="#ffffff" text-anchor="middle">Shopping List Simplified</text>
+  
+  <!-- Phone mockup -->
+  <rect x="580" y="200" width="300" height="620" rx="35" fill="#232323" filter="url(#phoneFilter)" />
+  <rect x="595" y="215" width="270" height="590" rx="25" fill="#ffffff" />
+  <rect x="720" y="225" width="20" height="5" rx="2" fill="#333" />
+  <circle cx="730" cy="785" r="20" fill="#f0f0f0" stroke="#ddd" />
+  
+  <!-- App content -->
+  <rect x="595" y="215" width="270" height="70" rx="25" fill="url(#accentColor)" />
+  <text x="630" y="260" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#ffffff">Shopping List</text>
+  
+  <!-- List items -->
+  <rect x="615" y="305" width="230" height="70" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+  <circle cx="640" cy="340" r="12" fill="#FF416C" fill-opacity="0.1" stroke="#FF416C" stroke-width="2" />
+  <path d="M635,340 L640,345 L646,335" stroke="#FF416C" stroke-width="2" fill="none" />
+  <text x="665" y="335" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Protein Sources</text>
+  <text x="665" y="355" font-family="Arial, sans-serif" font-size="13" fill="#666666">Chicken, Eggs, Whey</text>
+  
+  <rect x="615" y="385" width="230" height="70" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+  <circle cx="640" cy="420" r="12" fill="#FF416C" fill-opacity="0.1" stroke="#FF416C" stroke-width="2" />
+  <path d="M635,420 L640,425 L646,415" stroke="#FF416C" stroke-width="2" fill="none" />
+  <text x="665" y="415" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Complex Carbs</text>
+  <text x="665" y="435" font-family="Arial, sans-serif" font-size="13" fill="#666666">Rice, Quinoa, Potatoes</text>
+  
+  <rect x="615" y="465" width="230" height="70" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+  <circle cx="640" cy="500" r="12" fill="#FF416C" fill-opacity="0.1" stroke="#FF416C" stroke-width="2" />
+  <path d="M635,500 L640,505 L646,495" stroke="#FF416C" stroke-width="2" fill="none" />
+  <text x="665" y="495" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Healthy Fats</text>
+  <text x="665" y="515" font-family="Arial, sans-serif" font-size="13" fill="#666666">Avocado, Nuts, Olive Oil</text>
+  
+  <rect x="615" y="545" width="230" height="70" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+  <circle cx="640" cy="580" r="12" fill="#ffffff" stroke="#cccccc" stroke-width="2" />
+  <text x="665" y="575" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333333">Vegetables</text>
+  <text x="665" y="595" font-family="Arial, sans-serif" font-size="13" fill="#666666">Broccoli, Spinach, Kale</text>
+  
+  <!-- Summary card -->
+  <rect x="615" y="635" width="230" height="90" rx="8" fill="url(#accentColor)" />
+  <text x="635" y="665" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">Weekly Nutrition Plan</text>
+  <text x="635" y="690" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">Protein: 185g/day</text>
+  <text x="635" y="710" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">Budget: $85-95/week</text>
+  
+  <!-- Left side content -->
+  <g>
+    <text x="200" y="280" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Forget the guesswork.</text>
+    <text x="200" y="320" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.9">Your AI-powered shopping list is ready.</text>
+    
+    <rect x="200" y="350" width="40" height="4" fill="url(#accentColor)" />
+    
+    <g>
+      <text x="200" y="400" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8">• Auto-generated from meal plans</text>
+      <text x="200" y="440" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8">• Nutrition-optimized quantities</text>
+      <text x="200" y="480" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8">• Budget estimates included</text>
+    </g>
+    
+    <text x="200" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">Perfect portions,</text>
+    <text x="200" y="585" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#ffffff">perfect results.</text>
+    
+    <rect x="200" y="615" width="40" height="4" fill="url(#accentColor)" />
+    
+    <g>
+      <text x="200" y="665" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8">• Categories for easy shopping</text>
+      <text x="200" y="705" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8">• Precise macronutrient targets</text>
+      <text x="200" y="745" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8">• Syncs with your fitness goals</text>
+    </g>
+  </g>
+  
+  <!-- Bottom branding -->
+  <text x="540" y="960" font-family="Arial, sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">TrackMadeEazE</text>
+  <text x="540" y="990" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" fill-opacity="0.8" text-anchor="middle">Fitness Goals, Simplified</text>
+</svg>

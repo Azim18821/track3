@@ -1,0 +1,1747 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { format, parseISO } from "date-fns";
+
+// UI Components
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+
+// Icons
+import {
+  Activity,
+  AlertCircle,
+  Apple,
+  Calendar,
+  Check,
+  CheckCheck,
+  ChefHat,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Dumbbell,
+  Info,
+  Loader2,
+  ShoppingCart,
+  Trash2,
+  Utensils,
+} from "lucide-react";
+
+export default function ViewPlan() {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
+  const [removeFromLogs, setRemoveFromLogs] = useState(true);
+  const [selectedWorkoutDay, setSelectedWorkoutDay] = useState("");
+  const [selectedMealDay, setSelectedMealDay] = useState("");
+  
+  // Fetch active fitness plan
+  const {
+    data: activePlan,
+    isLoading: planLoading,
+    isError: planError,
+    error: planErrorDetail,
+  } = useQuery({
+    queryKey: ["/api/fitness-plans/active"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/fitness-plans/active");
+      if (!res.ok) {
+        if (res.status === 404) {
+          // No active plan is not an error condition
+          return null;
+        }
+        throw new Error("Failed to fetch active fitness plan");
+      }
+      return await res.json();
+    },
+  });
+
+  // Fetch user workouts for plan integration
+  const {
+    data: userWorkouts = [],
+    isLoading: workoutsLoading,
+  } = useQuery({
+    queryKey: ["/api/workouts"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/workouts");
+      if (!res.ok) throw new Error("Failed to fetch workouts");
+      return await res.json();
+    },
+  });
+
+  // Fetch user meals for plan integration
+  const {
+    data: userMeals = [],
+    isLoading: mealsLoading,
+  } = useQuery({
+    queryKey: ["/api/nutrition/meals"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/nutrition/meals");
+      if (!res.ok) throw new Error("Failed to fetch meals");
+      return await res.json();
+    },
+  });
+
+  // Mutation to create workouts from plan
+  const createWorkoutsMutation = useMutation({
+    mutationFn: async (planId: number) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/fitness-plans/${planId}/create-workouts`
+      );
+      if (!res.ok) throw new Error("Failed to create workouts from plan");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/workouts"] });
+      toast({
+        title: "Workouts Created",
+        description: "Your workout schedule has been updated with plan workouts",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error Creating Workouts",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to create meals from plan
+  const createMealsMutation = useMutation({
+    mutationFn: async (planId: number) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/fitness-plans/${planId}/create-meals`
+      );
+      if (!res.ok) throw new Error("Failed to create meals from plan");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/nutrition/meals"] });
+      toast({
+        title: "Meals Created",
+        description: "Your meal log has been updated with plan meals",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error Creating Meals",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to deactivate the plan
+  const deactivatePlanMutation = useMutation({
+    mutationFn: async ({
+      planId,
+      removeDataFromLogs,
+    }: {
+      planId: number;
+      removeDataFromLogs: boolean;
+    }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/fitness-plans/${planId}/deactivate`,
+        { removeDataFromLogs }
+      );
+      if (!res.ok) throw new Error("Failed to deactivate plan");
+      return await res.json();
+    },
+    onSuccess: () => {
+      // Immediately set the active plan to null in the cache to prevent "You have an active plan" message
+      queryClient.setQueryData(["/api/fitness-plans/active"], null);
+      
+      // Still invalidate queries to refresh data from the server
+      queryClient.invalidateQueries({ queryKey: ["/api/fitness-plans/active"] });
+      
+      if (removeFromLogs) {
+        queryClient.invalidateQueries({ queryKey: ["/api/workouts"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/nutrition/meals"] });
+      }
+      
+      setIsDeactivateDialogOpen(false);
+      
+      toast({
+        title: "Plan Deactivated",
+        description: "Your fitness plan has been deactivated",
+        variant: "default",
+      });
+      
+      // Navigate back to coach page to create a new plan
+      navigate("/coach");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error Deactivating Plan",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Loading state
+  if (planLoading || workoutsLoading || mealsLoading) {
+    return (
+      <div className="container py-10 flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Loading your fitness plan...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (planError) {
+    return (
+      <div className="container py-10">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {planErrorDetail instanceof Error
+              ? planErrorDetail.message
+              : "Failed to load fitness plan"}
+          </AlertDescription>
+        </Alert>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => navigate("/")}
+        >
+          Return to Dashboard
+        </Button>
+      </div>
+    );
+  }
+
+  // No active plan state
+  if (!activePlan) {
+    return (
+      <div className="container py-10 max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>No Active Fitness Plan</CardTitle>
+            <CardDescription>
+              You don't have an active fitness plan at the moment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center py-10 space-y-6">
+            <div className="flex flex-col items-center text-center max-w-md">
+              <Activity className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
+              <h3 className="text-xl font-medium mb-2">Create a Personalized Plan</h3>
+              <p className="text-muted-foreground mb-6">
+                Generate a customized workout and meal plan tailored to your fitness goals,
+                preferences, and lifestyle.
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate("/coach")}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+            >
+              <Dumbbell className="mr-2 h-4 w-4" />
+              Create Fitness Plan
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Extract plan details
+  const { id: planId, preferences, workoutPlan, mealPlan, createdAt } = activePlan;
+  
+  // Determine if plan data can be integrated with logs
+  const hasIntegratedWorkouts = userWorkouts.some((workout: any) => workout.planId === planId);
+  const hasIntegratedMeals = userMeals.some((meal: any) => meal.planId === planId);
+
+  // Debug function to print structure
+  const debugJsonStructure = (obj: any) => {
+    try {
+      // Only show this in development
+      if (process.env.NODE_ENV !== 'production') {
+        return (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 dark:bg-amber-950 dark:border-amber-900 dark:text-amber-300">
+            <details>
+              <summary className="text-xs font-medium cursor-pointer">Debug Plan Data Structure</summary>
+              <pre className="mt-2 text-xs overflow-auto max-h-[300px]">
+                {JSON.stringify(obj, null, 2)}
+              </pre>
+            </details>
+          </div>
+        );
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  };
+
+  return (
+    <div className="container py-4 sm:py-8 max-w-6xl mx-auto">
+      {/* Add debug information to help identify the data structure */}
+      {debugJsonStructure(activePlan)}
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1">Your Fitness Plan</h1>
+          <p className="text-muted-foreground">
+            Created on {format(parseISO(createdAt), "MMMM d, yyyy")}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => setIsDeactivateDialogOpen(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Deactivate Plan
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList className="mb-2 w-full grid grid-cols-4 gap-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="workouts" className="text-xs sm:text-sm">Workouts</TabsTrigger>
+          <TabsTrigger value="meals" className="text-xs sm:text-sm">Meals</TabsTrigger>
+          <TabsTrigger value="shopping" className="text-xs sm:text-sm">Shopping</TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Plan Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Plan Summary</CardTitle>
+                <CardDescription>Your fitness plan details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Primary Goal</Label>
+                    <p className="font-medium capitalize">
+                      {preferences.fitnessGoal?.replace("_", " ")}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                      Workout Days Per Week
+                    </Label>
+                    <p className="font-medium">{preferences.workoutDaysPerWeek}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                      Workout Duration
+                    </Label>
+                    <p className="font-medium">
+                      {preferences.workoutDuration} minutes
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                      Dietary Preference
+                    </Label>
+                    <p className="font-medium capitalize">
+                      {preferences.dietaryPreference}
+                    </p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">Nutrition Goals</h4>
+                  {/* Debug information */}
+                  <div className="p-2 text-xs text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-md mb-2">
+                    Available nutrition data: {
+                      preferences?.nutritionData ? 'From preferences.nutritionData' :
+                      preferences?.nutritionGoals ? 'From preferences.nutritionGoals' :
+                      mealPlan?.nutritionData ? 'From mealPlan.nutritionData' : 'None'
+                    }
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-xs text-muted-foreground block">
+                        Daily Calories
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(
+                          preferences?.nutritionData?.calories || 
+                          preferences?.nutritionGoals?.calories || 
+                          mealPlan?.nutritionData?.calories || 0
+                        )} kcal
+                      </span>
+                    </div>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-xs text-muted-foreground block">
+                        Protein
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(
+                          preferences?.nutritionData?.protein || 
+                          preferences?.nutritionGoals?.protein || 
+                          mealPlan?.nutritionData?.protein || 0
+                        )}g
+                      </span>
+                    </div>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-xs text-muted-foreground block">
+                        Carbs
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(
+                          preferences?.nutritionData?.carbs || 
+                          preferences?.nutritionGoals?.carbs || 
+                          mealPlan?.nutritionData?.carbs || 0
+                        )}g
+                      </span>
+                    </div>
+                    <div className="p-2 bg-muted rounded-md">
+                      <span className="text-xs text-muted-foreground block">
+                        Fat
+                      </span>
+                      <span className="font-medium">
+                        {Math.round(
+                          preferences?.nutritionData?.fat || 
+                          preferences?.nutritionGoals?.fat || 
+                          mealPlan?.nutritionData?.fat || 0
+                        )}g
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Integration Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Plan Integration</CardTitle>
+                <CardDescription>Add plan data to your tracking logs</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="h-5 w-5 text-indigo-500" />
+                        <div>
+                          <p className="font-medium">Workout Schedule</p>
+                          <p className="text-xs text-muted-foreground">
+                            Add workouts to your tracker
+                          </p>
+                        </div>
+                      </div>
+                      {hasIntegratedWorkouts ? (
+                        <Badge variant="outline" className="border-green-400 text-green-600 bg-green-50">
+                          <CheckCheck className="h-3 w-3 mr-1" />
+                          Added
+                        </Badge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => createWorkoutsMutation.mutate(planId)}
+                          disabled={createWorkoutsMutation.isPending}
+                        >
+                          {createWorkoutsMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3 mr-1" />
+                          )}
+                          Add
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Utensils className="h-5 w-5 text-green-500" />
+                        <div>
+                          <p className="font-medium">Meal Schedule</p>
+                          <p className="text-xs text-muted-foreground">
+                            Add meals to your nutrition log
+                          </p>
+                        </div>
+                      </div>
+                      {hasIntegratedMeals ? (
+                        <Badge variant="outline" className="border-green-400 text-green-600 bg-green-50">
+                          <CheckCheck className="h-3 w-3 mr-1" />
+                          Added
+                        </Badge>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => createMealsMutation.mutate(planId)}
+                          disabled={createMealsMutation.isPending}
+                        >
+                          {createMealsMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Check className="h-3 w-3 mr-1" />
+                          )}
+                          Add
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <Alert variant="default" className="bg-blue-50 border-blue-200">
+                    <Info className="h-4 w-4 text-blue-500" />
+                    <AlertTitle>Integration Features</AlertTitle>
+                    <AlertDescription className="text-xs text-muted-foreground">
+                      Adding your plan content to tracking logs makes it easier to
+                      follow your plan. Workouts will appear in your workout tracker,
+                      and meals will be added to your nutrition log.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Workout Plan Tab */}
+        <TabsContent value="workouts" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Workout Schedule</CardTitle>
+              <CardDescription>
+                Your personalized workout plan based on your goals and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {workoutPlan && workoutPlan.weeklySchedule && (
+                <div className="space-y-6">
+                  {/* Day selector dropdown */}
+                  <div className="mb-6">
+                    <label htmlFor="workout-day-select" className="block text-sm font-medium mb-2">
+                      Select Workout Day
+                    </label>
+                    <select 
+                      id="workout-day-select" 
+                      className="w-full p-2 border rounded-md bg-background focus:ring-2 focus:ring-primary"
+                      defaultValue={Object.keys(workoutPlan.weeklySchedule)[0]}
+                      onChange={(e) => {
+                        setSelectedWorkoutDay(e.target.value);
+                      }}
+                    >
+                      {Object.keys(workoutPlan.weeklySchedule).map((day) => (
+                        <option key={day} value={day}>
+                          {day.charAt(0).toUpperCase() + day.slice(1)} 
+                          {workoutPlan.weeklySchedule[day].isRestDay ? ' (Rest Day)' : 
+                           ` - ${workoutPlan.weeklySchedule[day].name || 'Workout'}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <ScrollArea className="h-[35vh] pr-2 rounded max-w-full">
+                    <div className="space-y-4">
+                      {/* Only show the selected day */}
+                      {(() => {
+                        const day = selectedWorkoutDay || Object.keys(workoutPlan.weeklySchedule)[0];
+                        const workout = workoutPlan.weeklySchedule[day];
+                        
+                        return (
+                          <div key={day} className="space-y-4">
+                            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-3 rounded-t-md">
+                              <h3 className="text-lg font-medium capitalize">
+                                {day}
+                              </h3>
+                              {workout.isRestDay ? (
+                                <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300">
+                                  Rest Day
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {workout.duration} min
+                                </Badge>
+                              )}
+                            </div>
+
+                            {workout.isRestDay ? (
+                              <p className="text-sm text-muted-foreground">
+                                Take a break today to allow your body to recover.
+                              </p>
+                            ) : (
+                              <>
+                                <p className="text-sm font-medium">{workout.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {workout.description}
+                                </p>
+
+                                <div className="space-y-4 mt-2">
+                                  {workout.exercises &&
+                                    workout.exercises.map((exercise: any, index: number) => (
+                                      <div
+                                        key={index}
+                                        className="p-3 border rounded-md hover:bg-slate-50 dark:hover:bg-slate-800"
+                                      >
+                                        <p className="font-medium">{exercise.name}</p>
+                                        <div className="flex gap-4 mt-2 text-sm">
+                                          <div>
+                                            <span className="text-muted-foreground">
+                                              Sets:
+                                            </span>{" "}
+                                            {exercise.sets}
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground">
+                                              Reps:
+                                            </span>{" "}
+                                            {exercise.reps}
+                                          </div>
+                                          {exercise.weight && (
+                                            <div>
+                                              <span className="text-muted-foreground">
+                                                Weight:
+                                              </span>{" "}
+                                              {exercise.weight}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {exercise.notes && (
+                                          <p className="text-xs text-muted-foreground mt-2">
+                                            {exercise.notes}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="justify-between border-t p-4">
+              <div className="text-sm text-muted-foreground">
+                <span className="font-medium">Tip:</span> Track your progress by logging
+                each workout when completed.
+              </div>
+              <Button
+                onClick={() => navigate("/workouts")}
+                size="sm"
+                className="gap-1"
+              >
+                <Calendar className="h-4 w-4" />
+                Workout Log
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        {/* Meal Plan Tab */}
+        <TabsContent value="meals" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Meal Plan</CardTitle>
+              <CardDescription>
+                Your personalized meal plan based on your nutritional goals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {mealPlan && (mealPlan.weeklyMeals || mealPlan.weeklyMealPlan) && (
+                <>
+                  {/* Mobile-friendly day selector dropdown */}
+                  <div className="mb-6">
+                    <label htmlFor="meal-day-select" className="block text-sm font-medium mb-2">
+                      Select Day
+                    </label>
+                    <select 
+                      id="meal-day-select" 
+                      className="w-full p-2 border rounded-md bg-background focus:ring-2 focus:ring-primary"
+                      defaultValue={Object.keys(mealPlan.weeklyMeals || mealPlan.weeklyMealPlan)[0]}
+                      onChange={(e) => {
+                        setSelectedMealDay(e.target.value);
+                      }}
+                    >
+                      {Object.keys(mealPlan.weeklyMeals || mealPlan.weeklyMealPlan).map((day) => (
+                        <option key={day} value={day}>
+                          {day.charAt(0).toUpperCase() + day.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                
+                  {/* Debug information to help understand the structure */}
+                  <div className="mb-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-md">
+                    <p className="text-xs text-muted-foreground">Available meal plan properties: {Object.keys(mealPlan).join(', ')}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Using: {mealPlan.weeklyMeals ? 'weeklyMeals' : 'weeklyMealPlan'}</p>
+                  </div>
+                </>
+              )}
+              
+              <ScrollArea className="h-[35vh] pr-2 rounded max-w-full">
+                <div className="space-y-3">
+                  {mealPlan && (mealPlan.weeklyMeals || mealPlan.weeklyMealPlan) && 
+                    (() => {
+                      const day = selectedMealDay || Object.keys(mealPlan.weeklyMeals || mealPlan.weeklyMealPlan)[0];
+                      const meals = (mealPlan.weeklyMeals || mealPlan.weeklyMealPlan)[day];
+                      
+                      return (
+                        <div key={day} className="space-y-4">
+                          <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-md">
+                            <h3 className="text-lg font-medium capitalize">{day}</h3>
+                          </div>
+
+                          <div className="space-y-6">
+                            {/* Handle regular meals (breakfast, lunch, dinner) */}
+                            {["breakfast", "lunch", "dinner"].map(
+                              (mealType) =>
+                                meals[mealType] && (
+                                  <div key={mealType} className="space-y-3">
+                                    <div className="flex items-center">
+                                      {mealType === "breakfast" && <Coffee className="h-4 w-4 mr-2 text-amber-500" />}
+                                      {mealType === "lunch" && <Utensils className="h-4 w-4 mr-2 text-blue-500" />}
+                                      {mealType === "dinner" && <ChefHat className="h-4 w-4 mr-2 text-purple-500" />}
+                                      <h4 className="font-medium capitalize text-sm">
+                                        {mealType}
+                                      </h4>
+                                    </div>
+
+                                    <details className="p-3 border rounded-md hover:bg-slate-50 dark:hover:bg-gray-800">
+                                      <summary className="cursor-pointer list-none">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex flex-col">
+                                            <p className="font-medium">
+                                              {meals[mealType].name}
+                                            </p>
+                                            
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300"
+                                              >
+                                                {Math.round(
+                                                  meals[mealType].calories || 
+                                                  meals[mealType].nutrition?.calories || 0
+                                                )}{" "}
+                                                kcal
+                                              </Badge>
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                              >
+                                                {Math.round(
+                                                  meals[mealType].protein || 
+                                                  meals[mealType].nutrition?.protein || 0
+                                                )}g
+                                                P
+                                              </Badge>
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300"
+                                              >
+                                                {Math.round(
+                                                  meals[mealType].carbs || 
+                                                  meals[mealType].nutrition?.carbs || 0
+                                                )}g
+                                                C
+                                              </Badge>
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900 dark:border-purple-700 dark:text-purple-300"
+                                              >
+                                                {Math.round(
+                                                  meals[mealType].fat || 
+                                                  meals[mealType].nutrition?.fat || 0
+                                                )}g
+                                                F
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                          
+                                          {meals[mealType].estimatedCost && (
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900 dark:border-indigo-700 dark:text-indigo-300"
+                                            >
+                                              ~£{meals[mealType].estimatedCost?.toFixed(2)}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </summary>
+                                      
+                                      <div className="pt-4">
+                                        <p className="text-sm text-muted-foreground">
+                                          {meals[mealType].description}
+                                        </p>
+
+                                        {/* Ingredients with Shopping Cart Info */}
+                                        {meals[mealType].ingredients &&
+                                          meals[mealType].ingredients.length > 0 && (
+                                            <div className="mt-4 border-t pt-3">
+                                              <div className="flex items-center justify-between mb-2">
+                                                <p className="text-sm font-medium">
+                                                  Ingredients
+                                                </p>
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="sm" 
+                                                  className="h-7 gap-1 text-xs"
+                                                  onClick={() => document.getElementById(`tab-shopping`)?.click()}
+                                                >
+                                                  <ShoppingCart className="h-3.5 w-3.5" />
+                                                  View Shopping List
+                                                </Button>
+                                              </div>
+                                              <ul className="text-xs space-y-1.5 mt-1">
+                                                {meals[mealType].ingredients.map(
+                                                  (ingredient: any, i: number) => (
+                                                    <li key={i} className="flex items-center gap-2">
+                                                      <div className="w-1 h-1 rounded-full bg-primary"></div>
+                                                      {typeof ingredient === 'string' 
+                                                        ? ingredient 
+                                                        : `${ingredient.quantity || ''} ${ingredient.unit || ''} ${ingredient.name || 'ingredient'}`.trim()}
+                                                    </li>
+                                                  )
+                                                )}
+                                              </ul>
+                                            </div>
+                                          )}
+                                          
+                                        {/* Cooking Instructions */}
+                                        {meals[mealType].cookingInstructions && 
+                                          meals[mealType].cookingInstructions.length > 0 && (
+                                            <div className="mt-4 border-t pt-3">
+                                              <p className="text-sm font-medium mb-2">
+                                                Cooking Instructions
+                                              </p>
+                                              <ol className="text-xs space-y-1.5 list-decimal list-inside">
+                                                {meals[mealType].cookingInstructions.map(
+                                                  (instruction: string, i: number) => (
+                                                    <li key={i} className="pl-1">{instruction}</li>
+                                                  )
+                                                )}
+                                              </ol>
+                                            </div>
+                                        )}
+                                          
+                                        {/* Budget Information */}
+                                        {mealPlan?.shoppingList?.itemsByMeal && 
+                                         mealPlan.shoppingList.itemsByMeal[`${day}-${mealType}`] && (
+                                          <div className="mt-4 border-t pt-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="flex items-center">
+                                                <ShoppingCart className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                                                <p className="text-sm font-medium">Shopping Budget</p>
+                                              </div>
+                                              <Badge
+                                                variant="outline"
+                                                className={`
+                                                  ${
+                                                    (meals[mealType].budgetStatus === "under_budget" && 
+                                                      "bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300") ||
+                                                    (meals[mealType].budgetStatus === "near_budget" &&
+                                                      "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300") ||
+                                                    (meals[mealType].budgetStatus === "over_budget" &&
+                                                      "bg-red-50 border-red-200 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300") ||
+                                                    "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300"
+                                                  }
+                                                `}
+                                              >
+                                                {meals[mealType].budgetStatus === "under_budget" && "Within Budget"}
+                                                {meals[mealType].budgetStatus === "near_budget" && "Near Budget"}
+                                                {meals[mealType].budgetStatus === "over_budget" && "Over Budget"}
+                                                {!meals[mealType].budgetStatus && "Budget Info"}
+                                              </Badge>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-gray-800 rounded-md p-2 mt-1">
+                                              <div className="text-xs">
+                                                <span className="text-muted-foreground">Estimated:</span>
+                                                <div className="font-medium">
+                                                  £{meals[mealType].estimatedCost?.toFixed(2) || "0.00"}
+                                                </div>
+                                              </div>
+                                              <div className="text-xs text-right">
+                                                <span className="text-muted-foreground">Items:</span>
+                                                <div className="font-medium">
+                                                  {mealPlan.shoppingList.itemsByMeal[`${day}-${mealType}`].length || 0}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </details>
+                                  </div>
+                                )
+                            )}
+                            
+                            {/* Handle snacks separately since they can be an array */}
+                            {meals.snacks && (
+                              <div className="space-y-3">
+                                <div className="flex items-center">
+                                  <Apple className="h-4 w-4 mr-2 text-green-500" />
+                                  <h4 className="font-medium capitalize text-sm">
+                                    Snacks
+                                  </h4>
+                                </div>
+                                
+                                {/* If snacks is an array, map through them */}
+                                {Array.isArray(meals.snacks) ? (
+                                  <div className="space-y-3">
+                                    {meals.snacks.map((snack: any, index: number) => (
+                                      <details key={index} className="p-3 border rounded-md hover:bg-slate-50 dark:hover:bg-gray-800">
+                                        <summary className="cursor-pointer list-none">
+                                          <div className="flex justify-between items-start">
+                                            <div className="flex flex-col">
+                                              <p className="font-medium">
+                                                {snack.name}
+                                              </p>
+                                              
+                                              <div className="flex flex-wrap gap-2 mt-2">
+                                                <Badge
+                                                  variant="outline"
+                                                  className="bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300"
+                                                >
+                                                  {Math.round(snack.calories || 0)} kcal
+                                                </Badge>
+                                                <Badge
+                                                  variant="outline"
+                                                  className="bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                                >
+                                                  {Math.round(snack.protein || 0)}g P
+                                                </Badge>
+                                                <Badge
+                                                  variant="outline"
+                                                  className="bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300"
+                                                >
+                                                  {Math.round(snack.carbs || 0)}g C
+                                                </Badge>
+                                                <Badge
+                                                  variant="outline"
+                                                  className="bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900 dark:border-purple-700 dark:text-purple-300"
+                                                >
+                                                  {Math.round(snack.fat || 0)}g F
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                            
+                                            {snack.estimatedCost && (
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900 dark:border-indigo-700 dark:text-indigo-300"
+                                              >
+                                                ~£{snack.estimatedCost?.toFixed(2)}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </summary>
+                                        
+                                        <div className="pt-4">
+                                          <p className="text-sm text-muted-foreground">
+                                            {snack.description}
+                                          </p>
+
+                                          {/* Ingredients */}
+                                          {snack.ingredients && snack.ingredients.length > 0 && (
+                                            <div className="mt-4 border-t pt-3">
+                                              <div className="flex items-center justify-between mb-2">
+                                                <p className="text-sm font-medium">
+                                                  Ingredients
+                                                </p>
+                                              </div>
+                                              <ul className="text-xs space-y-1.5 mt-1">
+                                                {snack.ingredients.map(
+                                                  (ingredient: any, i: number) => (
+                                                    <li key={i} className="flex items-center gap-2">
+                                                      <div className="w-1 h-1 rounded-full bg-primary"></div>
+                                                      {typeof ingredient === 'string' 
+                                                        ? ingredient 
+                                                        : `${ingredient.quantity || ''} ${ingredient.unit || ''} ${ingredient.name || 'ingredient'}`.trim()}
+                                                    </li>
+                                                  )
+                                                )}
+                                              </ul>
+                                            </div>
+                                          )}
+                                          
+                                          {/* Cooking Instructions */}
+                                          {snack.cookingInstructions && 
+                                            snack.cookingInstructions.length > 0 && (
+                                              <div className="mt-4 border-t pt-3">
+                                                <p className="text-sm font-medium mb-2">
+                                                  Preparation
+                                                </p>
+                                                <ol className="text-xs space-y-1.5 list-decimal list-inside">
+                                                  {snack.cookingInstructions.map(
+                                                    (instruction: string, i: number) => (
+                                                      <li key={i} className="pl-1">{instruction}</li>
+                                                    )
+                                                  )}
+                                                </ol>
+                                              </div>
+                                          )}
+                                        </div>
+                                      </details>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  // Handle a single snack as non-array
+                                  <details className="p-3 border rounded-md hover:bg-slate-50 dark:hover:bg-gray-800">
+                                    <summary className="cursor-pointer list-none">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex flex-col">
+                                          <p className="font-medium">
+                                            {(meals.snacks as any).name}
+                                          </p>
+                                          
+                                          <div className="flex flex-wrap gap-2 mt-2">
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300"
+                                            >
+                                              {Math.round(
+                                                (meals.snacks as any).calories || 
+                                                (meals.snacks as any).nutrition?.calories || 0
+                                              )}{" "}
+                                              kcal
+                                            </Badge>
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                            >
+                                              {Math.round(
+                                                (meals.snacks as any).protein || 
+                                                (meals.snacks as any).nutrition?.protein || 0
+                                              )}g
+                                              P
+                                            </Badge>
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300"
+                                            >
+                                              {Math.round(
+                                                (meals.snacks as any).carbs || 
+                                                (meals.snacks as any).nutrition?.carbs || 0
+                                              )}g
+                                              C
+                                            </Badge>
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900 dark:border-purple-700 dark:text-purple-300"
+                                            >
+                                              {Math.round(
+                                                (meals.snacks as any).fat || 
+                                                (meals.snacks as any).nutrition?.fat || 0
+                                              )}g
+                                              F
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </summary>
+                                    
+                                    <div className="pt-4">
+                                      <p className="text-sm text-muted-foreground">
+                                        {(meals.snacks as any).description}
+                                      </p>
+
+                                      {/* Handle single snack's details */}
+                                      {(meals.snacks as any).ingredients && (
+                                        <div className="mt-4 border-t pt-3">
+                                          <p className="text-sm font-medium mb-2">Ingredients</p>
+                                          <ul className="text-xs space-y-1.5 mt-1">
+                                            {(meals.snacks as any).ingredients.map(
+                                              (ingredient: any, i: number) => (
+                                                <li key={i} className="flex items-center gap-2">
+                                                  <div className="w-1 h-1 rounded-full bg-primary"></div>
+                                                  {typeof ingredient === 'string' 
+                                                    ? ingredient 
+                                                    : `${ingredient.quantity || ''} ${ingredient.unit || ''} ${ingredient.name || 'ingredient'}`.trim()}
+                                                </li>
+                                              )
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </details>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {day !== "sunday" && <Separator className="mt-4" />}
+                        </div>
+                      );
+                    })()}
+                </div>
+              </ScrollArea>
+            </CardContent>
+            <CardFooter className="justify-between border-t p-4">
+              <div className="text-sm text-muted-foreground">
+                <span className="font-medium">Tip:</span> Track your nutrition intake
+                by logging each meal.
+              </div>
+              <Button
+                onClick={() => navigate("/nutrition")}
+                size="sm"
+                className="gap-1"
+              >
+                <Utensils className="h-4 w-4" />
+                Nutrition Log
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        {/* Shopping List Tab */}
+        <TabsContent value="shopping" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Shopping List</CardTitle>
+              <CardDescription>
+                All the ingredients you need for your weekly meal plan
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Debug information */}
+              {mealPlan && (
+                <div className="mb-6 p-3 bg-slate-50 dark:bg-slate-900 rounded-md">
+                  <p className="text-xs text-muted-foreground">Available meal plan properties: {Object.keys(mealPlan).join(', ')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Has shopping list: {mealPlan.shoppingList ? 'Yes' : (mealPlan.ingredients ? 'Using ingredients' : 'No')}
+                  </p>
+                  {mealPlan.shoppingList && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Shopping list properties: {Object.keys(mealPlan.shoppingList).join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
+            
+              <ScrollArea className="h-[40vh] pr-4 rounded">
+                <div className="space-y-6">
+                  {mealPlan && (mealPlan.shoppingList || mealPlan.ingredients) && (
+                    <>
+                      {/* Budget Summary Card */}
+                      <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-100 dark:from-indigo-950 dark:to-blue-950 dark:border-indigo-800">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                            <div>
+                              <h3 className="text-lg font-semibold mb-1">Weekly Budget</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Based on your provided budget and meal preferences
+                              </p>
+                            </div>
+                            
+                            <div className="flex flex-col items-end">
+                              <div className="text-2xl font-bold">
+                                £{(mealPlan.shoppingList?.budget || mealPlan.budget || 0).toFixed(2)}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Your weekly food budget
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Spending Stats */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                              <h4 className="text-sm font-medium mb-2">Estimated Cost</h4>
+                              <div className="flex justify-between items-center">
+                                <div className="text-2xl font-bold">
+                                  £{(mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0).toFixed(2)}
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={`
+                                    ${
+                                      ((mealPlan.shoppingList as any)?.budgetStatus === "under_budget" && 
+                                        "bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300") ||
+                                      ((mealPlan.shoppingList as any)?.budgetStatus === "near_budget" &&
+                                        "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900 dark:border-amber-700 dark:text-amber-300") ||
+                                      ((mealPlan.shoppingList as any)?.budgetStatus === "over_budget" &&
+                                        "bg-red-50 border-red-200 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300") ||
+                                      "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300"
+                                    }
+                                  `}
+                                >
+                                  {(mealPlan.shoppingList as any)?.budgetStatus === "under_budget" && "Under Budget"}
+                                  {(mealPlan.shoppingList as any)?.budgetStatus === "near_budget" && "Near Budget"}
+                                  {(mealPlan.shoppingList as any)?.budgetStatus === "over_budget" && "Over Budget"}
+                                  {!(mealPlan.shoppingList as any)?.budgetStatus && "Budget Status"}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                              <h4 className="text-sm font-medium mb-2">Remaining Budget</h4>
+                              <div className="flex justify-between items-center">
+                                <div className="text-2xl font-bold">
+                                  £{((mealPlan.shoppingList?.budget || mealPlan.budget || 0) - 
+                                     (mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0)).toFixed(2)}
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={`
+                                    ${
+                                      (((mealPlan.shoppingList?.budget || mealPlan.budget || 0) - 
+                                      (mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0)) > 0 && 
+                                        "bg-green-50 border-green-200 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300") ||
+                                      "bg-red-50 border-red-200 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300"
+                                    }
+                                  `}
+                                >
+                                  {((mealPlan.shoppingList?.budget || mealPlan.budget || 0) - 
+                                    (mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0)) > 0 ?
+                                    "Available" : "Exceeded"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Budget Progress Bar */}
+                          {(mealPlan.shoppingList?.budget || mealPlan.budget) && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span>0%</span>
+                                <span>50%</span>
+                                <span>100%</span>
+                              </div>
+                              <div className="w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    (mealPlan.shoppingList?.budgetStatus === "under_budget" && 
+                                      "bg-gradient-to-r from-green-400 to-green-500") ||
+                                    (mealPlan.shoppingList?.budgetStatus === "near_budget" &&
+                                      "bg-gradient-to-r from-amber-400 to-amber-500") ||
+                                    (mealPlan.shoppingList?.budgetStatus === "over_budget" &&
+                                      "bg-gradient-to-r from-red-400 to-red-500") ||
+                                    // If no budgetStatus exists, use a color based on percentage of budget used
+                                    (((mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0) / 
+                                      (mealPlan.shoppingList?.budget || mealPlan.budget || 1)) < 0.75 ?
+                                      "bg-gradient-to-r from-green-400 to-green-500" :
+                                    ((mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0) / 
+                                      (mealPlan.shoppingList?.budget || mealPlan.budget || 1)) < 0.9 ?
+                                      "bg-gradient-to-r from-amber-400 to-amber-500" :
+                                      "bg-gradient-to-r from-red-400 to-red-500")
+                                  }`}
+                                  style={{
+                                    width: `${Math.min(
+                                      100,
+                                      ((mealPlan.shoppingList?.estimatedCost || mealPlan.estimatedCost || 0) /
+                                        (mealPlan.shoppingList?.budget || mealPlan.budget || 1)) *
+                                        100
+                                    )}%`,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Category Breakdown */}
+                      <div className="mt-8">
+                        <h3 className="text-lg font-semibold mb-4">Category Breakdown</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                          {(mealPlan.shoppingList as any)?.categories && 
+                            Object.entries((mealPlan.shoppingList as any).categories)
+                              .filter(([_, items]: [string, any]) => items.estimatedCost)
+                              .sort((a: [string, any], b: [string, any]) => (b[1].estimatedCost || 0) - (a[1].estimatedCost || 0))
+                              .slice(0, 6)
+                              .map(([category, items]: [string, any]) => (
+                                <div key={category} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium capitalize">{category}</span>
+                                    <span className="text-sm">£{items.estimatedCost?.toFixed(2) || "0.00"}</span>
+                                  </div>
+                                  <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-indigo-500 dark:bg-indigo-400 rounded-full"
+                                      style={{
+                                        width: `${Math.min(
+                                          100,
+                                          ((items.estimatedCost || 0) /
+                                            ((mealPlan.shoppingList as any)?.budget || 1)) *
+                                            100
+                                        )}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    {Math.round(((items.estimatedCost || 0) / ((mealPlan.shoppingList as any)?.estimatedCost || 1)) * 100)}% of total
+                                  </p>
+                                </div>
+                              ))
+                          }
+                        </div>
+                      </div>
+
+                      {/* Shopping List Items */}
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold mb-1">Shopping List</h3>
+                        <p className="text-sm text-muted-foreground mb-2">Items needed for your weekly meal plan</p>
+                        
+                        {/* Debug information */}
+                        <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-md mb-2 text-xs">
+                          <p className="font-medium">Available meal plan properties:</p> 
+                          <p className="text-muted-foreground">{mealPlan ? Object.keys(mealPlan).join(', ') : 'No mealPlan data'}</p>
+                          <p className="font-medium mt-2">Has shopping list:</p> 
+                          <p className="text-muted-foreground">{mealPlan && mealPlan.shoppingList ? 'Yes' : 'No'}</p>
+                          {mealPlan && mealPlan.shoppingList && (
+                            <>
+                              <p className="font-medium mt-2">Shopping list properties:</p>
+                              <p className="text-muted-foreground">{Object.keys(mealPlan.shoppingList).join(', ')}</p>
+                              <p className="font-medium mt-2">Total items:</p>
+                              <p className="text-muted-foreground">
+                                {mealPlan.shoppingList.items ? mealPlan.shoppingList.items.length : 'No items array'}
+                                {mealPlan.shoppingList.categories ? ` | Categories: ${Object.keys(mealPlan.shoppingList.categories).length}` : ' | No categories'}
+                                {mealPlan.shoppingList.itemsByMeal ? ` | Items by meal: ${Object.keys(mealPlan.shoppingList.itemsByMeal).length}` : ' | No itemsByMeal'}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                        
+                        {/* Shopping List Tabs - by Category or by Meal */}
+                        <Tabs defaultValue="byCategory" className="w-full">
+                          <TabsList className="mb-2 w-full grid grid-cols-3 gap-1">
+                            <TabsTrigger value="byCategory" id="tab-byCategory" className="text-xs sm:text-sm">Category</TabsTrigger>
+                            <TabsTrigger value="byMeal" id="tab-byMeal" className="text-xs sm:text-sm">Meal</TabsTrigger>
+                            <TabsTrigger value="byBudget" id="tab-shopping" className="text-xs sm:text-sm">Budget</TabsTrigger>
+                          </TabsList>
+                          
+                          {/* By Category View */}
+                          <TabsContent value="byCategory" className="space-y-6">
+                            {!(mealPlan.shoppingList as any)?.categories ? (
+                              <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-4 mb-3">
+                                  <ShoppingCart className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <h3 className="font-medium">No Shopping List Available</h3>
+                                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                                  The shopping list for this meal plan hasn't been generated yet or contains no items.
+                                </p>
+                              </div>
+                            ) : (
+                              Object.entries((mealPlan.shoppingList as any).categories).map(
+                                ([category, items]: [string, any]) => (
+                                  <div key={category} className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <h3 className="font-medium capitalize">{category}</h3>
+                                      {items.estimatedCost && (
+                                        <Badge variant="outline" className="bg-gray-50 dark:bg-gray-800">
+                                          ~£{items.estimatedCost.toFixed(2)}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="space-y-2 pl-1">
+                                      {items.items && items.items.map((item: any, idx: number) => (
+                                        <div
+                                          key={idx}
+                                          className="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-gray-800"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <Checkbox id={`item-${category}-${idx}`} />
+                                            <Label
+                                              htmlFor={`item-${category}-${idx}`}
+                                              className="text-sm cursor-pointer"
+                                            >
+                                              {item.name}
+                                              {item.quantity && (
+                                                <span className="text-muted-foreground ml-1">
+                                                  ({typeof item.quantity === 'object' 
+                                                    ? `${item.quantity.value || ''} ${item.quantity.unit || ''}`.trim() 
+                                                    : item.quantity})
+                                                </span>
+                                              )}
+                                            </Label>
+                                          </div>
+                                          {item.estimatedCost && (
+                                            <span className="text-xs text-muted-foreground">
+                                              £{item.estimatedCost.toFixed(2)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <Separator className="mt-4" />
+                                  </div>
+                                )
+                              )
+                            )}
+                          </TabsContent>
+                          
+                          {/* By Meal View */}
+                          <TabsContent value="byMeal" className="space-y-6">
+                            {mealPlan && (mealPlan.weeklyMeals || mealPlan.weeklyMealPlan) && (
+                              <div className="space-y-6">
+                                {Object.entries(mealPlan.weeklyMeals || mealPlan.weeklyMealPlan).map(([day, meals]: [string, any]) => (
+                                  <div key={day} className="space-y-3">
+                                    <h3 className="font-medium capitalize">{day}</h3>
+                                    
+                                    <div className="space-y-4 pl-1">
+                                      {["breakfast", "lunch", "dinner", "snacks"].map((mealType) => 
+                                        meals[mealType] && meals[mealType].ingredients && meals[mealType].ingredients.length > 0 && (
+                                          <div 
+                                            key={`${day}-${mealType}`} 
+                                            id={`meal-shopping-${day}-${mealType}`}
+                                            className="p-3 bg-slate-50 dark:bg-gray-800 rounded-md"
+                                          >
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="flex items-start">
+                                                {mealType === "breakfast" && <Utensils className="h-4 w-4 mr-2 mt-0.5 text-amber-500" />}
+                                                {mealType === "lunch" && <Utensils className="h-4 w-4 mr-2 mt-0.5 text-blue-500" />}
+                                                {mealType === "dinner" && <Utensils className="h-4 w-4 mr-2 mt-0.5 text-purple-500" />}
+                                                {mealType === "snacks" && <Utensils className="h-4 w-4 mr-2 mt-0.5 text-green-500" />}
+                                                <div>
+                                                  <h4 className="text-sm font-medium capitalize">
+                                                    {mealType}: {meals[mealType].name}
+                                                  </h4>
+                                                  <p className="text-xs text-muted-foreground">
+                                                    {meals[mealType].description?.substring(0, 60)}{meals[mealType].description?.length > 60 ? '...' : ''}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              {meals[mealType].estimatedCost && (
+                                                <Badge variant="outline" className="bg-white dark:bg-gray-900">
+                                                  ~£{meals[mealType].estimatedCost.toFixed(2)}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                                              {(mealPlan.shoppingList as any)?.itemsByMeal && 
+                                               (mealPlan.shoppingList as any).itemsByMeal[`${day}-${mealType}`] ? (
+                                                (mealPlan.shoppingList as any).itemsByMeal[`${day}-${mealType}`].map((item: any, i: number) => (
+                                                  <div 
+                                                    key={i} 
+                                                    className="flex items-start gap-2 p-2 bg-white dark:bg-gray-900 rounded"
+                                                  >
+                                                    <Checkbox id={`meal-item-${day}-${mealType}-${i}`} className="mt-0.5" />
+                                                    <div className="flex-1">
+                                                      <Label
+                                                        htmlFor={`meal-item-${day}-${mealType}-${i}`}
+                                                        className="text-sm font-medium cursor-pointer"
+                                                      >
+                                                        {item.name}
+                                                      </Label>
+                                                      <div className="flex justify-between items-center mt-0.5">
+                                                        {item.quantity && (
+                                                          <span className="text-xs text-muted-foreground">
+                                                            {typeof item.quantity === 'object' 
+                                                              ? `${item.quantity.value || ''} ${item.quantity.unit || ''}`.trim() 
+                                                              : item.quantity}
+                                                          </span>
+                                                        )}
+                                                        {item.estimatedCost && (
+                                                          <span className="text-xs text-muted-foreground">
+                                                            ~£{item.estimatedCost.toFixed(2)}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                ))
+                                              ) : (
+                                                <div className="col-span-2 p-2 text-sm text-muted-foreground italic">
+                                                  Using ingredients from recipe: {meals[mealType].ingredients.map((ingredient: string, i: number) => (
+                                                    <span key={i} className="not-italic">
+                                                      {i > 0 && ", "}{ingredient}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                    <Separator className="mt-4" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </TabsContent>
+                          
+                          {/* By Budget View */}
+                          <TabsContent value="byBudget" className="space-y-6">
+                            {/* Budget tiers */}
+                            <div className="space-y-6">
+                              {/* Value items */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-medium flex items-center">
+                                    <Badge variant="outline" className="mr-2 bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700">
+                                      Value
+                                    </Badge>
+                                    Budget-Friendly Items
+                                  </h3>
+                                  <Badge variant="outline" className="bg-green-50 dark:bg-green-900">
+                                    Under £3.00
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {(mealPlan.shoppingList as any)?.itemsByBudget && 
+                                   (mealPlan.shoppingList as any).itemsByBudget.value?.map((item: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center justify-between p-2 rounded bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox id={`value-item-${idx}`} />
+                                        <div>
+                                          <Label
+                                            htmlFor={`value-item-${idx}`}
+                                            className="text-sm cursor-pointer"
+                                          >
+                                            {item.name}
+                                            {item.quantity && (
+                                              <span className="text-muted-foreground ml-1">
+                                                ({item.quantity})
+                                              </span>
+                                            )}
+                                          </Label>
+                                          {item.category && (
+                                            <div className="text-xs text-muted-foreground">
+                                              {item.category}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                                        £{item.estimatedCost?.toFixed(2) || "0.00"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              {/* Standard items */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-medium flex items-center">
+                                    <Badge variant="outline" className="mr-2 bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700">
+                                      Standard
+                                    </Badge>
+                                    Regular Items
+                                  </h3>
+                                  <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900">
+                                    £3.00 - £7.00
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {(mealPlan.shoppingList as any)?.itemsByBudget && 
+                                   (mealPlan.shoppingList as any).itemsByBudget.standard?.map((item: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center justify-between p-2 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox id={`standard-item-${idx}`} />
+                                        <div>
+                                          <Label
+                                            htmlFor={`standard-item-${idx}`}
+                                            className="text-sm cursor-pointer"
+                                          >
+                                            {item.name}
+                                            {item.quantity && (
+                                              <span className="text-muted-foreground ml-1">
+                                                ({item.quantity})
+                                              </span>
+                                            )}
+                                          </Label>
+                                          {item.category && (
+                                            <div className="text-xs text-muted-foreground">
+                                              {item.category}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                        £{item.estimatedCost?.toFixed(2) || "0.00"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              {/* Premium items */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h3 className="font-medium flex items-center">
+                                    <Badge variant="outline" className="mr-2 bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-700">
+                                      Premium
+                                    </Badge>
+                                    Specialty Items
+                                  </h3>
+                                  <Badge variant="outline" className="bg-purple-50 dark:bg-purple-900">
+                                    Over £7.00
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {(mealPlan.shoppingList as any)?.itemsByBudget && 
+                                   (mealPlan.shoppingList as any).itemsByBudget.premium?.map((item: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center justify-between p-2 rounded bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox id={`premium-item-${idx}`} />
+                                        <div>
+                                          <Label
+                                            htmlFor={`premium-item-${idx}`}
+                                            className="text-sm cursor-pointer"
+                                          >
+                                            {item.name}
+                                            {item.quantity && (
+                                              <span className="text-muted-foreground ml-1">
+                                                ({item.quantity})
+                                              </span>
+                                            )}
+                                          </Label>
+                                          {item.category && (
+                                            <div className="text-xs text-muted-foreground">
+                                              {item.category}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                                        £{item.estimatedCost?.toFixed(2) || "0.00"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+            <CardFooter className="justify-between border-t p-4">
+              <div className="text-sm text-muted-foreground">
+                <span className="font-medium">Tip:</span> Check items off as you shop
+                to keep track of your shopping list.
+              </div>
+              <Button size="sm" className="gap-1">
+                <ShoppingCart className="h-4 w-4" />
+                Print List
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Deactivate Plan Dialog */}
+      <Dialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Deactivate Fitness Plan</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate your current fitness plan?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="removeFromLogs"
+                checked={removeFromLogs}
+                onCheckedChange={(checked) => setRemoveFromLogs(checked as boolean)}
+              />
+              <Label
+                htmlFor="removeFromLogs"
+                className="text-sm cursor-pointer leading-tight"
+              >
+                Also remove related workout and meal entries from my logs
+              </Label>
+            </div>
+            <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-900">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Warning</AlertTitle>
+              <AlertDescription className="text-sm">
+                This action cannot be undone. You will need to create a new fitness
+                plan afterward.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeactivateDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                deactivatePlanMutation.mutate({
+                  planId,
+                  removeDataFromLogs: removeFromLogs,
+                })
+              }
+              disabled={deactivatePlanMutation.isPending}
+            >
+              {deactivatePlanMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Deactivate Plan
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

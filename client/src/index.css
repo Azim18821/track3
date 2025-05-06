@@ -1,0 +1,274 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animations for splash screen and other effects */
+@keyframes pulse-animation {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.1;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.1;
+  }
+}
+
+.pulse-animation {
+  animation: pulse-animation 2s infinite ease-in-out;
+}
+
+/* Professional loading animation for splash screen */
+@keyframes load-progress {
+  0% {
+    width: 0%;
+    transform: translateX(0);
+  }
+  50% {
+    width: 70%;
+  }
+  75% {
+    width: 85%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-load-progress {
+  animation: load-progress 2.2s cubic-bezier(0.45, 0, 0.15, 1) forwards;
+}
+
+/* Custom styles for collapsible components */
+.collapsible[data-state="open"] .collapsible-indicator {
+  transform: rotate(180deg);
+}
+
+.collapsible-content {
+  overflow: hidden;
+}
+
+.collapsible-content[data-state="open"] {
+  animation: slideDown 300ms ease-out;
+}
+
+.collapsible-content[data-state="closed"] {
+  animation: slideUp 300ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 207 90% 54%;
+  --primary-light: 199 89% 60%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 60 4.8% 95.9%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 207 90% 54%;
+  --primary-light: 199 89% 60%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    /* Add safe areas for notched devices */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+}
+
+/* Mobile-friendly form elements */
+.mobile-input {
+  @apply h-12 rounded-xl px-4 text-base;
+}
+
+.mobile-select-trigger {
+  @apply h-12 rounded-xl text-base;
+}
+
+.mobile-button {
+  @apply h-12 rounded-xl text-base px-6 font-medium transition-all;
+}
+  
+/* Notch and rounded corner handling */
+  .notch-friendly-container {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Bottom navigation spacing for home indicator */
+  .bottom-nav {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  
+  /* Header spacing for notch */
+  .app-header {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    min-height: calc(3rem + env(safe-area-inset-top));
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    touch-action: none;
+    display: flex;
+    align-items: center;
+  }
+
+  .dark .app-header {
+    background-color: hsl(var(--background));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* For fixed header spacing */
+  .mt-header-height {
+    margin-top: calc(3rem + env(safe-area-inset-top, 0px));
+    padding-top: 0.5rem;
+    padding-bottom: 4rem;
+    height: calc(100vh - 3rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Full screen container */
+  .full-screen-container {
+    min-height: 100vh;
+    min-height: 100svh; /* Modern viewport height units */
+    min-height: -webkit-fill-available;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+  
+  /* Workout mode modal specific fixes */
+  .workout-modal-container {
+    max-height: 100vh;
+    max-height: -webkit-fill-available;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .workout-modal-content {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+    overflow-y: auto;
+  }
+  
+  /* Improve touch scrolling */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix for Safari mobile height issues */
+  html {
+    height: -webkit-fill-available;
+    height: 100vh; /* Fallback */
+    height: 100svh; /* Modern viewport height */
+    width: 100vw; /* Ensure full width */
+    max-width: 100%; /* Prevent overflow */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+  }
+  
+  body {
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior: none; /* Prevent bounce on iOS */
+    touch-action: pan-y; /* Allow vertical panning/scrolling but disable horizontal */
+  }
+  
+  /* Safe area utilities */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Smooth scroll for iOS */
+  * {
+    scroll-behavior: smooth;
+  }
+

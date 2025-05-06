@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with no transparency -->
+  <rect width="512" height="512" rx="128" fill="#1e3a8a"/>
+  
+  <!-- Heartbeat line with thicker stroke and no transparency -->
+  <path d="M76 256H166L206 166L266 346L306 256H436" 
+        stroke-width="40" stroke="white" fill="none" 
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

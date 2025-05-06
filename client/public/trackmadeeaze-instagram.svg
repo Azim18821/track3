@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <!-- Definitions -->
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Accent gradient for elements -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Pulse animation for heartbeat -->
+    <radialGradient id="pulseGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:0" />
+      <animate attributeName="r" values="0.3;0.7;0.3" dur="3s" repeatCount="indefinite" />
+    </radialGradient>
+    
+    <!-- Advanced heartbeat pattern -->
+    <path id="heartbeatPath" d="M 0,50 L 20,50 L 35,15 L 50,85 L 65,15 L 80,85 L 95,50 L 110,50" 
+          stroke="#4ade80" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          
+    <!-- Filter for glow effects -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    
+    <!-- Clip path for phone mockup -->
+    <clipPath id="phoneScreen">
+      <rect x="0" y="0" width="240" height="520" rx="30" ry="30" />
+    </clipPath>
+    
+    <!-- Phone screen image -->
+    <pattern id="screenPattern" patternUnits="userSpaceOnUse" width="240" height="520">
+      <rect width="240" height="520" fill="#1a1a2e" />
+      <rect x="20" y="60" width="200" height="100" rx="10" fill="#2d3748" />
+      <rect x="20" y="180" width="200" height="100" rx="10" fill="#2d3748" />
+      <rect x="20" y="300" width="200" height="100" rx="10" fill="#2d3748" />
+      <rect x="20" y="420" width="95" height="60" rx="10" fill="url(#accentGradient)" />
+      <rect x="125" y="420" width="95" height="60" rx="10" fill="#4a5568" />
+    </pattern>
+    
+    <!-- Abstract shapes for background decoration -->
+    <path id="abstractShape1" d="M 0,0 C 50,-20 80,50 120,40 S 180,0 200,30 S 250,60 280,20" 
+          stroke="#4ade80" stroke-width="3" fill="none" stroke-linecap="round" />
+          
+    <path id="abstractShape2" d="M 0,0 C 30,40 60,20 90,50 S 130,30 160,60 S 200,20 220,40" 
+          stroke="#4ade80" stroke-width="3" fill="none" stroke-linecap="round" />
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1080" height="1080" fill="url(#bgGradient)" />
+  
+  <!-- Decorative elements -->
+  <circle cx="540" cy="540" r="400" fill="url(#pulseGradient)" opacity="0.3" />
+  <circle cx="540" cy="540" r="380" stroke="#4ade80" stroke-width="1" fill="none" opacity="0.3" />
+  <circle cx="540" cy="540" r="420" stroke="#4ade80" stroke-width="1" fill="none" opacity="0.3" />
+  
+  <!-- Abstract animated shapes for visual interest -->
+  <g opacity="0.15">
+    <use xlink:href="#abstractShape1" transform="translate(100, 200)" />
+    <use xlink:href="#abstractShape1" transform="translate(700, 800) rotate(180)" />
+    <use xlink:href="#abstractShape2" transform="translate(800, 300)" />
+    <use xlink:href="#abstractShape2" transform="translate(200, 700) rotate(180)" />
+  </g>
+  
+  <!-- Grid pattern for depth -->
+  <g opacity="0.05">
+    <defs>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" />
+      </pattern>
+    </defs>
+    <rect width="1080" height="1080" fill="url(#grid)" />
+  </g>
+  
+  <!-- Main content container -->
+  <g transform="translate(540, 540)">
+    <!-- Phone device mockup -->
+    <g transform="translate(-350, -200)">
+      <!-- Phone case -->
+      <rect x="-20" y="-20" width="280" height="560" rx="40" ry="40" fill="#0f172a" />
+      <rect x="0" y="0" width="240" height="520" rx="30" ry="30" fill="url(#screenPattern)" />
+      
+      <!-- App interface elements -->
+      <rect x="20" y="60" width="200" height="100" rx="10" fill="#2d3748" opacity="0.8"/>
+      <g transform="translate(35, 90)">
+        <use xlink:href="#heartbeatPath" transform="scale(1.5)" stroke-width="3" />
+      </g>
+      <text x="120" y="130" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Workout Progress</text>
+      
+      <!-- Bottom navigation -->
+      <rect x="15" y="480" width="210" height="30" rx="15" fill="#1e293b" />
+      <circle cx="45" cy="495" r="8" fill="#4ade80" />
+      <circle cx="85" cy="495" r="8" fill="#64748b" />
+      <circle cx="125" cy="495" r="8" fill="#64748b" />
+      <circle cx="165" cy="495" r="8" fill="#64748b" />
+      <circle cx="205" cy="495" r="8" fill="#64748b" />
+    </g>
+    
+    <!-- App features section -->
+    <g transform="translate(120, -200)">
+      <g filter="url(#glow)">
+        <text x="0" y="0" font-family="'Segoe UI', Arial, sans-serif" font-weight="bold" font-size="28" fill="white">AI-POWERED FITNESS</text>
+        <g transform="translate(0, 50)">
+          <rect x="-10" y="-25" width="30" height="30" rx="15" fill="url(#accentGradient)" />
+          <text x="40" y="0" font-family="'Segoe UI', Arial, sans-serif" font-size="20" fill="white">Smart Workout Tracking</text>
+        </g>
+        <g transform="translate(0, 100)">
+          <rect x="-10" y="-25" width="30" height="30" rx="15" fill="url(#accentGradient)" />
+          <text x="40" y="0" font-family="'Segoe UI', Arial, sans-serif" font-size="20" fill="white">Personalized Meal Plans</text>
+        </g>
+        <g transform="translate(0, 150)">
+          <rect x="-10" y="-25" width="30" height="30" rx="15" fill="url(#accentGradient)" />
+          <text x="40" y="0" font-family="'Segoe UI', Arial, sans-serif" font-size="20" fill="white">Real-time Progress Analytics</text>
+        </g>
+        <g transform="translate(0, 200)">
+          <rect x="-10" y="-25" width="30" height="30" rx="15" fill="url(#accentGradient)" />
+          <text x="40" y="0" font-family="'Segoe UI', Arial, sans-serif" font-size="20" fill="white">Science-Based Training</text>
+        </g>
+      </g>
+    </g>
+    
+    <!-- Brand and logo section -->
+    <g transform="translate(0, 250)">
+      <!-- Modern app logo (stylized heartbeat/EKG in a shield shape) -->
+      <g filter="url(#glow)">
+        <path d="M 0,-80 L 80,0 L 0,80 L -80,0 Z" fill="#0f172a" stroke="url(#accentGradient)" stroke-width="5" />
+        <g transform="translate(-60, 0) scale(1.2)">
+          <use xlink:href="#heartbeatPath" />
+        </g>
+      </g>
+      
+      <!-- Brand name with modern typography -->
+      <text x="0" y="140" font-family="'Segoe UI', Arial, sans-serif" font-weight="bold" font-size="70" fill="white" text-anchor="middle" filter="url(#glow)">TrackMadeEaze</text>
+      
+      <!-- Tagline -->
+      <text x="0" y="190" font-family="'Segoe UI', Arial, sans-serif" font-size="28" fill="#f0f9ff" text-anchor="middle">FITNESS TRACKING ON ANOTHER LEVEL</text>
+      
+      <!-- Coming Soon badge -->
+      <g transform="translate(0, 240)">
+        <rect x="-140" y="-25" width="280" height="50" rx="25" fill="url(#accentGradient)" filter="url(#glow)" />
+        <text x="0" y="5" font-family="'Segoe UI', Arial, sans-serif" font-weight="bold" font-size="24" fill="white" text-anchor="middle">COMING SOON</text>
+      </g>
+    </g>
+  </g>
+</svg>
