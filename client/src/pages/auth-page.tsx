@@ -20,18 +20,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, Dumbbell, Salad, CheckCircle, Clock, Mail } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Login form schema
+// Login form schema - with more tolerant validation for mobile
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().trim().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
-// Registration form schema with email validation and password confirmation
+// Registration form schema with more tolerant email validation for mobile
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().trim().min(2, "Username must be at least 2 characters"),
+  // More flexible email validation for iOS
+  email: z.string()
+    .trim()
+    .min(5, "Email must be at least 5 characters")
+    .refine(
+      (val) => val.includes('@') && val.includes('.'), 
+      { message: "Must be a valid email address" }
+    ),
+  password: z.string().min(4, "Password must be at least 4 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   trainerUsername: z.string().optional(), // Optional trainer username field
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
