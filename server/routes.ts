@@ -5825,7 +5825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get AI Coach conversation history
+  // Get AI Coach conversation history - safe version
   app.get("/api/coach/messages", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -5837,11 +5837,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Get the conversation messages
-      const { getCoachMessages } = require('./adaptive-coach');
-      const messages = await getCoachMessages(userId);
+      // Directly access conversation store for simpler implementation
+      // without relying on potentially error-prone context refresh
+      try {
+        // Just require the needed pieces directly
+        const { conversationStore } = require('./adaptive-coach');
+        
+        if (conversationStore && conversationStore[userId] && Array.isArray(conversationStore[userId].messages)) {
+          // Filter to just return user/assistant messages (no system messages)
+          const filteredMessages = conversationStore[userId].messages
+            .filter(m => m.role === "user" || m.role === "assistant")
+            .map(m => ({
+              role: m.role,
+              content: m.content,
+              timestamp: m.timestamp
+            }));
+            
+          return res.json({ messages: filteredMessages });
+        }
+      } catch (convError) {
+        console.error("Error accessing conversation store:", convError);
+      }
       
-      res.json({ messages });
+      // Fallback to empty array if anything fails
+      return res.json({ messages: [] });
     } catch (error) {
       console.error("Error fetching AI coach messages:", error);
       res.status(500).json({ message: "Failed to fetch AI coach messages" });
