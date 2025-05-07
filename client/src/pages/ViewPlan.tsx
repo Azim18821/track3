@@ -757,21 +757,24 @@ export default function ViewPlan() {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Primary Goal</Label>
                     <p className="font-medium capitalize">
-                      {preferences.fitnessGoal?.replace("_", " ")}
+                      {(preferences?.goal || preferences?.fitnessGoal || "Not specified")?.replace("_", " ")}
                     </p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">
                       Workout Days Per Week
                     </Label>
-                    <p className="font-medium">{preferences.workoutDaysPerWeek}</p>
+                    <p className="font-medium">
+                      {preferences?.workoutDaysPerWeek || 
+                       (workoutPlan?.weeklySchedule ? Object.keys(workoutPlan.weeklySchedule).length : 0)}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">
                       Workout Duration
                     </Label>
                     <p className="font-medium">
-                      {preferences.workoutDuration} minutes
+                      {preferences?.workoutDuration || "60"} minutes
                     </p>
                   </div>
                   <div className="space-y-1">
@@ -779,7 +782,10 @@ export default function ViewPlan() {
                       Dietary Preference
                     </Label>
                     <p className="font-medium capitalize">
-                      {preferences.dietaryPreference}
+                      {preferences?.dietaryPreference || 
+                        (preferences?.dietaryRestrictions?.length > 0 
+                          ? preferences.dietaryRestrictions.join(", ") 
+                          : "No restrictions")}
                     </p>
                   </div>
                 </div>
