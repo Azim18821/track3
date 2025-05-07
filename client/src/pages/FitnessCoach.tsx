@@ -1504,7 +1504,7 @@ export default function FitnessCoach() {
               <Button 
                 variant="outline" 
                 size="lg"
-                onClick={() => setLocation('/view-plan')}
+                onClick={() => setLocation('/fitness-plan')}
               >
                 <Calendar className="mr-2 h-5 w-5" />
                 View Current Plan
