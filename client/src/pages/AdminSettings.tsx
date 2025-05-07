@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, Save, AlertCircle, CheckCircle, Settings, Database, 
-  RefreshCw, Trash2, Activity, RotateCcw
+  RefreshCw, Trash2, Activity, RotateCcw, Globe
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLocation } from 'wouter';
 import LibraryUpdateForm from '@/components/admin/LibraryUpdateForm';
+import { ApiConfigPanel } from '@/components/developer/ApiConfigPanel';
 
 interface ResetStuckGenerationsResult {
   resetCount: number;
@@ -377,6 +378,21 @@ export default function AdminSettings() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-indigo-500" />
+                    API Configuration for Mobile Testing
+                  </CardTitle>
+                  <CardDescription>
+                    Configure API endpoints for iOS/Android testing
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ApiConfigPanel />
+                </CardContent>
+              </Card>
+            
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
