@@ -579,12 +579,9 @@ export default function ViewPlan() {
   
   // Debug the plan data structure
   console.log("PLAN DEBUG - Full Active Plan:", activePlan);
-  // More detailed debug logging
-  console.log("PLAN DEBUG - Preferences Object:", JSON.stringify(preferences, null, 2));
+  console.log("PLAN DEBUG - Preferences Object:", preferences);
   console.log("PLAN DEBUG - Goal Value:", preferences?.goal);
   console.log("PLAN DEBUG - FitnessGoal Value:", preferences?.fitnessGoal);
-  console.log("PLAN DEBUG - All Preference Keys:", preferences ? Object.keys(preferences) : "No preferences object");
-  console.log("PLAN DEBUG - Object Type:", preferences ? typeof preferences : "undefined");
   
   // Extract budget & store preferences from plan data
   const weeklyBudget = preferences?.weeklyBudget || mealPlan?.shoppingList?.budget || 50;

@@ -859,9 +859,7 @@ export class DatabaseStorage implements IStorage {
     // Debug log to see what's coming in
     console.log("DEBUG - Creating fitness plan for user:", userId);
     console.log("DEBUG - Plan preferences:", plan.preferences);
-    console.log("DEBUG - Fitness goal from preferences:", 
-      plan.preferences && typeof plan.preferences === 'object' ? 
-      (plan.preferences as any).goal : "No goal field found");
+    console.log("DEBUG - Fitness goal from preferences:", plan.preferences.goal);
     
     // First, deactivate any active plans
     await db
