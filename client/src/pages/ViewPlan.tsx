@@ -144,8 +144,7 @@ import {
   DollarSign,
   TrendingDown,
   TrendingUp,
-  Store as ShopIcon,
-  Calculator
+  Store as ShopIcon
 } from "lucide-react";
 
 // MealDetailCard Component
@@ -2085,68 +2084,11 @@ export default function ViewPlan() {
                                                   </p>
                                                 </div>
                                               </div>
-                                              <div className="flex items-center gap-2">
-                                                {meals[mealType].estimatedCost && (
-                                                  <Badge variant="outline" className="bg-white dark:bg-gray-900">
-                                                    ~£{meals[mealType].estimatedCost.toFixed(2)}
-                                                  </Badge>
-                                                )}
-                                                {/* Find Cost Button */}
-                                                {(mealPlan.shoppingList?.onDemandGeneration) && (
-                                                  <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                      if (!activePlan?.id) {
-                                                        toast({
-                                                          title: "Error",
-                                                          description: "Plan ID is required",
-                                                          variant: "destructive",
-                                                        });
-                                                        return;
-                                                      }
-                                                      
-                                                      toast({
-                                                        title: "Calculating cost...",
-                                                        description: `Finding costs for ${meals[mealType].name}`,
-                                                      });
-                                                      
-                                                      apiRequest(
-                                                        "POST",
-                                                        `/api/fitness-plans/${activePlan.id}/calculate-meal-cost`,
-                                                        { 
-                                                          day, 
-                                                          mealType, 
-                                                          preferredStore: mealPlan.shoppingList?.preferredStore || "aldi" 
-                                                        }
-                                                      ).then(async (res) => {
-                                                        if (!res.ok) {
-                                                          const errorText = await res.text();
-                                                          throw new Error(errorText || "Failed to calculate meal cost");
-                                                        }
-                                                        
-                                                        // Invalidate the active plan query to refresh the UI
-                                                        queryClient.invalidateQueries({ queryKey: ["/api/fitness-plans/active"] });
-                                                        
-                                                        toast({
-                                                          title: "Cost calculated",
-                                                          description: `The cost for ${meals[mealType].name} has been calculated`,
-                                                          variant: "default",
-                                                        });
-                                                      }).catch(error => {
-                                                        toast({
-                                                          title: "Error calculating cost",
-                                                          description: error.message,
-                                                          variant: "destructive",
-                                                        });
-                                                      });
-                                                    }}
-                                                    className="h-7 px-2 bg-white dark:bg-gray-800"
-                                                  >
-                                                    <Calculator className="h-3.5 w-3.5 mr-1" />
-                                                    <span className="text-xs">Find Cost</span>
-                                                  </Button>
-                                                )}
+                                              {meals[mealType].estimatedCost && (
+                                                <Badge variant="outline" className="bg-white dark:bg-gray-900">
+                                                  ~£{meals[mealType].estimatedCost.toFixed(2)}
+                                                </Badge>
+                                              )}
                                             </div>
                                             
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
