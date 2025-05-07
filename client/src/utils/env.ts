@@ -44,9 +44,18 @@ export function getEnv(key: string, fallback: string = ''): string {
 
 // Get base URL for API calls
 function getBaseUrl(): string {
+  // Check for a custom API URL in localStorage - useful for development/testing
+  if (typeof window !== 'undefined' && window.localStorage.getItem('custom_api_url')) {
+    return window.localStorage.getItem('custom_api_url') || '';
+  }
+  
   // For native environments
   if (isNative) {
-    return 'https://www.trackmadeaze.com';
+    // Default production API for mobile apps
+    const defaultMobileApi = 'https://www.trackmadeaze.com';
+    
+    // Allow environment variable override 
+    return getEnv('VITE_MOBILE_API_URL', defaultMobileApi);
   }
   
   // For web environments

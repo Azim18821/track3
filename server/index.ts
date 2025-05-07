@@ -4,8 +4,18 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initSystemSettings } from "./initSettings";
 import { runProfileColumnsMigration } from "./migrationRunner";
 import { checkAndRepairPlanGenerationStatus } from "./planGenerationCheck";
+import cors from "cors";
 
 const app = express();
+
+// Configure CORS for cross-origin requests (particularly for mobile apps)
+app.use(cors({
+  origin: true, // Allow any origin (for development - consider restricting in production)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Allow cookies for session management
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
