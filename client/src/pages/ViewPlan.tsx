@@ -757,7 +757,12 @@ export default function ViewPlan() {
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">Primary Goal</Label>
                     <p className="font-medium capitalize">
-                      {(preferences?.goal || preferences?.fitnessGoal || "Not specified")?.replace("_", " ")}
+                      {(() => {
+                        // Improved handling of goal field with better fallbacks
+                        const goalValue = preferences?.goal || preferences?.fitnessGoal || "Not specified";
+                        // Replace all underscores with spaces and capitalize properly
+                        return typeof goalValue === 'string' ? goalValue.replace(/_/g, " ") : "Not specified";
+                      })()}
                     </p>
                   </div>
                   <div className="space-y-1">
