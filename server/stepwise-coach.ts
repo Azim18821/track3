@@ -1234,6 +1234,25 @@ class StepwiseCoach {
       console.log('[PLAN DEBUG] saveFinalPlan preferences keys:', 
                   Object.keys(preferences).length ? Object.keys(preferences) : 'Empty preferences');
       
+      // Ensure goal and fitnessGoal fields are both set (for backward compatibility)
+      if (preferences.goal && !preferences.fitnessGoal) {
+        console.log('[PLAN DEBUG] Setting fitnessGoal from goal:', preferences.goal);
+        preferences.fitnessGoal = preferences.goal;
+      } else if (preferences.fitnessGoal && !preferences.goal) {
+        console.log('[PLAN DEBUG] Setting goal from fitnessGoal:', preferences.fitnessGoal);
+        preferences.goal = preferences.fitnessGoal;
+      } else if (!preferences.goal && !preferences.fitnessGoal && planData.goal) {
+        console.log('[PLAN DEBUG] Setting goal and fitnessGoal from planData.goal:', planData.goal);
+        preferences.goal = planData.goal;
+        preferences.fitnessGoal = planData.goal;
+      } else {
+        console.log('[PLAN DEBUG] Goal fields:', { 
+          goal: preferences.goal, 
+          fitnessGoal: preferences.fitnessGoal,
+          planDataGoal: planData.goal
+        });
+      }
+      
       // Add nutrition data to preferences for display in ViewPlan component
       if (planData.nutritionData) {
         console.log('[PLAN DEBUG] Adding nutritionData to preferences:', planData.nutritionData);
