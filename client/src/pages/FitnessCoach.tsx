@@ -1340,6 +1340,7 @@ export default function FitnessCoach() {
                 },
                 preferences: {
                   goal: coachInput.fitnessGoal,
+                  fitnessGoal: coachInput.fitnessGoal, // Add this as a backup field for consistency
                   currentWeight: coachInput.weight,
                   unit: 'kg',
                   age: coachInput.age,
@@ -1353,6 +1354,9 @@ export default function FitnessCoach() {
                   workoutDuration: coachInput.workoutDuration || 60,
                   workoutNames: coachInput.workoutNames || {},
                 },
+                
+                // For debugging what's being sent
+                _debug_fitnessGoal: coachInput.fitnessGoal,
                 mealPlan: {
                   weeklySchedule: coachResponse.mealPlan || {}
                 },

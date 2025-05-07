@@ -856,6 +856,11 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createFitnessPlan(userId: number, plan: InsertFitnessPlan): Promise<FitnessPlan> {
+    // Debug log to see what's coming in
+    console.log("DEBUG - Creating fitness plan for user:", userId);
+    console.log("DEBUG - Plan preferences:", plan.preferences);
+    console.log("DEBUG - Fitness goal from preferences:", plan.preferences.goal);
+    
     // First, deactivate any active plans
     await db
       .update(fitnessPlans)
@@ -876,6 +881,10 @@ export class DatabaseStorage implements IStorage {
         isActive: true
       })
       .returning();
+    
+    // Debug log the created plan
+    console.log("DEBUG - Created new fitness plan:", newPlan.id);
+    console.log("DEBUG - New plan preferences:", newPlan.preferences);
     
     return newPlan;
   }

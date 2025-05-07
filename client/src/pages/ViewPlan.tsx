@@ -577,6 +577,12 @@ export default function ViewPlan() {
   // Extract plan details
   const { id: planId, preferences, workoutPlan, mealPlan, createdAt } = activePlan;
   
+  // Debug the plan data structure
+  console.log("PLAN DEBUG - Full Active Plan:", activePlan);
+  console.log("PLAN DEBUG - Preferences Object:", preferences);
+  console.log("PLAN DEBUG - Goal Value:", preferences?.goal);
+  console.log("PLAN DEBUG - FitnessGoal Value:", preferences?.fitnessGoal);
+  
   // Extract budget & store preferences from plan data
   const weeklyBudget = preferences?.weeklyBudget || mealPlan?.shoppingList?.budget || 50;
   const preferredStore = preferences?.preferredStore || mealPlan?.shoppingList?.store || 'Tesco';
