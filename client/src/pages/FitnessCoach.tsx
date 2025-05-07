@@ -1319,6 +1319,11 @@ export default function FitnessCoach() {
               // Clear generation tracking from localStorage
               localStorage.removeItem('fitness_plan_generating');
               
+              // Redirect to fitness plan page after plan is successfully generated
+              setTimeout(() => {
+                setLocation('/fitness-plan');
+              }, 1500);
+              
               // Log the complete response to inspect its structure
               console.log("Received coach response:", JSON.stringify(coachResponse, null, 2));
               
@@ -1442,6 +1447,11 @@ export default function FitnessCoach() {
       queryClient.invalidateQueries({ queryKey: ['/api/nutrition/goals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
       setIsDialogOpen(false);
+      
+      // Redirect to the fitness plan page after a short delay to allow toast to be seen
+      setTimeout(() => {
+        setLocation('/fitness-plan');
+      }, 1500);
     },
     onError: (error: Error) => {
       // Reset progress tracking in case of error if it's still showing
