@@ -863,6 +863,28 @@ export async function analyzeUserProgress(
 }
 
 /**
+ * Gets conversation messages for a user
+ */
+export async function getCoachMessages(userId: number): Promise<Array<{role: string, content: string, timestamp: Date}>> {
+  try {
+    // Initialize conversation if it doesn't exist
+    const conversation = await getUserConversation(userId);
+    
+    // Only return actual conversation messages (user/assistant), not the system messages
+    return conversation.messages
+      .filter(m => m.role === "user" || m.role === "assistant")
+      .map(m => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp
+      }));
+  } catch (error) {
+    console.error("Error getting coach messages:", error);
+    return [];
+  }
+}
+
+/**
  * Provides a progress update for the dashboard
  */
 export async function getProgressUpdate(userId: number): Promise<string> {

@@ -5825,6 +5825,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get AI Coach conversation history
+  app.get("/api/coach/messages", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          message: "AI Coach is unavailable. Please contact the administrator." 
+        });
+      }
+      
+      // Get the conversation messages
+      const { getCoachMessages } = require('./adaptive-coach');
+      const messages = await getCoachMessages(userId);
+      
+      res.json({ messages });
+    } catch (error) {
+      console.error("Error fetching AI coach messages:", error);
+      res.status(500).json({ message: "Failed to fetch AI coach messages" });
+    }
+  });
+  
   // Get AI Coach progress insights for dashboard
   app.get("/api/coach/insights", ensureAuthenticated, async (req: Request, res: Response) => {
     try {

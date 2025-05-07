@@ -5,9 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Brain, Send, Sparkles, Loader2 } from "lucide-react";
+import { Brain, Send, Sparkles, Loader2, RotateCcw } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery } from "@tanstack/react-query";
 
 interface Message {
   role: "user" | "assistant";
@@ -20,17 +21,64 @@ interface CoachChatInterfaceProps {
   quickMode?: boolean;
 }
 
+interface CoachMessageResponse {
+  messages: Array<{
+    role: "user" | "assistant";
+    content: string;
+    timestamp: string | Date;
+  }>;
+}
+
 export default function CoachChatInterface({ planData, quickMode = false }: CoachChatInterfaceProps = {}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Add welcome message when component mounts
+  // Fetch conversation history from server
+  const { data: messageHistory, isLoading: isLoadingHistory, error: historyError, refetch: refetchHistory } = useQuery<CoachMessageResponse>({
+    queryKey: ['/api/coach/messages'],
+    enabled: !!user, // Only fetch if user is logged in
+  });
+  
+  // Process the message history data when it changes
   useEffect(() => {
-    if (messages.length === 0) {
+    if (messageHistory?.messages && Array.isArray(messageHistory.messages) && messageHistory.messages.length > 0) {
+      // Format timestamps correctly - server provides string dates
+      const formattedMessages = messageHistory.messages.map(msg => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
+      setMessages(formattedMessages);
+      setIsFetchingHistory(false);
+    } else if (messageHistory) {
+      // No history found, show welcome message after checking
+      setIsFetchingHistory(false);
+    }
+  }, [messageHistory]);
+  
+  // Handle API errors
+  useEffect(() => {
+    if (historyError) {
+      console.error("Error fetching coach messages:", historyError);
+      setIsFetchingHistory(false);
+      // Don't show error toast for permission errors - just fallback to welcome message
+      if (!historyError.toString().includes("403")) {
+        toast({
+          title: "Could not load conversation history",
+          description: "Using a new conversation instead",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [historyError, toast]);
+  
+  // Add welcome message only if we have no history and finished checking
+  useEffect(() => {
+    if (!isFetchingHistory && messages.length === 0) {
       // If in quick mode (no plan), provide a helpful but limited greeting
       if (quickMode) {
         setMessages([
@@ -67,7 +115,7 @@ export default function CoachChatInterface({ planData, quickMode = false }: Coac
         ]);
       }
     }
-  }, [user, messages.length, planData, quickMode]);
+  }, [user, messages.length, planData, quickMode, isFetchingHistory]);
   
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -167,43 +215,69 @@ export default function CoachChatInterface({ planData, quickMode = false }: Coac
       </CardHeader>
       
       <div className="flex-1 overflow-y-auto px-3 py-2">
-        <div className="space-y-3">
-          {messages.map((message, index) => (
-            <div 
-              key={index} 
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+        {isLoadingHistory ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="h-6 w-6 animate-spin mb-2 mx-auto text-indigo-500" />
+              <p className="text-sm text-gray-500">Loading conversation history...</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Refresh conversation button */}
+            {messages.length > 1 && (
+              <div className="flex justify-center my-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs bg-white hover:bg-indigo-50 border-indigo-200 text-indigo-700 flex items-center gap-1"
+                  onClick={() => {
+                    refetchHistory();
+                    setIsFetchingHistory(true);
+                  }}
+                >
+                  <RotateCcw className="h-3 w-3" /> Refresh Conversation
+                </Button>
+              </div>
+            )}
+            
+            {messages.map((message, index) => (
               <div 
-                className={`max-w-[85%] rounded-lg px-3 py-2 ${
-                  message.role === "user" 
-                    ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100" 
-                    : "bg-white dark:bg-gray-800 border border-indigo-100 dark:border-indigo-900"
-                }`}
+                key={index} 
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {message.role === "assistant" && (
-                  <div className="flex items-center mb-1 space-x-1">
-                    <Sparkles className="h-3 w-3 text-indigo-500" />
-                    <span className="text-xs font-medium text-indigo-500">AI Coach</span>
+                <div 
+                  className={`max-w-[85%] rounded-lg px-3 py-2 ${
+                    message.role === "user" 
+                      ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-100" 
+                      : "bg-white dark:bg-gray-800 border border-indigo-100 dark:border-indigo-900"
+                  }`}
+                >
+                  {message.role === "assistant" && (
+                    <div className="flex items-center mb-1 space-x-1">
+                      <Sparkles className="h-3 w-3 text-indigo-500" />
+                      <span className="text-xs font-medium text-indigo-500">AI Coach</span>
+                    </div>
+                  )}
+                  
+                  <div className="whitespace-pre-wrap text-sm break-words">
+                    {message.content}
                   </div>
-                )}
-                
-                <div className="whitespace-pre-wrap text-sm break-words">
-                  {message.content}
-                </div>
-                
-                <div className="mt-1 text-right">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(message.timestamp).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </span>
+                  
+                  <div className="mt-1 text-right">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(message.timestamp).toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
       </div>
       
       <CardFooter className="p-2 border-t border-indigo-100 dark:border-indigo-900/50 bg-white dark:bg-gray-900">
