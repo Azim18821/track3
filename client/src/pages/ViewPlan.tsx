@@ -687,7 +687,7 @@ export default function ViewPlan() {
   // Removed debug function
 
   return (
-    <div className="container p-0 sm:p-4 pb-20 sm:pb-8 max-w-6xl mx-auto">
+    <div className="container p-0 sm:p-4 pb-20 sm:pb-8 max-w-7xl mx-auto">
       <div className="flex flex-col items-start px-4 sm:px-0 mb-4 sm:mb-6 pt-4 sm:pt-0">
         <div className="flex flex-col sm:flex-row w-full items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4">
           <div>
@@ -976,7 +976,7 @@ export default function ViewPlan() {
                     </div>
                   </div>
                   
-                  <ScrollArea className="h-[35vh] pr-2 rounded max-w-full">
+                  <ScrollArea className="h-[45vh] pr-2 rounded max-w-full">
                     <div className="space-y-4">
                       {/* Only show the selected day */}
                       {(() => {
@@ -1128,7 +1128,7 @@ export default function ViewPlan() {
                 </>
               )}
               
-              <ScrollArea className="h-[35vh] pr-2 rounded max-w-full">
+              <ScrollArea className="h-[45vh] pr-2 rounded max-w-full">
                 <div className="space-y-3">
                   {mealPlan && (mealPlan.weeklyMeals || mealPlan.weeklyMealPlan) && 
                     (() => {
@@ -1465,7 +1465,7 @@ export default function ViewPlan() {
             <CardContent className="p-4 sm:p-6">
 
             
-              <ScrollArea className="h-[40vh] pr-4 rounded">
+              <ScrollArea className="h-[45vh] pr-4 rounded">
                 <div className="space-y-6">
                   {mealPlan && (mealPlan.shoppingList || mealPlan.ingredients) && (
                     <>

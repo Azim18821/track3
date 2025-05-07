@@ -65,14 +65,61 @@ interface AICoachConversation {
   };
 }
 
-// Storage for conversation history (in-memory for now, could be moved to DB)
+// Storage for conversation history (in-memory with memory optimization)
 const conversationStore: Record<number, AICoachConversation> = {};
+
+// Memory management constants
+const MAX_CONVERSATIONS = 100; // Maximum number of conversations to keep in memory
+const MAX_MESSAGES_PER_CONVERSATION = 20; // Maximum number of messages to keep per user
+const CONVERSATION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const MEMORY_CLEANUP_INTERVAL = 60 * 60 * 1000; // Run cleanup every hour
+
+// Timestamps for last activity per user
+const lastUserActivity: Record<number, number> = {};
+
+// Function to clean up memory periodically
+function cleanupConversations() {
+  console.log("Running AI coach conversation memory cleanup...");
+  const now = Date.now();
+  
+  // 1. Clean up inactive conversations
+  for (const userId in lastUserActivity) {
+    const lastActive = lastUserActivity[userId];
+    if (now - lastActive > CONVERSATION_TIMEOUT) {
+      console.log(`Cleaning up inactive conversation for user ${userId}, inactive for ${(now - lastActive) / (60 * 60 * 1000)} hours`);
+      delete conversationStore[userId];
+      delete lastUserActivity[userId];
+    }
+  }
+  
+  // 2. If we still have too many conversations, remove the oldest ones
+  if (Object.keys(conversationStore).length > MAX_CONVERSATIONS) {
+    console.log(`Too many conversations in memory (${Object.keys(conversationStore).length}), removing oldest ones`);
+    const usersByActivity = Object.entries(lastUserActivity)
+      .map(([userId, timestamp]) => ({ userId: Number(userId), timestamp }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+      
+    const usersToRemove = usersByActivity.slice(0, usersByActivity.length - MAX_CONVERSATIONS);
+    
+    for (const { userId } of usersToRemove) {
+      delete conversationStore[userId];
+      delete lastUserActivity[userId];
+    }
+  }
+}
+
+// Set up periodic memory cleanup
+setInterval(cleanupConversations, MEMORY_CLEANUP_INTERVAL);
 
 /**
  * Gets or initializes a conversation for a user
  */
 async function getUserConversation(userId: number): Promise<AICoachConversation> {
+  // Track user activity timestamp for memory cleanup
+  lastUserActivity[userId] = Date.now();
+  
   if (!conversationStore[userId]) {
+    console.log(`Initializing new conversation for user ${userId}`);
     // Initialize a new conversation
     conversationStore[userId] = {
       userId,
@@ -88,6 +135,15 @@ async function getUserConversation(userId: number): Promise<AICoachConversation>
     
     // Load context data
     await refreshUserContext(userId);
+  } else {
+    // If the conversation exists but has too many messages, trim it
+    if (conversationStore[userId].messages.length > MAX_MESSAGES_PER_CONVERSATION) {
+      console.log(`Trimming conversation for user ${userId} from ${conversationStore[userId].messages.length} to ${MAX_MESSAGES_PER_CONVERSATION} messages`);
+      // Keep the system prompt (first message) and the most recent messages
+      const systemPrompt = conversationStore[userId].messages[0];
+      const recentMessages = conversationStore[userId].messages.slice(-(MAX_MESSAGES_PER_CONVERSATION - 1));
+      conversationStore[userId].messages = [systemPrompt, ...recentMessages];
+    }
   }
   
   return conversationStore[userId];
@@ -515,8 +571,15 @@ export async function chatWithAICoach(
       timestamp: new Date()
     });
     
-    // Keep only the last 10 messages to avoid context length issues
-    const recentMessages = conversation.messages.slice(-10);
+    // Optimize message length for API calls - keep more recent messages
+    // with a hard cap on total message count
+    const MAX_API_MESSAGES = Math.min(8, MAX_MESSAGES_PER_CONVERSATION - 2);
+    
+    // Since we're using the system message separately, we need MAX_API_MESSAGES - 1
+    const recentMessages = conversation.messages.slice(-(MAX_API_MESSAGES));
+    
+    // Log message count for debugging
+    console.log(`AI Coach: Sending ${recentMessages.length} recent messages to API for user ${userId}`);
     
     // Get the system prompt based on options
     const systemPrompt = getSystemPrompt(options);
@@ -530,8 +593,15 @@ export async function chatWithAICoach(
       }))
     ];
     
+    // Calculate approximate token count (rough estimate) to monitor usage
+    const estimatedTokens = messagesWithSystem.reduce((total, msg) => {
+      // Rough estimate: 1 token ≈ 4 characters for English text
+      return total + Math.ceil(msg.content.length / 4);
+    }, 0);
+    
+    console.log(`AI Coach: Estimated input tokens: ${estimatedTokens} for user ${userId}`);
+    
     // Generate a response using the OpenAI API - always use text format
-    // We've removed the JSON format option to ensure responses are always human-readable
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: messagesWithSystem,
@@ -547,6 +617,14 @@ export async function chatWithAICoach(
       content: assistantMessage,
       timestamp: new Date()
     });
+    
+    // Log actual token usage when available
+    if (response.usage) {
+      console.log(`AI Coach: Actual token usage for user ${userId}: 
+        Input tokens: ${response.usage.prompt_tokens}
+        Output tokens: ${response.usage.completion_tokens}
+        Total tokens: ${response.usage.total_tokens}`);
+    }
     
     return {
       response: assistantMessage,
@@ -701,22 +779,41 @@ export async function analyzeUserProgress(
       timestamp: new Date()
     });
     
-    // Keep only the last 10 messages to avoid context length issues
-    const recentMessages = conversation.messages.slice(-10);
+    // Optimize message length for API calls
+    const MAX_API_MESSAGES = Math.min(8, MAX_MESSAGES_PER_CONVERSATION - 2);
+    const recentMessages = conversation.messages.slice(-(MAX_API_MESSAGES));
+    
+    // Calculate approximate token count (rough estimate) to monitor usage
+    const messages = [
+      { role: "system" as const, content: getSystemPrompt() },
+      ...recentMessages.map(m => ({ 
+        role: m.role as "system" | "user" | "assistant", 
+        content: m.content 
+      }))
+    ];
+    
+    const estimatedTokens = messages.reduce((total, msg) => {
+      // Rough estimate: 1 token ≈ 4 characters for English text
+      return total + Math.ceil(msg.content.length / 4);
+    }, 0);
+    
+    console.log(`AI Coach Analysis: Estimated input tokens: ${estimatedTokens} for user ${userId}`);
     
     // Generate insights using OpenAI in natural language format
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [
-        { role: "system" as const, content: getSystemPrompt() },
-        ...recentMessages.map(m => ({ 
-          role: m.role as "system" | "user" | "assistant", 
-          content: m.content 
-        }))
-      ],
+      messages: messages,
       temperature: 0.5,
       max_tokens: 600
     });
+    
+    // Log actual token usage when available
+    if (response.usage) {
+      console.log(`AI Coach Analysis: Actual token usage for user ${userId}: 
+        Input tokens: ${response.usage.prompt_tokens}
+        Output tokens: ${response.usage.completion_tokens}
+        Total tokens: ${response.usage.total_tokens}`);
+    }
     
     const content = response.choices[0].message.content;
     if (!content) {
@@ -792,19 +889,41 @@ export async function getProgressUpdate(userId: number): Promise<string> {
       timestamp: new Date()
     }];
     
+    // Optimize message length for API calls
+    const MAX_API_MESSAGES = 5; // Keep this one very lightweight
+    const recentMessages = tempMessages.slice(-MAX_API_MESSAGES);
+    
+    // Calculate approximate token count (rough estimate) to monitor usage
+    const messages = [
+      { role: "system" as const, content: getSystemPrompt() },
+      ...recentMessages.map(m => ({ 
+        role: m.role as "system" | "user" | "assistant", 
+        content: m.content 
+      }))
+    ];
+    
+    const estimatedTokens = messages.reduce((total, msg) => {
+      // Rough estimate: 1 token ≈ 4 characters for English text
+      return total + Math.ceil(msg.content.length / 4);
+    }, 0);
+    
+    console.log(`AI Coach Update: Estimated input tokens: ${estimatedTokens} for user ${userId}`);
+    
     // Generate the update
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [
-        { role: "system", content: getSystemPrompt() },
-        ...tempMessages.slice(-5).map(m => ({ 
-          role: m.role as "system" | "user" | "assistant", 
-          content: m.content 
-        }))
-      ],
+      messages: messages,
       temperature: 0.7,
       max_tokens: 60
     });
+    
+    // Log actual token usage when available
+    if (response.usage) {
+      console.log(`AI Coach Update: Actual token usage for user ${userId}: 
+        Input tokens: ${response.usage.prompt_tokens}
+        Output tokens: ${response.usage.completion_tokens}
+        Total tokens: ${response.usage.total_tokens}`);
+    }
     
     return response.choices[0].message.content || 
       "Keep up the good work! Your AI coach is tracking your progress.";
