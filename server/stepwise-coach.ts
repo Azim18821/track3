@@ -43,6 +43,12 @@ export interface PlanData {
   ingredients?: any;
   shoppingList?: any;
   input_json?: any;
+  budgetInfo?: {
+    amount: number | string;
+    type: string;
+    currency: string;
+  };
+  preferredStore?: string;
   isGenerating?: boolean;
   step?: PlanGenerationStep;
   stepMessage?: string;
@@ -333,48 +339,38 @@ class StepwiseCoach {
 
         case PlanGenerationStep.EXTRACT_INGREDIENTS:
           console.log('👉👉👉 [STEP TRACE] EXTRACT_INGREDIENTS step starting for user', userId);
-          // Retrieve budget from the saved input data if the passed input is undefined
+          // Store the budget and preferred store data for future on-demand shopping list generation
           const budget = updatedData.input_json?.weeklyBudget || planData.input_json?.weeklyBudget || 0;
-          // Retrieve preferred store if available
           const preferredStore = updatedData.input_json?.preferredStore || planData.input_json?.preferredStore;
-          console.log('👉👉👉 [STEP TRACE] Using budget value:', budget, 'and preferred store:', preferredStore || 'none', 'for user', userId);
-          // Generate shopping list
-          const shoppingList = await this.generateShoppingList(updatedData.ingredients, budget, preferredStore);
-          console.log('✅✅✅ [STEP TRACE] Shopping list generation completed successfully for user', userId);
-          updatedData.shoppingList = shoppingList;
-          nextStep = PlanGenerationStep.SHOPPING_LIST;
-          console.log('🔄🔄🔄 [STEP TRACE] Setting nextStep to SHOPPING_LIST (step 5) for user', userId);
+          console.log('👉👉👉 [STEP TRACE] Storing budget value:', budget, 'and preferred store:', preferredStore || 'none', 'for user', userId);
           
-          // Force an auto-continue to complete the plan after a longer delay
-          console.log('⏱️⏱️⏱️ [STEP TRACE] Scheduling completion with 8-second delay for user', userId);
+          // Skip the automatic shopping list generation - will be done on-demand
+          console.log('ℹ️ℹ️ℹ️ [STEP TRACE] Skipping automatic shopping list generation as per new functionality for user', userId);
+          
+          // Store the ingredients separately instead of creating a shopping list
+          updatedData.budgetInfo = { 
+            amount: budget,
+            type: typeof budget === 'string' ? 'string' : 'number',
+            currency: '£'
+          };
+          updatedData.preferredStore = preferredStore;
+          
+          // Skip to completion - no shopping list step needed anymore
+          console.log('✅✅✅ [STEP TRACE] Ingredients stored successfully for user', userId);
+          
+          // Set next step directly to COMPLETE
+          nextStep = PlanGenerationStep.COMPLETE;
+          console.log('🔄🔄🔄 [STEP TRACE] Setting nextStep to COMPLETE (finished) for user', userId);
+          
+          // Schedule the final step after a short delay
           setTimeout(async () => {
             try {
-              // Double-check that shopping list data exists before continuing
-              const currentData = await storage.getPlanGenerationData(userId);
-              if (currentData?.shoppingList?.categories || currentData?.shoppingList?.items) {
-                console.log('🔁🔁🔁 [STEP TRACE] Auto-continuing from SHOPPING_LIST to COMPLETE for user', userId);
-                console.log('📊📊📊 [STEP TRACE] Shopping list data available:', 
-                           'categories:', currentData.shoppingList?.categories ? Object.keys(currentData.shoppingList.categories).length : 0,
-                           'items:', currentData.shoppingList?.items ? currentData.shoppingList.items.length : 0);
-                
-                const moveResult = await this.continueGeneration(userId);
-                console.log('✅✅✅ [STEP TRACE] Auto-continue to complete plan successful for user', userId, 'now at step', moveResult.step);
-              } else {
-                console.error('⚠️⚠️⚠️ [STEP TRACE] Shopping list data not yet ready for user', userId, ', delaying completion');
-                // Try again after a short delay
-                setTimeout(async () => {
-                  try {
-                    console.log('🔄🔄🔄 [STEP TRACE] Second attempt at continuing to complete for user', userId);
-                    const moveResult = await this.continueGeneration(userId);
-                    console.log('✅✅✅ [STEP TRACE] Second attempt auto-complete successful for user', userId, 'now at step', moveResult.step);
-                  } catch (retryErr) {
-                    console.error('💥💥💥 [STEP TRACE] Failed second attempt to complete for user', userId, retryErr);
-                  }
-                }, 5000);
-              }
+              console.log('🔁🔁🔁 [STEP TRACE] Auto-continuing directly to COMPLETE for user', userId);
+              const moveResult = await this.continueGeneration(userId);
+              console.log('✅✅✅ [STEP TRACE] Auto-continue to complete plan successful for user', userId, 'now at step', moveResult.step);
             } catch (autoErr) {
               console.error('❌❌❌ [STEP TRACE] Failed to auto-continue to complete plan for user', userId, autoErr);
-              // Still try to continue after a longer delay
+              // Try again after a delay
               setTimeout(async () => {
                 try {
                   console.log('🔄🔄🔄 [STEP TRACE] Recovery attempt at completing plan for user', userId);
@@ -383,9 +379,9 @@ class StepwiseCoach {
                 } catch (recoveryErr) {
                   console.error('💥💥💥 [STEP TRACE] Failed recovery attempt to complete for user', userId, recoveryErr);
                 }
-              }, 8000);
+              }, 5000);
             }
-          }, 8000);
+          }, 3000);
           break;
 
         case PlanGenerationStep.SHOPPING_LIST:
@@ -1303,83 +1299,25 @@ class StepwiseCoach {
       
       const mealPlan = planData.mealPlan || {};
       
-      // Properly add shopping list to the meal plan
-      if (planData.shoppingList) {
-        console.log('[PLAN DEBUG] Adding shopping list to meal plan with keys:', 
-                  Object.keys(planData.shoppingList).join(', '));
-        
-        // Ensure we have a properly structured shopping list
-        const shoppingList = planData.shoppingList;
-        
-        // Make sure the shopping list has categories
-        if (!shoppingList.categories || Object.keys(shoppingList.categories).length === 0) {
-          console.log('[PLAN DEBUG] Shopping list missing categories, creating default structure');
-          
-          // Create default categories from ingredients if available
-          if (planData.ingredients && planData.ingredients.categories) {
-            // Convert ingredients categories to shopping list format
-            shoppingList.categories = {};
-            
-            Object.entries(planData.ingredients.categories).forEach(([categoryName, items]: [string, any]) => {
-              if (Array.isArray(items)) {
-                // For proper compatibility with ViewPlan UI, we need specific format
-                // The UI expects a flat array of items under each category name
-                shoppingList.categories[categoryName] = items.map(item => ({
-                  name: item.name,
-                  quantity: item.quantity || 'as needed',
-                  unit: item.unit || '',
-                  estimatedPrice: Math.round((Math.random() * 4 + 1) * 100) / 100, // Random price between £1-£5
-                  checked: false
-                }));
-              }
-            });
-            
-            console.log('[PLAN DEBUG] Created shopping list categories from ingredients:', 
-                      Object.keys(shoppingList.categories).join(', '));
-          }
-        }
-        
-        // Ensure flat items list exists
-        if (!shoppingList.items || shoppingList.items.length === 0) {
-          console.log('[PLAN DEBUG] Shopping list missing items array, creating from categories');
-          shoppingList.items = [];
-          
-          if (shoppingList.categories) {
-            // Collect all items from all categories
-            Object.entries(shoppingList.categories).forEach(([categoryName, items]: [string, any]) => {
-              // With our new format, items are directly in an array under the category key
-              if (Array.isArray(items)) {
-                items.forEach((item: any) => {
-                  shoppingList.items.push({
-                    ...item,
-                    category: categoryName
-                  });
-                });
-              }
-            });
-          }
-          
-          console.log('[PLAN DEBUG] Created items array with', shoppingList.items.length, 'items');
-        }
-        
-        // Ensure budget status exists
-        if (!shoppingList.budgetStatus) {
-          console.log('[PLAN DEBUG] Shopping list missing budget status, adding default status');
-          const budget = planData.input_json?.weeklyBudget || 50;
-          const totalCost = shoppingList.totalCost || 0;
-          // Allow 10% over budget before marking as "over_budget"
-          const upperBudgetLimit = budget * 1.1;
-          shoppingList.budgetStatus = totalCost <= upperBudgetLimit ? "under_budget" : "over_budget";
-        }
-        
-        // Now set the enhanced shopping list
-        mealPlan.shoppingList = shoppingList;
-        console.log('[PLAN DEBUG] Final shopping list structure:', 
-                  'categories:', Object.keys(mealPlan.shoppingList.categories || {}).length,
-                  'items:', (mealPlan.shoppingList.items || []).length);
-      } else {
-        console.log('[PLAN DEBUG] No shopping list available to add to meal plan');
-      }
+      // Set up on-demand shopping list structure instead of generating the list
+      console.log('[PLAN DEBUG] Setting up on-demand shopping list infrastructure');
+      
+      // Store budget information and preferred store
+      const budget = planData.budgetInfo?.amount || planData.input_json?.weeklyBudget || 50;
+      const preferredStore = planData.preferredStore || planData.input_json?.preferredStore || 'aldi';
+      
+      // Create empty shopping list structure with on-demand flag
+      mealPlan.shoppingList = {
+        onDemandGeneration: true,
+        hasIngredients: planData.ingredients && Object.keys(planData.ingredients).length > 0,
+        budget: budget,
+        preferredStore: preferredStore,
+        categories: {},
+        items: [],
+        itemsByMeal: {}
+      };
+      
+      console.log('[PLAN DEBUG] Created on-demand shopping list structure with budget:', budget, 'and store:', preferredStore);
       
       // Add ingredients data
       if (planData.ingredients) {

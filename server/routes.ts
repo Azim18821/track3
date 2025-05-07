@@ -3042,6 +3042,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create meals from a fitness plan
+  // Calculate meal cost endpoint
+  app.post("/api/fitness-plans/:planId/calculate-meal-cost", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const planId = parseInt(req.params.planId);
+      const { day, mealType, preferredStore = "aldi" } = req.body;
+      
+      console.log(`Calculating meal cost for fitness plan ${planId}, day: ${day}, mealType: ${mealType}, store: ${preferredStore}`);
+      
+      // Get the fitness plan and validate ownership
+      const plan = await storage.getFitnessPlan(planId);
+      
+      if (!plan) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "Fitness plan not found" 
+        });
+      }
+      
+      if (plan.userId !== userId && !req.user!.isAdmin) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Access denied: This fitness plan belongs to another user" 
+        });
+      }
+      
+      if (!plan.mealPlan || !plan.mealPlan.weeklyMeals) {
+        return res.status(400).json({
+          success: false,
+          message: "No meal plan data found in this fitness plan"
+        });
+      }
+      
+      // Extract the meal from the plan
+      const weeklyMeals = plan.mealPlan.weeklyMeals || plan.mealPlan.weeklyMealPlan;
+      if (!weeklyMeals || !weeklyMeals[day] || !weeklyMeals[day][mealType]) {
+        return res.status(404).json({
+          success: false,
+          message: "Specified meal not found in the plan"
+        });
+      }
+      
+      const meal = weeklyMeals[day][mealType];
+      
+      // Check if ingredients exist
+      if (!meal.ingredients || meal.ingredients.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No ingredients found for this meal"
+        });
+      }
+      
+      // Use OpenAI to calculate meal cost based on ingredients and store
+      try {
+        console.log(`Calculating cost for ${meal.name} with ${meal.ingredients.length} ingredients at ${preferredStore}`);
+        
+        // Format ingredients for the prompt
+        const ingredientList = meal.ingredients.map((ingredient: any) => {
+          if (typeof ingredient === 'string') {
+            return ingredient;
+          } else {
+            return `${ingredient.quantity || ''} ${ingredient.unit || ''} ${ingredient.name || 'ingredient'}`.trim();
+          }
+        }).join(", ");
+        
+        // Call OpenAI API to calculate the cost
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            {
+              role: "system",
+              content: `You are a UK grocery pricing expert with detailed knowledge of current prices at different supermarkets.
+                        Your task is to estimate the cost of a meal based on its ingredients and the chosen supermarket.
+                        Respond with a JSON object containing:
+                        1. totalCost: The estimated total cost of the meal in GBP
+                        2. ingredients: An array of ingredients with individual prices
+                        3. store: The name of the supermarket used for pricing
+                        
+                        Price tiers for UK supermarkets:
+                        - Premium: Waitrose, M&S (highest prices, +25% above average)
+                        - Standard: Tesco, Sainsbury's, Morrisons, Asda (average prices)
+                        - Budget: Aldi, Lidl (lowest prices, -15% below average)
+                        
+                        Be realistic about current UK grocery prices. Don't underestimate.`
+            },
+            {
+              role: "user",
+              content: `Calculate the cost of ${meal.name} with these ingredients from ${preferredStore}:
+                        ${ingredientList}`
+            }
+          ],
+          response_format: { type: "json_object" }
+        });
+        
+        // Parse the response
+        const content = response.choices[0].message.content;
+        const jsonContent = typeof content === 'string' ? content : '{}';
+        const result = JSON.parse(jsonContent);
+        
+        // Update the meal with cost information
+        const mealCost = {
+          totalCost: result.totalCost || 0,
+          ingredients: result.ingredients || [],
+          store: result.store || preferredStore
+        };
+        
+        // Update the meal in the plan with the calculated cost
+        if (!plan.mealPlan.shoppingList) {
+          plan.mealPlan.shoppingList = { 
+            onDemandGeneration: true,
+            itemsByMeal: {}
+          };
+        }
+        
+        if (!plan.mealPlan.shoppingList.itemsByMeal) {
+          plan.mealPlan.shoppingList.itemsByMeal = {};
+        }
+        
+        // Save the cost information by meal key
+        const mealKey = `${day}-${mealType}`;
+        plan.mealPlan.shoppingList.itemsByMeal[mealKey] = mealCost.ingredients.map((ingredient: any) => ({
+          name: ingredient.name,
+          quantity: ingredient.quantity,
+          unit: ingredient.unit,
+          estimatedCost: ingredient.price || 0,
+          checked: false
+        }));
+        
+        // Save updated plan
+        await storage.updateFitnessPlan(planId, {
+          mealPlan: plan.mealPlan
+        });
+        
+        return res.status(200).json({
+          success: true,
+          mealCost,
+          mealKey
+        });
+      } catch (error) {
+        console.error("Error calculating meal cost:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to calculate meal cost",
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    } catch (error) {
+      console.error("Error in calculate-meal-cost endpoint:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Server error while calculating meal cost",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.post("/api/fitness-plans/:planId/create-meals", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
