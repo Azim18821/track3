@@ -332,16 +332,41 @@ class StepwiseCoach {
           break;
 
         case PlanGenerationStep.EXTRACT_INGREDIENTS:
-          console.log('👉👉👉 [STEP TRACE] EXTRACT_INGREDIENTS step starting for user', userId);
+          console.log('👉👉👉 [STEP TRACE] CALCULATE_MEAL_PRICES step starting for user', userId);
           // Retrieve budget from the saved input data if the passed input is undefined
           const budget = updatedData.input_json?.weeklyBudget || planData.input_json?.weeklyBudget || 0;
           // Retrieve preferred store if available
           const preferredStore = updatedData.input_json?.preferredStore || planData.input_json?.preferredStore;
           console.log('👉👉👉 [STEP TRACE] Using budget value:', budget, 'and preferred store:', preferredStore || 'none', 'for user', userId);
-          // Generate shopping list
-          const shoppingList = await this.generateShoppingList(updatedData.ingredients, budget, preferredStore);
-          console.log('✅✅✅ [STEP TRACE] Shopping list generation completed successfully for user', userId);
-          updatedData.shoppingList = shoppingList;
+          
+          // Calculate meal prices instead of generating a shopping list
+          const { calculateWeeklyMealPrices } = require('./mealPricing');
+          
+          if (!updatedData.mealPlan || !updatedData.mealPlan.weeklyMealPlan) {
+            console.error('⚠️⚠️⚠️ [STEP TRACE] Meal plan not available for price calculation for user', userId);
+            throw new Error('Meal plan not available for price calculation');
+          }
+          
+          try {
+            // Calculate prices for all meals in the plan
+            const pricedMealPlan = await calculateWeeklyMealPrices(
+              updatedData.mealPlan, 
+              preferredStore || 'Tesco'
+            );
+            
+            // Update meal plan with prices
+            updatedData.mealPlan = pricedMealPlan;
+            console.log('✅✅✅ [STEP TRACE] Meal price calculation completed successfully for user', userId);
+            
+            // Generate combined meal view
+            const { getCombinedWeeklyMeals } = require('./mealPricing');
+            updatedData.combinedMeals = getCombinedWeeklyMeals(pricedMealPlan);
+            console.log('✅✅✅ [STEP TRACE] Combined meal view generated successfully for user', userId);
+          } catch (error) {
+            console.error('❌❌❌ [STEP TRACE] Error calculating meal prices for user', userId, error);
+            // Continue with the unpriced meal plan rather than failing completely
+          }
+          
           nextStep = PlanGenerationStep.SHOPPING_LIST;
           console.log('🔄🔄🔄 [STEP TRACE] Setting nextStep to SHOPPING_LIST (step 5) for user', userId);
           
@@ -812,12 +837,14 @@ class StepwiseCoach {
         messages: [
           {
             role: "system",
-            content: `You are a nutrition expert creating a personalized meal plan with structured ingredient data.
-            Create a detailed weekly meal plan for a ${age}-year-old ${sex} with a primary goal of ${fitnessGoal}.
+            content: `You are a nutrition expert creating a personalized meal plan with detailed recipes, cooking instructions, and accurate pricing.
+            Create a comprehensive weekly meal plan for a ${age}-year-old ${sex} with a primary goal of ${fitnessGoal}.
             
             The meal plan should:
             1. Meet the nutritional targets: ${nutritionData.calories} calories, ${nutritionData.protein}g protein, ${nutritionData.carbs}g carbs, ${nutritionData.fat}g fat
             2. IMPORTANT: Determine the optimal number and timing of meals based on the user's goals (${fitnessGoal}) and calorie needs (${nutritionData.calories}cal) - do NOT default to a fixed meal structure
+            3. Include DETAILED cooking instructions for each recipe
+            4. Calculate ACCURATE pricing based on FULL PACKAGE SIZES at ${preferredStore ? preferredStore : 'Tesco'}
             3. Respect dietary preferences: ${dietaryPreferences.join(", ")}
             4. Fit within a ${budgetLevel} budget (${budgetLevel === "economy" ? "£30-50" : budgetLevel === "premium" ? "£90+" : "£50-90"}/week)
             5. IMPORTANT: Stay within the user's maximum budget with a margin of ±10% - never exceed the maximum budget by more than 10%
