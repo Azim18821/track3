@@ -47,6 +47,7 @@ import passwordResetRoutes from "./passwordResetRoutes";
 import onboardingRoutes from "./onboardingRoutes";
 import ingredientsRoutes from "./ingredientsRoutes";
 import trainerRoutes from "./trainerRoutes";
+import planGenerationRoutes from "./planGenerationRoutes";
 import { planGenerationStatus } from "@shared/schema";
 import { generateCoachResponse, CoachInput } from "./coach";
 import {
@@ -217,6 +218,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register trainer routes for managing client nutrition and fitness plans
   app.use('/api/trainer', trainerRoutes);
+  
+  // Register enhanced AI fitness plan generation routes
+  app.use('/api/fitness-plans', planGenerationRoutes);
   
   // Food image recognition endpoint
   app.post('/api/food/recognize', ensureAuthenticated, async (req: Request, res: Response) => {
