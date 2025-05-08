@@ -17,8 +17,6 @@ import FitnessCoach from "@/pages/FitnessCoach";
 import AICoachPage from "@/pages/AICoachPage";
 import AICoachHome from "@/pages/AICoachHome";
 import ViewPlan from "@/pages/ViewPlan";
-import ViewPlanPage from "@/pages/ViewPlanPage";
-import GeneratePlanPage from "@/pages/GeneratePlanPage";
 import WeightLog from "@/pages/WeightLog";
 import ProfilePage from "@/pages/ProfilePage";
 import ProfileCompletionPage from "@/pages/ProfileCompletionPage";

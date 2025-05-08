@@ -411,54 +411,21 @@ export type InsertNutritionGoal = z.infer<typeof insertNutritionGoalSchema>;
 export type NutritionGoal = typeof nutritionGoals.$inferSelect;
 
 // Fitness Plans
-// Plan generation progress tracking
-export const planGenerationProgress = pgTable("plan_generation_progress", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  isGenerating: boolean("is_generating").default(true).notNull(),
-  startedAt: timestamp("started_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  currentStep: integer("current_step").notNull(),
-  totalSteps: integer("total_steps").notNull(),
-  stepMessage: text("step_message").notNull(),
-  estimatedTimeRemaining: integer("estimated_time_remaining"), // in seconds
-  errorMessage: text("error_message"),
-  retryCount: integer("retry_count").default(0).notNull(),
-  dataJson: text("data_json"), // For storing partial plan data during generation
-});
-
-export const insertPlanGenerationProgressSchema = createInsertSchema(planGenerationProgress).omit({
-  id: true,
-  startedAt: true,
-  updatedAt: true,
-});
-
-export type InsertPlanGenerationProgress = z.infer<typeof insertPlanGenerationProgressSchema>;
-export type PlanGenerationProgress = typeof planGenerationProgress.$inferSelect;
-
-// Enhanced fitness plans with grocery list and summary
 export const fitnessPlans = pgTable("fitness_plans", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   preferences: jsonb("preferences").notNull(),
   workoutPlan: jsonb("workout_plan").notNull(),
   mealPlan: jsonb("meal_plan").notNull(),
-  groceryList: jsonb("grocery_list"), // New field for shopping list
-  nutritionData: jsonb("nutrition_data"), // New field for detailed nutrition data
-  summary: jsonb("summary"), // New field for summary information
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   deactivatedAt: timestamp("deactivated_at"),
   deactivationReason: text("deactivation_reason"),
-  weeklyBudget: real("weekly_budget"), // Budget amount
-  budgetCurrency: text("budget_currency").default("GBP"), // Currency (default to British Pounds)
-  actualCost: real("actual_cost"), // Actual cost of the grocery list
 });
 
 export const insertFitnessPlanSchema = createInsertSchema(fitnessPlans).omit({
   id: true,
   userId: true,
-  createdAt: true,
 });
 
 export type InsertFitnessPlan = z.infer<typeof insertFitnessPlanSchema>;
