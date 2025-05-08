@@ -61,7 +61,6 @@ import { syncPendingItems } from "@/lib/offlineDB";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 import ProfilePrompt from "@/components/ProfilePrompt";
-import MobileDebugView from "@/components/developer/MobileDebugView";
 import { PlanGenerationProvider } from "./contexts/PlanGenerationContext";
 
 // AppInitializer component to handle service worker registration, Capacitor, and offline sync features
@@ -370,7 +369,6 @@ function App() {
                 <OfflineIndicator />
                 <InstallPrompt />
                 <ProfilePrompt />
-                <MobileDebugView />
                 <Toaster />
               </TooltipProvider>
             </ThemeProvider>

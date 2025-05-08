@@ -3,9 +3,6 @@ import { CapacitorConfig } from '@capacitor/cli';
 // Determine if we're in production build or dev build
 const isProduction = process.env.NODE_ENV === 'production';
 
-// For local development, allow overriding server URL via environment variable
-const localDevUrl = process.env.CAPACITOR_LOCAL_URL || undefined;
-
 // Dynamically set server configuration based on environment
 const serverConfig = isProduction 
   ? {
@@ -16,15 +13,13 @@ const serverConfig = isProduction
     }
   : {
       // Development configuration - for local testing
-      // If CAPACITOR_LOCAL_URL is set, use it (your Mac's IP)
-      url: localDevUrl,
-      // Use HTTP for local development
-      androidScheme: 'http',
-      iosScheme: 'http',
-      // Only set hostname if no URL is provided
-      hostname: localDevUrl ? undefined : 'app',
-      // Allow cleartext (HTTP) traffic for local development
-      cleartext: true,
+      // Comment out url to use hostname, uncomment to use specific URL
+      // url: 'http://localhost:3000',
+      androidScheme: 'https',
+      iosScheme: 'https',
+      hostname: 'app',
+      // If needed for local development:
+      // cleartext: true,
     };
 
 const config: CapacitorConfig = {
@@ -36,8 +31,8 @@ const config: CapacitorConfig = {
     contentInset: 'always',
     backgroundColor: '#1e3a8a',
     allowsLinkPreview: true,
-    // Allow connections to all domains in development mode
-    limitsNavigationsToAppBoundDomains: isProduction,
+    // Include resource files that may contain configuration
+    limitsNavigationsToAppBoundDomains: true,
   },
   plugins: {
     SplashScreen: {
