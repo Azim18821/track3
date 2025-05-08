@@ -302,13 +302,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Generate shopping list and calculate budget for a fitness plan
-  app.post("/api/fitness-plans/:planId/calculate-budget", ensureAuthenticated, async (req: Request, res: Response) => {
+  // Calculate meal prices for a fitness plan
+  app.post("/api/fitness-plans/:planId/calculate-meal-prices", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       const planId = parseInt(req.params.planId);
       const userId = req.user!.id;
+      const { preferredStore } = req.body;
       
-      console.log(`Generating shopping list for fitness plan ID: ${planId}`);
+      console.log(`Calculating meal prices for fitness plan ID: ${planId}`);
       
       // Get the fitness plan
       const plan = await storage.getFitnessPlan(planId);
@@ -326,34 +327,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Meal plan data is missing in the fitness plan" });
       }
       
-      // Extract ingredients using OpenAI
-      const shoppingList = await extractIngredientsFromMealPlan(plan.mealPlan);
+      // Import the meal pricing functions
+      const { calculateWeeklyMealPrices } = require('./mealPricing');
       
-      // Update the fitness plan with the shopping list
+      // Calculate prices for all meals in the plan
+      const updatedMealPlan = await calculateWeeklyMealPrices(
+        plan.mealPlan, 
+        preferredStore || 'Tesco'
+      );
+      
+      // Update the fitness plan with the priced meal plan
       const updatedPlan = await db.update(fitnessPlans)
         .set({
-          preferences: {
-            ...plan.preferences,
-            shoppingList: shoppingList
-          }
+          mealPlan: updatedMealPlan
         })
         .where(eq(fitnessPlans.id, planId))
         .returning();
       
       if (!updatedPlan || updatedPlan.length === 0) {
-        return res.status(500).json({ message: "Failed to update fitness plan with shopping list" });
+        return res.status(500).json({ message: "Failed to update fitness plan with meal prices" });
       }
       
       return res.status(200).json({
         success: true,
-        message: "Shopping list generated successfully", 
-        shoppingList
+        message: "Meal prices calculated successfully",
+        costSummary: updatedMealPlan.costSummary || {
+          totalWeeklyCost: 0,
+          currency: 'GBP'
+        }
       });
     } catch (error: any) {
-      console.error('Error generating shopping list:', error);
+      console.error('Error calculating meal prices:', error);
       return res.status(500).json({ 
-        message: 'Failed to generate shopping list',
+        message: 'Failed to calculate meal prices',
         error: error.message || 'Unknown error'
+      });
+    }
+  });
+  
+  // Get combined weekly meal view
+  app.get("/api/fitness-plans/:planId/combined-meals", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const planId = parseInt(req.params.planId);
+      const userId = req.user!.id;
+      
+      console.log(`Getting combined meal view for fitness plan ID: ${planId}`);
+      
+      // Get the fitness plan
+      const plan = await storage.getFitnessPlan(planId);
+      
+      if (!plan) {
+        return res.status(404).json({ message: "Fitness plan not found" });
+      }
+      
+      // Make sure the plan belongs to the user or they are an admin
+      if (plan.userId !== userId && !req.user!.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to access this plan" });
+      }
+      
+      if (!plan.mealPlan) {
+        return res.status(400).json({ message: "Meal plan data is missing in the fitness plan" });
+      }
+      
+      // Import the function to get combined weekly meals
+      const { getCombinedWeeklyMeals } = require('./mealPricing');
+      
+      // Get the combined weekly meal view
+      const combinedMeals = getCombinedWeeklyMeals(plan.mealPlan);
+      
+      return res.status(200).json(combinedMeals);
+    } catch (error: any) {
+      console.error("Error getting combined meal view:", error);
+      return res.status(500).json({ 
+        message: "Failed to get combined meal view",
+        error: error.message || "Unknown error"
       });
     }
   });
