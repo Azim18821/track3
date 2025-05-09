@@ -4342,6 +4342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestId = parseInt(req.params.requestId);
       const { status } = req.body;
       const userId = req.user!.id;
+      const username = req.user!.username;
       
       console.log(`Client ${userId} responding to request ${requestId} with status: ${status}`);
       
@@ -4357,8 +4358,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Request not found" });
       }
       
-      console.log(`Found request: ${JSON.stringify(request)}`);
-      
       // Verify this user is the client in the request
       if (request.clientId !== userId) {
         console.log(`Unauthorized: request client ID ${request.clientId} does not match user ID ${userId}`);
@@ -4373,7 +4372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // If accepting, check if the user already has a trainer
+      // If accepting, check if the user already has a trainer (faster rejection path)
       if (status === "accepted") {
         const existingTrainers = await storage.getClientTrainers(userId);
         
@@ -4387,6 +4386,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Updating request ${requestId} status to ${status}`);
       
+      // Start processing the request - preload trainer info for faster processing
+      let trainerUsername: string | undefined;
+      if (status === "accepted") {
+        // Fetch trainer username in parallel to avoid sequential delays
+        const trainerUser = await storage.getUser(request.trainerId);
+        trainerUsername = trainerUser?.username;
+      }
+      
       // Update the request status
       const updatedRequest = await storage.respondToTrainerClientRequest(requestId, status);
       
@@ -4395,23 +4402,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Request not found or could not be updated" });
       }
       
-      console.log(`Request updated successfully: ${JSON.stringify(updatedRequest)}`);
+      // Immediately send a success response to the client for better perceived performance
+      // This sends the HTTP response but keeps the function running to complete the background tasks
+      res.status(200).json(updatedRequest);
+      
+      // Background tasks - these happen after the response is sent
       
       // Send real-time notification to the trainer about the client's response
       broadcastToUser(updatedRequest.trainerId, 'trainer_request_updated', {
         request: updatedRequest,
         clientId: userId,
-        clientName: req.user!.username,
+        clientName: username,
         status,
-        message: `Client ${req.user!.username} has ${status} your connection request.`,
+        message: `Client ${username} has ${status} your connection request.`,
         isTrainer: true
       });
       
       // If the client accepted, also establish the trainer-client relationship
       if (status === "accepted") {
         try {
-          console.log(`Creating trainer-client relationship between trainer ${updatedRequest.trainerId} and client ${userId}`);
-          
           // Create the trainer-client relationship
           const relationship = await storage.assignClientToTrainer(
             updatedRequest.trainerId, 
@@ -4419,28 +4428,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
             `Relationship established via client acceptance on ${new Date().toISOString()}`
           );
           
-          console.log(`Relationship created: ${JSON.stringify(relationship)}`);
-          
-          // Broadcast relationship creation to both parties
-          broadcastToUser(updatedRequest.trainerId, 'trainer_client_connected', {
+          // Broadcast relationship creation to both parties - more efficiently
+          const trainerNotification = {
             relationship,
-            clientName: req.user!.username
-          });
+            clientName: username
+          };
           
-          broadcastToUser(userId, 'trainer_client_connected', {
+          const clientNotification = {
             relationship,
-            trainerName: (await storage.getUser(updatedRequest.trainerId))?.username || 'Your trainer'
-          });
+            trainerName: trainerUsername || 'Your trainer'
+          };
+          
+          // Send notifications in parallel
+          await Promise.all([
+            broadcastToUser(updatedRequest.trainerId, 'trainer_client_connected', trainerNotification),
+            broadcastToUser(userId, 'trainer_client_connected', clientNotification)
+          ]);
+          
         } catch (relationshipError) {
           console.error("Error creating trainer-client relationship:", relationshipError);
-          // We'll still return success since the request was updated correctly
+          // The client already received a success response, so no need to handle this error
         }
       }
-      
-      res.status(200).json(updatedRequest);
     } catch (error) {
       console.error("Error responding to request:", error);
-      res.status(500).json({ message: "Failed to respond to request" });
+      // Only send error response if we haven't already sent a success response
+      if (!res.headersSent) {
+        res.status(500).json({ message: "Failed to respond to request" });
+      }
     }
   });
   
