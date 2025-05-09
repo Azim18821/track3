@@ -4466,7 +4466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send a message between trainer and client
   app.post("/api/messages", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
-      const { trainerId, clientId, content } = req.body;
+      const { trainerId, clientId, content, messageType, mediaUrl, thumbnailUrl } = req.body;
       const senderId = req.user!.id;
       
       if (!trainerId || !clientId || !content || !content.trim()) {
@@ -4501,6 +4501,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientId: clientIdNum,
         senderId,
         content: content.trim(),
+        messageType: messageType || 'text',
+        mediaUrl: mediaUrl,
+        thumbnailUrl: thumbnailUrl,
         isRead: false
       });
       
@@ -4634,6 +4637,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking messages as read:", error);
       res.status(500).json({ message: "Error marking messages as read" });
+    }
+  });
+  
+  // Configure multer storage for file uploads
+  const mediaStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, './uploads/media');
+    },
+    filename: (req, file, cb) => {
+      // Generate unique filename with timestamp + random string + original extension
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 12);
+      const originalExtension = file.originalname.split('.').pop() || '';
+      const filename = `${timestamp}-${randomString}.${originalExtension}`;
+      cb(null, filename);
+    }
+  });
+  
+  // Define file filter to only allow certain file types
+  const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    const type = req.body.type || 'file';
+    
+    if (type === 'image' && !file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed for image uploads'));
+    }
+    
+    if (type === 'video' && !file.mimetype.startsWith('video/')) {
+      return cb(new Error('Only video files are allowed for video uploads'));
+    }
+    
+    // Accept all files for generic file type
+    cb(null, true);
+  };
+  
+  // Initialize multer upload with 50MB size limit
+  const upload = multer({ 
+    storage: mediaStorage,
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+    fileFilter
+  });
+  
+  // Upload file for messaging
+  app.post("/api/messages/upload", ensureAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      const { trainerId, clientId, type } = req.body;
+      const senderId = req.user!.id;
+      
+      if (!trainerId || !clientId) {
+        return res.status(400).json({ message: "trainerId and clientId are required" });
+      }
+      
+      // Parse IDs to integers if they're strings
+      const trainerIdNum = typeof trainerId === 'string' ? parseInt(trainerId) : trainerId;
+      const clientIdNum = typeof clientId === 'string' ? parseInt(clientId) : clientId;
+      
+      // Verify that the sender is either the trainer or the client
+      if (senderId !== trainerIdNum && senderId !== clientIdNum) {
+        return res.status(403).json({ message: "Unauthorized to upload files for these users" });
+      }
+      
+      // Check for an active trainer-client relationship
+      const trainerClients = await storage.getTrainerClients(trainerIdNum);
+      const isValidRelationship = trainerClients.some(tc => tc.client.id === clientIdNum);
+      
+      if (!isValidRelationship) {
+        const clientTrainers = await storage.getClientTrainers(clientIdNum);
+        const hasRelationship = clientTrainers.some(ct => ct.trainer.id === trainerIdNum);
+        
+        if (!hasRelationship) {
+          // Delete the uploaded file
+          const fs = require('fs');
+          fs.unlinkSync(req.file.path);
+          
+          // Return a 404 instead of 403 to avoid giving too much info on relationships
+          return res.status(404).json({ message: "Trainer-client relationship not found" });
+        }
+      }
+      
+      // Construct the media URL (relative to server)
+      const mediaUrl = `/uploads/media/${req.file.filename}`;
+      
+      // For videos, we would normally generate a thumbnail here
+      // For simplicity, we'll just use the same URL for thumbnail
+      // A production implementation would use a library like ffmpeg to generate thumbnails
+      const thumbnailUrl = type === 'video' ? mediaUrl : undefined;
+      
+      res.status(201).json({ 
+        mediaUrl,
+        thumbnailUrl,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      });
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Error uploading file" });
     }
   });
   

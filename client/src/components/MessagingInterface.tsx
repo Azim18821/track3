@@ -10,8 +10,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { 
   Loader2, Send, MessageSquare, WifiOff, 
-  Video, Image, File, X, Upload, Camera, 
-  Plus, ChevronDown, ChevronUp
+  Video, Image as ImageIcon, FileText as FileIcon, X, Upload, Camera, 
+  Plus, ChevronDown, ChevronUp, Paperclip, Film
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -565,29 +565,118 @@ const MessagingInterface = ({
         <div ref={messagesEndRef} />
       </CardContent>
       <CardFooter className="pt-2 pb-2 md:pt-3 md:pb-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60">
-        <div className="flex w-full space-x-2 md:space-x-3">
-          <Textarea
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-grow resize-none text-sm rounded-lg border border-indigo-200 dark:border-indigo-900/50 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-600 min-h-[60px] md:min-h-[80px] bg-white dark:bg-gray-800 dark:text-gray-200 shadow-sm"
-            maxLength={1000}
-            rows={2}
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim() || sendMessageMutation.isPending}
-            type="submit"
-            size="icon"
-            className="h-auto w-10 md:w-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg shadow-sm transition-colors duration-200 disabled:opacity-50 disabled:shadow-none"
-          >
-            {sendMessageMutation.isPending ? (
-              <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4 md:h-5 md:w-5" />
-            )}
-          </Button>
+        {/* Hidden file inputs */}
+        <input 
+          type="file"
+          ref={videoInputRef}
+          className="hidden"
+          accept="video/*"
+          onChange={(e) => handleFileInputChange(e, 'video')}
+        />
+        <input 
+          type="file"
+          ref={imageInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={(e) => handleFileInputChange(e, 'image')}
+        />
+        <input 
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={(e) => handleFileInputChange(e, 'file')}
+        />
+        
+        <div className="flex w-full flex-col space-y-2">
+          {/* Media preview and upload progress */}
+          {mediaFile && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-2 flex items-center justify-between">
+              <div className="flex items-center">
+                {mediaType === 'video' && <Film className="h-4 w-4 mr-2 text-blue-600" />}
+                {mediaType === 'image' && <ImageIcon className="h-4 w-4 mr-2 text-blue-600" />}
+                {mediaType === 'file' && <FileIcon className="h-4 w-4 mr-2 text-blue-600" />}
+                <span className="text-xs text-blue-700 dark:text-blue-300 truncate max-w-[150px]">
+                  {mediaFile.name}
+                </span>
+              </div>
+              
+              {isUploading ? (
+                <div className="flex items-center">
+                  <div className="h-1.5 w-24 bg-blue-200 dark:bg-blue-800 rounded-full overflow-hidden mr-2">
+                    <div 
+                      className="h-full bg-blue-600 dark:bg-blue-400 rounded-full"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs text-blue-700 dark:text-blue-300">{uploadProgress}%</span>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCancelMedia}
+                  className="h-6 w-6"
+                >
+                  <X className="h-3 w-3 text-blue-700 dark:text-blue-300" />
+                </Button>
+              )}
+            </div>
+          )}
+          
+          {/* Message input area */}
+          <div className="flex w-full space-x-2 md:space-x-3">
+            <div className="relative flex-grow">
+              <Textarea
+                placeholder="Type your message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-grow resize-none text-sm rounded-lg border border-indigo-200 dark:border-indigo-900/50 focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-600 min-h-[60px] md:min-h-[80px] bg-white dark:bg-gray-800 dark:text-gray-200 shadow-sm pr-10"
+                maxLength={1000}
+                rows={2}
+              />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 bottom-2 h-8 w-8 rounded-full opacity-70 hover:opacity-100 text-blue-600 dark:text-blue-400"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => videoInputRef.current?.click()}>
+                    <Film className="mr-2 h-4 w-4" />
+                    <span>Video</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => imageInputRef.current?.click()}>
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    <span>Image</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                    <FileIcon className="mr-2 h-4 w-4" />
+                    <span>File</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <Button
+              onClick={handleSendMessage}
+              disabled={(mediaType === 'text' && !newMessage.trim()) || sendMessageMutation.isPending || isUploading}
+              type="submit"
+              size="icon"
+              className="h-auto w-10 md:w-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg shadow-sm transition-colors duration-200 disabled:opacity-50 disabled:shadow-none"
+            >
+              {sendMessageMutation.isPending || isUploading ? (
+                <Loader2 className="h-4 w-4 md:h-5 md:w-5 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 md:h-5 md:w-5" />
+              )}
+            </Button>
+          </div>
         </div>
       </CardFooter>
     </Card>
