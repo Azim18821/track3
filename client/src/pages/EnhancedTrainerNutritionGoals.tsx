@@ -422,10 +422,6 @@ export default function EnhancedTrainerNutritionGoals() {
           Back to Client
         </Button>
         
-        <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-          {clientData?.nutritionGoal ? 'Edit' : 'Set'} Nutrition Goals
-        </h1>
-        
         <Button 
           disabled={isSaving}
           onClick={form.handleSubmit(onSubmit)}
