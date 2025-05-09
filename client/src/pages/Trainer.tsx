@@ -793,14 +793,14 @@ const TrainerPage: React.FC = () => {
   };
   
   // Query to fetch clients for selection
-  const { data: clientsData, isLoading: isClientsLoading, error: clientsError } = useQuery({
+  const { data: clientsData, isLoading: isClientsLoading, error: clientsError } = useQuery<ClientData[]>({
     queryKey: ['/api/trainer/clients'],
     retry: 1,
   });
   
   // Extract array of clients from nested data structure
   const clients = useMemo(() => {
-    if (!clientsData) return [];
+    if (!clientsData || !Array.isArray(clientsData)) return [];
     return clientsData.map((item: ClientData) => item.client);
   }, [clientsData]);
   

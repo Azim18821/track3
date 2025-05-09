@@ -980,20 +980,33 @@ export default function EnhancedTrainerClientDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-2">
-              {clientData?.meals && clientData?.meals.length > 0 && clientData?.nutritionGoal ? (
-                <WeeklyNutritionView 
-                  meals={clientData.meals} 
-                  nutritionGoals={{
-                    calories: clientData.nutritionGoal.caloriesPerDay,
-                    protein: clientData.nutritionGoal.proteinPerDay,
-                    carbs: clientData.nutritionGoal.carbsPerDay,
-                    fat: clientData.nutritionGoal.fatPerDay
-                  }}
-                  onViewDay={(date) => {
-                    window.alert(`Viewing detailed nutrition for ${date} coming soon!`);
-                  }}
-                />
-              ) : (
+              {/* Debug information */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-muted-foreground mb-4 p-2 bg-slate-100 rounded overflow-auto max-h-24">
+                  <p>Debug - Meals: {clientData?.meals ? `${clientData.meals.length} found` : 'none'}</p>
+                  <p>Debug - Nutrition Goal: {clientData?.nutritionGoal ? 'exists' : 'missing'}</p>
+                  {clientData?.nutritionGoal && (
+                    <p>Goal values: {JSON.stringify(clientData.nutritionGoal)}</p>
+                  )}
+                </div>
+              )}
+              
+              {/* Always render WeeklyNutritionView with fallback values for empty states */}
+              <WeeklyNutritionView 
+                meals={clientData?.meals || []} 
+                nutritionGoals={{
+                  calories: clientData?.nutritionGoal?.caloriesTarget || 2000,
+                  protein: clientData?.nutritionGoal?.proteinTarget || 150,
+                  carbs: clientData?.nutritionGoal?.carbsTarget || 200,
+                  fat: clientData?.nutritionGoal?.fatTarget || 70
+                }}
+                onViewDay={(date) => {
+                  window.alert(`Viewing detailed nutrition for ${date} coming soon!`);
+                }}
+              />
+
+              {/* Show message if no nutrition data or goals */}
+              {(!clientData?.meals || clientData.meals.length === 0 || !clientData?.nutritionGoal) && (
                 <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">No nutrition data found</p>
                   <p className="text-xs mt-1">

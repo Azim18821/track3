@@ -30,10 +30,17 @@ interface WeeklyNutritionViewProps {
 }
 
 const WeeklyNutritionView: React.FC<WeeklyNutritionViewProps> = ({ 
-  meals, 
-  nutritionGoals,
+  meals = [], 
+  nutritionGoals = { calories: 2000, protein: 150, carbs: 200, fat: 70 },
   onViewDay 
 }) => {
+  // Ensure nutritionGoals has all required properties
+  const safeNutritionGoals = {
+    calories: nutritionGoals?.calories || 2000,
+    protein: nutritionGoals?.protein || 150,
+    carbs: nutritionGoals?.carbs || 200,
+    fat: nutritionGoals?.fat || 70
+  };
   // Use today's date as the maximum available date for navigation
   const today = new Date();
   const [currentDate, setCurrentDate] = useState(today);
@@ -63,24 +70,45 @@ const WeeklyNutritionView: React.FC<WeeklyNutritionViewProps> = ({
     });
     
     // Add meals to their respective days and calculate daily totals
-    meals.forEach(meal => {
-      // Standardize date format - some dates might come with time component
-      let mealDate = meal.date;
-      if (mealDate.includes('T')) {
-        // If the date has a time component, strip it off
-        mealDate = mealDate.split('T')[0];
-      }
-      
-      if (sortedMeals[mealDate]) {
-        sortedMeals[mealDate].push({...meal, date: mealDate});
-        
-        // Add to daily totals
-        totals[mealDate].calories += meal.nutrition.calories;
-        totals[mealDate].protein += meal.nutrition.protein;
-        totals[mealDate].carbs += meal.nutrition.carbs;
-        totals[mealDate].fat += meal.nutrition.fat;
-      }
-    });
+    if (Array.isArray(meals)) {
+      meals.forEach(meal => {
+        try {
+          // Skip invalid meal objects
+          if (!meal || typeof meal !== 'object') return;
+          
+          // Standardize date format - some dates might come with time component
+          let mealDate = meal.date || '';
+          if (typeof mealDate !== 'string') {
+            // If date is not a string, try to convert or skip
+            try {
+              mealDate = String(mealDate);
+            } catch (e) {
+              return; // Skip this meal if date cannot be processed
+            }
+          }
+          
+          if (mealDate.includes('T')) {
+            // If the date has a time component, strip it off
+            mealDate = mealDate.split('T')[0];
+          }
+          
+          if (sortedMeals[mealDate]) {
+            sortedMeals[mealDate].push({...meal, date: mealDate});
+            
+            // Add to daily totals if nutrition data exists
+            if (meal.nutrition && typeof meal.nutrition === 'object') {
+              totals[mealDate].calories += Number(meal.nutrition.calories) || 0;
+              totals[mealDate].protein += Number(meal.nutrition.protein) || 0;
+              totals[mealDate].carbs += Number(meal.nutrition.carbs) || 0;
+              totals[mealDate].fat += Number(meal.nutrition.fat) || 0;
+            }
+          }
+        } catch (error) {
+          console.error('Error processing meal:', error);
+          // Continue with next meal
+        }
+      });
+    }
     
     setWeeklyMeals(sortedMeals);
     setDailyTotals(totals);
@@ -172,10 +200,16 @@ const WeeklyNutritionView: React.FC<WeeklyNutritionViewProps> = ({
           // Group meals by type for display
           const mealsByType: { [key: string]: number } = {};
           dayMeals.forEach(meal => {
-            if (mealsByType[meal.mealType]) {
-              mealsByType[meal.mealType]++;
-            } else {
-              mealsByType[meal.mealType] = 1;
+            try {
+              // Use a default meal type if not provided
+              const mealType = meal.mealType || 'other';
+              if (mealsByType[mealType]) {
+                mealsByType[mealType]++;
+              } else {
+                mealsByType[mealType] = 1;
+              }
+            } catch (error) {
+              console.error('Error processing meal type:', error);
             }
           });
           
@@ -202,11 +236,11 @@ const WeeklyNutritionView: React.FC<WeeklyNutritionViewProps> = ({
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-medium">Calories</span>
                         <span className="text-muted-foreground">
-                          {dayTotal.calories} / {nutritionGoals.calories}
+                          {dayTotal.calories} / {safeNutritionGoals.calories}
                         </span>
                       </div>
                       <Progress 
-                        value={getPercentage(dayTotal.calories, nutritionGoals.calories)} 
+                        value={getPercentage(dayTotal.calories, safeNutritionGoals.calories)} 
                         className="h-1.5" 
                       />
                     </div>
