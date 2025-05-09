@@ -25,6 +25,8 @@ router.post('/update-libraries/exercises', ensureAdmin, async (req: Request, res
       });
     }
     
+    console.log(`Admin requested exercise library update: ${options.count} exercises in category "${options.category || 'all'}"`);
+    
     const result = await updateExercises(options);
     res.status(result.success ? 200 : 500).json(result);
   } catch (error: unknown) {
@@ -56,6 +58,8 @@ router.post('/update-libraries/meals', ensureAdmin, async (req: Request, res: Re
         message: 'Count must be between 1 and 20' 
       });
     }
+    
+    console.log(`Admin requested meal library update: ${options.count} recipes of type "${options.mealType || 'all'}"`);
     
     const result = await updateMeals(options);
     res.status(result.success ? 200 : 500).json(result);
@@ -98,6 +102,11 @@ router.post('/update-libraries/all', ensureAdmin, async (req: Request, res: Resp
         message: 'Count must be between 1 and 20 for both libraries' 
       });
     }
+    
+    console.log(`Admin requested update of both libraries: 
+      - ${options.exercises.count} exercises in category "${options.exercises.category || 'all'}"
+      - ${options.meals.count} meals of type "${options.meals.mealType || 'all'}"
+    `);
     
     const result = await updateBothLibraries(options);
     res.status(result.success ? 200 : 500).json(result);
