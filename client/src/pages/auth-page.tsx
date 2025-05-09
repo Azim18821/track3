@@ -38,8 +38,7 @@ const registerSchema = z.object({
       { message: "Must be a valid email address" }
     ),
   password: z.string().min(4, "Password must be at least 4 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your password"),
-  trainerUsername: z.string().optional(), // Optional trainer username field
+  confirmPassword: z.string().min(1, "Please confirm your password")
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -69,7 +68,6 @@ export default function AuthPage() {
       email: "",
       password: "",
       confirmPassword: "",
-      trainerUsername: "",
     },
   });
   
@@ -369,23 +367,6 @@ export default function AuthPage() {
                         )}
                       />
                       
-                      <FormField
-                        control={registerForm.control}
-                        name="trainerUsername"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Trainer Username (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter your trainer's username if you have one" {...field} />
-                            </FormControl>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              If you're working with a personal trainer, enter their username to connect your account.
-                            </p>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-  
                       <Button
                         type="submit"
                         className="w-full"
