@@ -514,8 +514,8 @@ const ClientList: React.FC = () => {
                 </CardHeader>
                 <CardContent className="pb-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Badge variant="outline" className="text-xs">
-                      {relationship?.status === 'active' ? 'Active' : 'Inactive'}
+                    <Badge variant="default" className="text-xs bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">
+                      Active
                     </Badge>
                     
                     <Button 
