@@ -79,6 +79,7 @@
 }
 
 :root {
+  /* Theme colors */
   --background: 0 0% 100%;
   --foreground: 20 14.3% 4.1%;
   --muted: 60 4.8% 95.9%;
@@ -100,6 +101,29 @@
   --destructive-foreground: 60 9.1% 97.8%;
   --ring: 20 14.3% 4.1%;
   --radius: 0.5rem;
+  
+  /* Safe area insets as CSS variables 
+   * These will be populated by SafeAreaProvider component
+   * with the actual values from env() function
+   */
+  --sat: 0px; /* safe area top */
+  --sar: 0px; /* safe area right */
+  --sab: 0px; /* safe area bottom */
+  --sal: 0px; /* safe area left */
+  --has-notch: 0; /* 1 if device has a notch, 0 otherwise */
+  
+  /* Font sizing for different device types */
+  --font-size-base: 16px;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  
+  /* Touch target sizes */
+  --touch-target-size: 44px; /* Minimum Apple-recommended touch target size */
 }
 
 .dark {
@@ -131,10 +155,46 @@
     @apply border-border;
   }
 
+  html {
+    /* Base font size that can be scaled based on device width */
+    font-size: 16px;
+  }
+  
+  /* Responsive typography using the clamp function */
+  @media screen and (min-width: 320px) {
+    html {
+      /* Start at 14px for smallest screens, grow to 16px on larger screens */
+      font-size: clamp(14px, 0.75rem + 1vw, 16px);
+    }
+  }
+
+  /* iPad specific adjustments */
+  @media screen and (min-width: 768px) and (max-width: 1024px) {
+    html {
+      font-size: clamp(15px, 0.8rem + 0.8vw, 18px);
+    }
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
     /* Add safe areas for notched devices */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Prevent scrollbar flashing on iOS */
+    overscroll-behavior-y: none;
+    /* Prevent bounce effect but allow scrolling */
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Proper text sizing on iOS */
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Fix iOS form input zooming */
+  input, select, textarea, button {
+    font-size: 16px; /* Prevents iOS zoom on focus */
   }
 }
 
@@ -260,6 +320,77 @@
   
   .pr-safe {
     padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Enhanced safe area utilities with minimum values */
+  .pt-safe-min {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  
+  .pb-safe-min {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  
+  .pl-safe-min {
+    padding-left: max(0.5rem, env(safe-area-inset-left));
+  }
+  
+  .pr-safe-min {
+    padding-right: max(0.5rem, env(safe-area-inset-right));
+  }
+  
+  /* Margin versions for safe areas */
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
+  }
+  
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .ml-safe {
+    margin-left: env(safe-area-inset-left);
+  }
+  
+  .mr-safe {
+    margin-right: env(safe-area-inset-right);
+  }
+  
+  /* Negative margins for safe areas (useful for full bleed layouts) */
+  .neg-mt-safe {
+    margin-top: calc(-1 * env(safe-area-inset-top));
+  }
+  
+  .neg-mb-safe {
+    margin-bottom: calc(-1 * env(safe-area-inset-bottom));
+  }
+  
+  .neg-ml-safe {
+    margin-left: calc(-1 * env(safe-area-inset-left));
+  }
+  
+  .neg-mr-safe {
+    margin-right: calc(-1 * env(safe-area-inset-right));
+  }
+  
+  /* Keyboard avoiding container */
+  .keyboard-avoiding-container {
+    position: relative;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    transition: all 0.3s ease;
+  }
+  
+  /* When keyboard is visible - add this class dynamically */
+  .keyboard-visible .keyboard-avoiding-container {
+    padding-bottom: 1rem;
+  }
+  
+  /* Specific sizing for input fields to avoid zoom on iOS */
+  .ios-input {
+    font-size: 16px; /* Prevents iOS zoom */
+    line-height: 1.2;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
   }
   
   /* Custom scrollbar styling */

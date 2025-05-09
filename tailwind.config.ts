@@ -4,6 +4,16 @@ export default {
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    screens: {
+      'xs': '375px',     // iPhone SE and smaller devices
+      'sm': '640px',     // Default Tailwind breakpoint
+      'md': '768px',     // iPad Mini, iPad
+      'ipad': '820px',   // iPad Air
+      'ipad-pro': '1024px', // iPad Pro
+      'lg': '1024px',    // Default Tailwind breakpoint
+      'xl': '1280px',    // Default Tailwind breakpoint
+      '2xl': '1536px',   // Default Tailwind breakpoint
+    },
     extend: {
       borderRadius: {
         lg: "var(--radius)",

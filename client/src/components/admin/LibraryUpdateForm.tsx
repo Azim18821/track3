@@ -15,6 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 interface LibraryUpdateResult {
   success: boolean;
   message: string;
+  // For single update responses
+  added?: number;
+  duplicatesSkipped?: number;
+  // For dual update responses
   exerciseResult?: {
     added: number;
     duplicatesSkipped: number;
@@ -26,7 +30,7 @@ interface LibraryUpdateResult {
 }
 
 const exerciseCategories = [
-  { value: "", label: "All Categories" },
+  { value: "all", label: "All Categories" },
   { value: "chest", label: "Chest" },
   { value: "back", label: "Back" },
   { value: "legs", label: "Legs" },
@@ -40,7 +44,7 @@ const exerciseCategories = [
 ];
 
 const mealTypes = [
-  { value: "", label: "All Meal Types" },
+  { value: "all", label: "All Meal Types" },
   { value: "breakfast", label: "Breakfast" },
   { value: "lunch", label: "Lunch" },
   { value: "dinner", label: "Dinner" },
@@ -52,9 +56,9 @@ const mealTypes = [
 export default function LibraryUpdateForm() {
   const { toast } = useToast();
   const [exerciseCount, setExerciseCount] = useState<number>(5);
-  const [exerciseCategory, setExerciseCategory] = useState<string>("");
+  const [exerciseCategory, setExerciseCategory] = useState<string>("all");
   const [mealCount, setMealCount] = useState<number>(5);
-  const [mealType, setMealType] = useState<string>("");
+  const [mealType, setMealType] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<string>("exercises");
   const [lastUpdateResult, setLastUpdateResult] = useState<LibraryUpdateResult | null>(null);
 
@@ -133,7 +137,7 @@ export default function LibraryUpdateForm() {
       queryClient.invalidateQueries({ queryKey: ["/api/meal-recipes"] });
       toast({
         title: "Libraries Updated",
-        description: "Exercise and meal libraries have been updated successfully.",
+        description: `Added ${data.exerciseResult.added} exercises and ${data.mealResult.added} meal recipes.`,
         variant: "default",
       });
     },
@@ -237,13 +241,13 @@ export default function LibraryUpdateForm() {
               )}
             </Button>
             
-            {lastUpdateResult && activeTab === "exercises" && lastUpdateResult.exerciseResult && (
+            {lastUpdateResult && activeTab === "exercises" && lastUpdateResult.success && !lastUpdateResult.exerciseResult && (
               <Alert className="mt-4 bg-green-50 border-green-100">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800">Update Successful</AlertTitle>
                 <AlertDescription className="text-green-700">
-                  Added {lastUpdateResult.exerciseResult.added} new exercises, 
-                  skipped {lastUpdateResult.exerciseResult.duplicatesSkipped} duplicates.
+                  Added {lastUpdateResult.added || 0} new exercises, 
+                  skipped {lastUpdateResult.duplicatesSkipped || 0} duplicates.
                 </AlertDescription>
               </Alert>
             )}
@@ -303,13 +307,13 @@ export default function LibraryUpdateForm() {
               )}
             </Button>
             
-            {lastUpdateResult && activeTab === "meals" && lastUpdateResult.mealResult && (
+            {lastUpdateResult && activeTab === "meals" && lastUpdateResult.success && !lastUpdateResult.mealResult && (
               <Alert className="mt-4 bg-green-50 border-green-100">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800">Update Successful</AlertTitle>
                 <AlertDescription className="text-green-700">
-                  Added {lastUpdateResult.mealResult.added} new recipes, 
-                  skipped {lastUpdateResult.mealResult.duplicatesSkipped} duplicates.
+                  Added {lastUpdateResult.added || 0} new recipes, 
+                  skipped {lastUpdateResult.duplicatesSkipped || 0} duplicates.
                 </AlertDescription>
               </Alert>
             )}

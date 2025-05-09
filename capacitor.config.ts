@@ -33,6 +33,9 @@ const config: CapacitorConfig = {
     allowsLinkPreview: true,
     // Include resource files that may contain configuration
     limitsNavigationsToAppBoundDomains: true,
+    // Enable responsive layout adjustments based on screen size
+    preferredContentMode: 'mobile',
+    scrollEnabled: true,
   },
   plugins: {
     SplashScreen: {

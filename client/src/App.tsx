@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { useEffect, useState } from "react";
 import { initializeCapacitor } from "@/utils/capacitor";
 import { AnalysisProvider } from "@/components/analysis/AnalysisProvider";
+import SafeAreaProvider from "@/components/SafeAreaProvider";
 
 import ProtectedLayout from "@/components/ProtectedLayout";
 import Dashboard from "@/pages/Dashboard";
@@ -153,8 +154,9 @@ function App() {
           <AnalysisProvider>
             <ThemeProvider attribute="class" defaultTheme={defaultTheme} enableSystem={true}>
               <TooltipProvider>
-                <AppInitializer />
-                <div className="min-h-[100svh] w-screen full-screen-container notch-friendly-container">
+                <SafeAreaProvider>
+                  <AppInitializer />
+                  <div className="min-h-[100svh] w-screen full-screen-container notch-friendly-container">
                   <Switch>
                     {/* Public Routes */}
                     <Route path="/" component={ConditionalHome} />
@@ -370,6 +372,7 @@ function App() {
                 <InstallPrompt />
                 <ProfilePrompt />
                 <Toaster />
+                </SafeAreaProvider>
               </TooltipProvider>
             </ThemeProvider>
           </AnalysisProvider>
