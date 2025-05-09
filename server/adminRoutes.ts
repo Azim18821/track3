@@ -111,6 +111,82 @@ router.post('/update-libraries/all', ensureAdmin, async (req: Request, res: Resp
 });
 
 /**
+ * Route for admin to get all clients for a trainer
+ * GET /api/admin/trainers/:trainerId/clients
+ */
+router.get('/trainers/:trainerId/clients', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const trainerId = parseInt(req.params.trainerId);
+    
+    // Verify the trainer exists
+    const trainer = await storage.getUser(trainerId);
+    if (!trainer) {
+      return res.status(404).json({ message: "Trainer not found" });
+    }
+    
+    // Get all trainer-client relationships for this trainer
+    const trainerClients = await storage.getTrainerClients(trainerId);
+    
+    // Format the response to match the expected structure
+    const formattedRelationships = trainerClients.map(tc => ({
+      id: tc.relationship.id,
+      trainerId: tc.relationship.trainerId,
+      clientId: tc.relationship.clientId,
+      assignedAt: tc.relationship.assignedAt,
+      notes: tc.relationship.notes,
+      client: {
+        id: tc.client.id,
+        username: tc.client.username,
+        email: tc.client.email
+      }
+    }));
+    
+    res.status(200).json(formattedRelationships);
+  } catch (error) {
+    console.error("Error fetching trainer's clients:", error);
+    res.status(500).json({ message: "Failed to fetch trainer's clients" });
+  }
+});
+
+/**
+ * Route for admin to get all trainers for a client
+ * GET /api/admin/clients/:clientId/trainers
+ */
+router.get('/clients/:clientId/trainers', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const clientId = parseInt(req.params.clientId);
+    
+    // Verify the client exists
+    const client = await storage.getUser(clientId);
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+    
+    // Get all trainer-client relationships for this client
+    const clientTrainers = await storage.getClientTrainers(clientId);
+    
+    // Format the response to match the expected structure
+    const formattedRelationships = clientTrainers.map(ct => ({
+      id: ct.relationship.id,
+      trainerId: ct.relationship.trainerId,
+      clientId: ct.relationship.clientId,
+      assignedAt: ct.relationship.assignedAt,
+      notes: ct.relationship.notes,
+      trainer: {
+        id: ct.trainer.id,
+        username: ct.trainer.username,
+        email: ct.trainer.email
+      }
+    }));
+    
+    res.status(200).json(formattedRelationships);
+  } catch (error) {
+    console.error("Error fetching client's trainers:", error);
+    res.status(500).json({ message: "Failed to fetch client's trainers" });
+  }
+});
+
+/**
  * Route to get library update status
  * GET /api/admin/update-libraries/status
  */

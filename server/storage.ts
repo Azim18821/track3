@@ -1352,6 +1352,22 @@ export class DatabaseStorage implements IStorage {
       relationship: item.relationship
     }));
   }
+  
+  async getClientTrainers(clientId: number): Promise<{ trainer: User, relationship: TrainerClient }[]> {
+    const result = await db.select({
+      relationship: trainerClients,
+      trainer: users
+    })
+    .from(trainerClients)
+    .innerJoin(users, eq(trainerClients.trainerId, users.id))
+    .where(eq(trainerClients.clientId, clientId))
+    .orderBy(asc(users.username));
+
+    return result.map(item => ({
+      trainer: item.trainer,
+      relationship: item.relationship
+    }));
+  }
 
   async getClientTrainers(clientId: number): Promise<{ trainer: User, relationship: TrainerClient }[]> {
     const result = await db.select({

@@ -282,118 +282,272 @@ export default function AdminUserEdit() {
             <User className="mr-2 h-5 w-5" />
             {userData?.username}'s Account
           </CardTitle>
+          <CardDescription>
+            Manage user details and training relationships
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
-                        <Input className="pl-9" placeholder="Username" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      The user's login name
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+          <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'info' | 'relationships')} className="w-full">
+            <TabsList className="mb-4 w-full grid grid-cols-2">
+              <TabsTrigger value="info" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                <span>Account Information</span>
+              </TabsTrigger>
+              <TabsTrigger value="relationships" className="flex items-center gap-2">
+                <Link className="h-4 w-4" />
+                <span>Training Relationships</span>
+              </TabsTrigger>
+            </TabsList>
+          
+            <TabsContent value="info" className="space-y-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+                            <Input className="pl-9" placeholder="Username" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          The user's login name
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+                            <Input className="pl-9" placeholder="Email address" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          The user's email address
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="isAdmin"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base flex items-center">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Admin privileges
+                          </FormLabel>
+                          <FormDescription>
+                            Grant this user administrator access to the application
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="isTrainer"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base flex items-center">
+                            <Dumbbell className="mr-2 h-4 w-4" />
+                            Personal Trainer
+                          </FormLabel>
+                          <FormDescription>
+                            Designate this user as a personal trainer who can manage assigned clients
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => navigate('/admin/users')}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={updateUserMutation.isPending}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+                    >
+                      {updateUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </TabsContent>
+            
+            <TabsContent value="relationships" className="space-y-8">
+              {/* As Client Section */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <User className="mr-2 h-5 w-5 text-blue-600" />
+                  Trainers for this User
+                </h3>
+                
+                {clientRelationshipsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : clientRelationships && clientRelationships.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Trainer</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Assigned Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clientRelationships.map((relation: TrainerClient) => (
+                          <TableRow key={relation.id}>
+                            <TableCell className="font-medium">
+                              {relation.trainer?.username || 'Unknown'}
+                            </TableCell>
+                            <TableCell>
+                              {relation.trainer?.email || 'No email'}
+                            </TableCell>
+                            <TableCell>
+                              {format(new Date(relation.assignedAt), 'MMM d, yyyy')}
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center text-red-600 hover:text-red-700"
+                                onClick={() => handleRemoveRelationship(relation.id)}
+                                disabled={removeRelationshipMutation.isPending}
+                              >
+                                {removeRelationshipMutation.isPending && removeRelationshipMutation.variables === relation.id ? (
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Link2Off className="mr-2 h-3 w-3" />
+                                )}
+                                Remove
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <Alert className="bg-blue-50 border-blue-100">
+                    <AlertTriangle className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-800">No trainers assigned</AlertTitle>
+                    <AlertDescription className="text-blue-600">
+                      This user doesn't have any personal trainers assigned.
+                    </AlertDescription>
+                  </Alert>
                 )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
-                        <Input className="pl-9" placeholder="Email address" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      The user's email address
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="isAdmin"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base flex items-center">
-                        <Shield className="mr-2 h-4 w-4" />
-                        Admin privileges
-                      </FormLabel>
-                      <FormDescription>
-                        Grant this user administrator access to the application
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="isTrainer"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base flex items-center">
-                        <Dumbbell className="mr-2 h-4 w-4" />
-                        Personal Trainer
-                      </FormLabel>
-                      <FormDescription>
-                        Designate this user as a personal trainer who can manage assigned clients
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/admin/users')}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={updateUserMutation.isPending}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                >
-                  {updateUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </Button>
               </div>
-            </form>
-          </Form>
+              
+              {/* As Trainer Section */}
+              {userData?.isTrainer && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                    <Dumbbell className="mr-2 h-5 w-5 text-purple-600" />
+                    Clients of this Trainer
+                  </h3>
+                  
+                  {trainerRelationshipsLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : trainerRelationships && trainerRelationships.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Assigned Date</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {trainerRelationships.map((relation: TrainerClient) => (
+                            <TableRow key={relation.id}>
+                              <TableCell className="font-medium">
+                                {relation.client?.username || 'Unknown'}
+                              </TableCell>
+                              <TableCell>
+                                {relation.client?.email || 'No email'}
+                              </TableCell>
+                              <TableCell>
+                                {format(new Date(relation.assignedAt), 'MMM d, yyyy')}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center text-red-600 hover:text-red-700"
+                                  onClick={() => handleRemoveRelationship(relation.id)}
+                                  disabled={removeRelationshipMutation.isPending}
+                                >
+                                  {removeRelationshipMutation.isPending && removeRelationshipMutation.variables === relation.id ? (
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Link2Off className="mr-2 h-3 w-3" />
+                                  )}
+                                  Remove
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <Alert className="bg-purple-50 border-purple-100">
+                      <AlertTriangle className="h-4 w-4 text-purple-600" />
+                      <AlertTitle className="text-purple-800">No clients assigned</AlertTitle>
+                      <AlertDescription className="text-purple-600">
+                        This trainer doesn't have any clients assigned.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
