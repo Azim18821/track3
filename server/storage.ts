@@ -316,6 +316,19 @@ export class DatabaseStorage implements IStorage {
     return await this.getUser(id);
   }
   
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      // Delete the user
+      const result = await db.delete(users).where(eq(users.id, id));
+      
+      // Return true if at least one record was deleted
+      return result.count > 0;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+  
   async updateUserProfile(id: number, profileUpdate: {
     email?: string;
     dateOfBirth?: Date | null;
