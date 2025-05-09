@@ -399,8 +399,37 @@ const MessagingInterface = ({
     return format(date, "MMM d, h:mm a");
   }
 
+  // File change handlers for the hidden file inputs
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'file' | 'image' | 'video') => {
+    // Delegate to the main file handler function
+    handleFileInputChange(event, type);
+  };
+  
   return (
     <Card className="h-full flex flex-col border-2 border-indigo-100 dark:border-indigo-900/40 shadow-md">
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={(e) => handleFileChange(e, 'file')}
+        accept="*/*"
+      />
+      <input
+        type="file"
+        ref={imageInputRef}
+        style={{ display: 'none' }}
+        onChange={(e) => handleFileChange(e, 'image')}
+        accept="image/*"
+      />
+      <input
+        type="file"
+        ref={videoInputRef}
+        style={{ display: 'none' }}
+        onChange={(e) => handleFileChange(e, 'video')}
+        accept="video/*"
+      />
+      
       <CardHeader className="py-2 px-3 md:px-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60">
         <CardTitle className="flex justify-between items-center text-blue-700 dark:text-blue-400 text-sm md:text-base">
           <span className="flex items-center">
@@ -565,27 +594,7 @@ const MessagingInterface = ({
         <div ref={messagesEndRef} />
       </CardContent>
       <CardFooter className="pt-2 pb-2 md:pt-3 md:pb-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/60">
-        {/* Hidden file inputs */}
-        <input 
-          type="file"
-          ref={videoInputRef}
-          className="hidden"
-          accept="video/*"
-          onChange={(e) => handleFileInputChange(e, 'video')}
-        />
-        <input 
-          type="file"
-          ref={imageInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={(e) => handleFileInputChange(e, 'image')}
-        />
-        <input 
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={(e) => handleFileInputChange(e, 'file')}
-        />
+        {/* File input elements now at the top of the component */}
         
         <div className="flex w-full flex-col space-y-2">
           {/* Media preview and upload progress */}

@@ -1425,7 +1425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Configure multer for image upload handling
-  const upload = multer({
+  const imageUpload = multer({
     storage: multer.memoryStorage(),
     limits: {
       fileSize: 10 * 1024 * 1024, // Limit to 10MB
@@ -1433,7 +1433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Food image recognition endpoint
-  app.post("/api/nutrition/recognize-food", ensureAuthenticated, upload.single('image'), async (req: Request, res: Response) => {
+  app.post("/api/nutrition/recognize-food", ensureAuthenticated, imageUpload.single('image'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ 
@@ -4672,14 +4672,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   // Initialize multer upload with 50MB size limit
-  const upload = multer({ 
+  const mediaUpload = multer({ 
     storage: mediaStorage,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
     fileFilter
   });
   
   // Upload file for messaging
-  app.post("/api/messages/upload", ensureAuthenticated, upload.single('file'), async (req: Request, res: Response) => {
+  app.post("/api/messages/upload", ensureAuthenticated, mediaUpload.single('file'), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
