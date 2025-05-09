@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, User, Search, Check, X, Mail, Settings, Users, Shield,
-  Trophy, FileDown, UserCheck
+  Trophy, FileDown, UserCheck, Trash2, AlertTriangle
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -76,9 +76,42 @@ export default function AdminUsers() {
     }
   });
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest('DELETE', `/api/admin/users/${userId}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to delete user');
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User deleted",
+        description: "The user has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error deleting user",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   // Handle user approval
   const handleApproveUser = (userId: number) => {
     approveUserMutation.mutate(userId);
+  };
+  
+  // Handle user deletion
+  const handleDeleteUser = (userId: number, username: string) => {
+    if (window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+      deleteUserMutation.mutate(userId);
+    }
   };
   
   // Filter users based on search query
@@ -287,6 +320,22 @@ export default function AdminUsers() {
                               >
                                 Workouts
                               </Button>
+                              {!user.isAdmin && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center text-red-600 hover:text-red-700"
+                                  onClick={() => handleDeleteUser(user.id, user.username)}
+                                  disabled={deleteUserMutation.isPending}
+                                >
+                                  {deleteUserMutation.isPending && deleteUserMutation.variables === user.id ? (
+                                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="mr-2 h-3 w-3" />
+                                  )}
+                                  Delete
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
