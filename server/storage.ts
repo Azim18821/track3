@@ -318,11 +318,13 @@ export class DatabaseStorage implements IStorage {
   
   async deleteUser(id: number): Promise<boolean> {
     try {
-      // Delete the user
-      const result = await db.delete(users).where(eq(users.id, id));
+      // Delete the user and return the deleted record
+      const result = await db.delete(users)
+        .where(eq(users.id, id))
+        .returning({ deleted: users.id });
       
       // Return true if at least one record was deleted
-      return result.count > 0;
+      return result.length > 0;
     } catch (error) {
       console.error("Error deleting user:", error);
       return false;

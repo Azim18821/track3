@@ -378,6 +378,36 @@ export function setupAuth(app: Express) {
       res.status(500).json({ message: "Failed to update user" });
     }
   });
+  
+  // Delete a user account (Admin only)
+  app.delete("/api/admin/users/:id", ensureAdmin, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id, 10);
+      
+      // Prevent deleting yourself
+      if (req.user && req.user.id === userId) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Delete the user
+      const success = await storage.deleteUser(userId);
+      
+      if (success) {
+        res.status(200).json({ message: "User successfully deleted" });
+      } else {
+        res.status(500).json({ message: "Failed to delete user" });
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
 }
 
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -389,14 +419,14 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 }
 
 export function ensureAdmin(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && req.user.isAdmin) {
+  if (req.isAuthenticated() && req.user && req.user.isAdmin) {
     return next();
   }
   res.status(403).json({ message: "Unauthorized access" });
 }
 
 export function ensureTrainer(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && (req.user.isAdmin || req.user.isTrainer)) {
+  if (req.isAuthenticated() && req.user && (req.user.isAdmin || req.user.isTrainer)) {
     return next();
   }
   
