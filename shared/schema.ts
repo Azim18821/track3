@@ -78,6 +78,9 @@ export const trainerMessages = pgTable("trainer_messages", {
   clientId: integer("client_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
+  messageType: text("message_type").default("text").notNull(), // "text", "video", "image", etc.
+  mediaUrl: text("media_url"), // URL for videos or images
+  thumbnailUrl: text("thumbnail_url"), // For video/image thumbnails
   sentAt: timestamp("sent_at").notNull().defaultNow(),
   isRead: boolean("is_read").default(false).notNull(),
 });
@@ -243,6 +246,11 @@ export type TrainerClientRequest = typeof trainerClientRequests.$inferSelect;
 export const insertTrainerMessageSchema = createInsertSchema(trainerMessages).omit({
   id: true,
   sentAt: true,
+}).extend({
+  // Add validation for multimedia messages
+  messageType: z.enum(['text', 'video', 'image', 'file']).default('text'),
+  mediaUrl: z.string().url().optional(),
+  thumbnailUrl: z.string().url().optional(),
 });
 
 export type InsertTrainerMessage = z.infer<typeof insertTrainerMessageSchema>;
