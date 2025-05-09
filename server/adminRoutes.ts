@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ensureAdmin } from './auth';
 import { updateExercises, updateMeals, updateBothLibraries } from './adminLibraryUpdates';
+import { storage } from './storage';
 
 const router = Router();
 
@@ -128,7 +129,7 @@ router.get('/trainers/:trainerId/clients', ensureAdmin, async (req: Request, res
     const trainerClients = await storage.getTrainerClients(trainerId);
     
     // Format the response to match the expected structure
-    const formattedRelationships = trainerClients.map(tc => ({
+    const formattedRelationships = trainerClients.map((tc: { relationship: any, client: any }) => ({
       id: tc.relationship.id,
       trainerId: tc.relationship.trainerId,
       clientId: tc.relationship.clientId,
@@ -166,7 +167,7 @@ router.get('/clients/:clientId/trainers', ensureAdmin, async (req: Request, res:
     const clientTrainers = await storage.getClientTrainers(clientId);
     
     // Format the response to match the expected structure
-    const formattedRelationships = clientTrainers.map(ct => ({
+    const formattedRelationships = clientTrainers.map((ct: { relationship: any, trainer: any }) => ({
       id: ct.relationship.id,
       trainerId: ct.relationship.trainerId,
       clientId: ct.relationship.clientId,
