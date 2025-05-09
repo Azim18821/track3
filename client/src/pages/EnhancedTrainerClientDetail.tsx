@@ -83,6 +83,20 @@ export default function EnhancedTrainerClientDetail() {
     console.log("EnhancedTrainerClientDetail params:", { clientId, rawParams: params });
   }, [clientId, params]);
   
+  // Set active tab based on current URL
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes('/workouts')) {
+      setActiveTab('workout');
+    } else if (path.includes('/nutrition-goals')) {
+      setActiveTab('nutrition');
+    } else if (path.includes('/messages')) {
+      setActiveTab('messages');
+    } else {
+      setActiveTab('overview');
+    }
+  }, []);
+
   // Redirect if not trainer
   useEffect(() => {
     if (user && !user.isTrainer && !user.isAdmin) {
@@ -505,8 +519,8 @@ export default function EnhancedTrainerClientDetail() {
       >
         <TabsList className="grid grid-cols-5 mb-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workout">Workout</TabsTrigger>
-          <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+          <TabsTrigger value="workout" onClick={() => navigate(`/trainer/clients/${clientId}/workouts`)}>Workout</TabsTrigger>
+          <TabsTrigger value="nutrition" onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}>Nutrition</TabsTrigger>
           <TabsTrigger value="messages">Messages</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
