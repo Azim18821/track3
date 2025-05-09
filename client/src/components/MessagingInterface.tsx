@@ -8,7 +8,17 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
-import { Loader2, Send, MessageSquare, WifiOff } from "lucide-react";
+import { 
+  Loader2, Send, MessageSquare, WifiOff, 
+  Video, Image, File, X, Upload, Camera, 
+  Plus, ChevronDown, ChevronUp
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { isWebSocketConnected, sendWebSocketMessage, MESSAGE_RECEIVED_EVENT } from "@/lib/websocket";
 
 interface Message {
@@ -17,6 +27,9 @@ interface Message {
   clientId: number;
   senderId: number;
   content: string;
+  messageType?: 'text' | 'video' | 'image' | 'file';
+  mediaUrl?: string;
+  thumbnailUrl?: string;
   sentAt: string;
   isRead: boolean;
 }
@@ -40,6 +53,16 @@ const MessagingInterface = ({
   const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  // State for media attachments
+  const [mediaType, setMediaType] = useState<'text' | 'video' | 'image' | 'file'>('text');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
 
   // Determine if the current user is the trainer or client
   const isTrainer = currentUserId === trainerId;
@@ -89,12 +112,17 @@ const MessagingInterface = ({
 
   // Mutation to send a new message
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async (data: {
+      content: string;
+      messageType?: 'text' | 'video' | 'image' | 'file';
+      mediaUrl?: string;
+      thumbnailUrl?: string;
+    }) => {
       try {
         const res = await apiRequest("POST", "/api/messages", {
           trainerId,
           clientId,
-          content,
+          ...data
         });
         
         if (!res.ok) {
@@ -112,6 +140,9 @@ const MessagingInterface = ({
       // Also invalidate unread count to update badge in sidebar
       queryClient.invalidateQueries({ queryKey: ["/api/messages/unread/count"] });
       setNewMessage("");
+      setMediaFile(null);
+      setMediaType('text');
+      setUploadProgress(0);
     },
     onError: (error: any) => {
       toast({
@@ -119,6 +150,79 @@ const MessagingInterface = ({
         description: error.message || "There was an error sending your message",
         variant: "destructive",
       });
+    },
+  });
+  
+  // Mutation to upload media files
+  const uploadMediaMutation = useMutation({
+    mutationFn: async (file: File) => {
+      try {
+        setIsUploading(true);
+        
+        // Create a FormData object to send the file
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', mediaType);
+        formData.append('trainerId', trainerId.toString());
+        formData.append('clientId', clientId.toString());
+        
+        // Use XMLHttpRequest to track upload progress
+        return new Promise<{ mediaUrl: string; thumbnailUrl?: string }>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const percentage = Math.round((event.loaded / event.total) * 100);
+              setUploadProgress(percentage);
+            }
+          });
+          
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                resolve(response);
+              } catch (e) {
+                reject(new Error('Failed to parse server response'));
+              }
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+          
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error occurred during upload'));
+          });
+          
+          xhr.addEventListener('abort', () => {
+            reject(new Error('Upload was aborted'));
+          });
+          
+          xhr.open('POST', '/api/messages/upload');
+          xhr.send(formData);
+        });
+      } catch (err: any) {
+        throw err;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    onSuccess: (result) => {
+      // Send the message with the media URL
+      sendMessageMutation.mutate({
+        content: newMessage || `Shared a ${mediaType}`, // Use message text or default
+        messageType: mediaType,
+        mediaUrl: result.mediaUrl,
+        thumbnailUrl: result.thumbnailUrl
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: `Failed to upload ${mediaType}`,
+        description: error.message || `There was an error uploading your ${mediaType}`,
+        variant: "destructive",
+      });
+      setIsUploading(false);
     },
   });
 
@@ -142,6 +246,9 @@ const MessagingInterface = ({
             clientId: data.clientId,
             senderId: data.senderId,
             content: data.content,
+            messageType: data.messageType || 'text',
+            mediaUrl: data.mediaUrl,
+            thumbnailUrl: data.thumbnailUrl,
             sentAt: data.timestamp || new Date().toISOString(),
             isRead: false
           };
@@ -206,10 +313,51 @@ const MessagingInterface = ({
     }
   }, [messages, pendingMessages]);
 
+  // Handle file input change
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'video' | 'image' | 'file') => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Validate file size (limit to 50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select a file smaller than 50MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Set the media type and file
+      setMediaType(type);
+      setMediaFile(file);
+      
+      // Set a descriptive message if none exists
+      if (!newMessage.trim()) {
+        setNewMessage(`Shared a ${type.toLowerCase()}`);
+      }
+      
+      // Close the attachment menu
+      setShowAttachMenu(false);
+    }
+  };
+  
+  // Handle sending a message
   const handleSendMessage = () => {
+    // If there's a media file to upload
+    if (mediaFile && mediaType !== 'text') {
+      uploadMediaMutation.mutate(mediaFile);
+      return;
+    }
+    
+    // For text-only messages
     if (newMessage.trim()) {
-      // Always use regular HTTP API for persistence
-      sendMessageMutation.mutate(newMessage);
+      // Send with regular HTTP API
+      sendMessageMutation.mutate({
+        content: newMessage,
+        messageType: 'text'
+      });
       
       // If WebSocket is connected, also send via WebSocket for immediate delivery
       if (wsConnected) {
@@ -219,6 +367,7 @@ const MessagingInterface = ({
             trainerId,
             clientId,
             content: newMessage,
+            messageType: 'text',
             senderId: currentUserId,
             recipientId: isTrainer ? clientId : trainerId,
             timestamp: new Date().toISOString()
@@ -229,7 +378,15 @@ const MessagingInterface = ({
       }
     }
   };
+  
+  // Cancel media upload
+  const handleCancelMedia = () => {
+    setMediaFile(null);
+    setMediaType('text');
+    setUploadProgress(0);
+  };
 
+  // Handle keyboard input
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -347,6 +504,43 @@ const MessagingInterface = ({
                         : "bg-white/95 dark:bg-gray-800/95 border border-indigo-100/70 dark:border-indigo-900/50"
                     } ${isPending ? "opacity-70" : ""}`}
                   >
+                    {message.mediaUrl && message.messageType === 'video' && (
+                      <div className="mb-2">
+                        <video 
+                          controls 
+                          src={message.mediaUrl} 
+                          className="rounded max-w-full max-h-[250px] mb-2"
+                          poster={message.thumbnailUrl}
+                        />
+                      </div>
+                    )}
+                    
+                    {message.mediaUrl && message.messageType === 'image' && (
+                      <div className="mb-2">
+                        <img 
+                          src={message.mediaUrl} 
+                          alt="Shared image" 
+                          className="rounded max-w-full max-h-[250px] mb-2 object-contain"
+                          onClick={() => window.open(message.mediaUrl, '_blank')}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </div>
+                    )}
+                    
+                    {message.mediaUrl && message.messageType === 'file' && (
+                      <div className="flex items-center mb-2 p-1.5 bg-white/20 dark:bg-black/20 rounded">
+                        <FileIcon className="h-4 w-4 mr-2" />
+                        <a 
+                          href={message.mediaUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className={`text-xs underline ${isCurrentUserSender ? "text-blue-100" : "text-blue-600 dark:text-blue-400"}`}
+                        >
+                          {message.mediaUrl.split('/').pop()}
+                        </a>
+                      </div>
+                    )}
+                    
                     <div className={`text-xs md:text-sm leading-relaxed ${isCurrentUserSender ? "text-white" : "text-gray-800 dark:text-gray-200"}`}>
                       {message.content}
                     </div>
