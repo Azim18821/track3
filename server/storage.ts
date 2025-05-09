@@ -52,6 +52,7 @@ export interface IStorage {
   approveUser(id: number): Promise<User | undefined>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   getUserProfile(id: number): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   updateUserProfile(id: number, profileUpdate: {
     email?: string;
     dateOfBirth?: Date | null;
