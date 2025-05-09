@@ -1550,22 +1550,8 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Updated request: ${JSON.stringify(updatedRequest)}`);
       
-      // If the status is 'accepted', create a trainer-client relationship
-      if (status === 'accepted') {
-        console.log(`Creating trainer-client relationship: trainer=${updatedRequest.trainerId}, client=${updatedRequest.clientId}`);
-        try {
-          const relationship = await this.assignClientToTrainer(
-            updatedRequest.trainerId, 
-            updatedRequest.clientId,
-            updatedRequest.message || undefined
-          );
-          console.log(`Created relationship: ${JSON.stringify(relationship)}`);
-        } catch (error) {
-          console.error(`Error creating trainer-client relationship: ${error}`);
-          // Continue processing even if relationship creation fails
-        }
-      }
-      
+      // The trainer-client relationship is now created only in the route handler
+      // to avoid creating it twice and to ensure proper real-time notifications
       return updatedRequest;
     } catch (error) {
       console.error(`Error updating trainer request ${id}: ${error}`);
