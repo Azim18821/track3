@@ -9,7 +9,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
 import { z } from "zod";
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, not, inArray } from "drizzle-orm";
 import { sendPlanReadyEmail, verifyEmailConnection, hasEmailCredentials } from "./emailService";
 import multer from 'multer';
 import { 

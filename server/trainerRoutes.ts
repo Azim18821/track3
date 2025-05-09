@@ -1013,4 +1013,37 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
   }
 });
 
+// Get messages for a specific client
+router.get('/messages/:clientId', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const clientId = parseInt(req.params.clientId);
+    
+    // Verify that there's a trainer-client relationship
+    const trainerClients = await storage.getTrainerClients(trainerId);
+    const isValidClient = trainerClients.some(tc => tc.client.id === clientId);
+    
+    if (!isValidClient) {
+      return res.status(403).json({ message: 'Not authorized to view messages for this client' });
+    }
+    
+    // Get messages for this trainer-client pair
+    const messages = await storage.getTrainerClientMessages(trainerId, clientId);
+    
+    // Mark messages from client as read
+    const messagesToMark = messages
+      .filter(m => m.senderId === clientId && !m.isRead)
+      .map(m => m.id);
+      
+    if (messagesToMark.length > 0) {
+      await storage.markMessagesAsRead(trainerId, messagesToMark);
+    }
+    
+    res.json(messages);
+  } catch (error) {
+    console.error('Error getting trainer-client messages:', error);
+    res.status(500).json({ message: 'Error fetching messages' });
+  }
+});
+
 export default router;
