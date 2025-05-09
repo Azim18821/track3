@@ -1,0 +1,23 @@
+Database connection initialized
+Checking if database schema update is needed...
+User profile columns already exist.
+Ensured all additional user profile columns exist
+Database schema update completed
+Initializing default system settings...
+Setting plan_generation_frequency_days already exists with value: 0
+Setting fitness_coach_globally_disabled already exists with value: false
+System settings initialization complete
+Checking for stale plan generation statuses...
+No stale plan generation statuses found.
+Session configuration: {
+  secret: '[SET]',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 2592000000
+  },
+  env: 'development'
+}
