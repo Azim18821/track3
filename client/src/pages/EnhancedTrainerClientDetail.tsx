@@ -8,7 +8,7 @@ import {
   Loader2, ArrowLeft, Save, User, Scale, CalendarRange, 
   Dumbbell, Utensils, ClipboardList, Send, UserMinus, AlertTriangle,
   PenSquare, CheckSquare, Plus, ListPlus, MessageCircle, ChevronRight,
-  BarChart, Activity, Calendar
+  BarChart, Activity, Calendar, Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -1006,25 +1006,34 @@ export default function EnhancedTrainerClientDetail() {
               />
 
               {/* Show message if no nutrition data or goals */}
-              {(!clientData?.meals || clientData.meals.length === 0 || !clientData?.nutritionGoal) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No nutrition data found</p>
-                  <p className="text-xs mt-1">
-                    {clientData?.nutritionGoal 
-                      ? "Your client hasn't logged any meals yet." 
-                      : "Set nutrition goals for your client first."}
-                  </p>
-                  {!clientData?.nutritionGoal && (
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Set Nutrition Goals
-                    </Button>
-                  )}
+              {(!clientData?.meals || (clientData?.meals && clientData.meals.length === 0) || !clientData?.nutritionGoal) && (
+                <div className="text-center py-6 mt-6 mx-auto max-w-md border border-dashed border-gray-200 rounded-lg p-6 bg-gray-50/50">
+                  <div className="flex flex-col items-center">
+                    <div className="p-3 bg-primary/10 rounded-full mb-4">
+                      {!clientData?.nutritionGoal ? (
+                        <Settings className="h-6 w-6 text-primary" />
+                      ) : (
+                        <Utensils className="h-6 w-6 text-primary" />
+                      )}
+                    </div>
+                    <h3 className="font-medium text-base">No nutrition data found</h3>
+                    <p className="text-sm mt-1 text-muted-foreground">
+                      {clientData?.nutritionGoal 
+                        ? "Your client hasn't logged any meals yet." 
+                        : "Set nutrition goals for your client first."}
+                    </p>
+                    {!clientData?.nutritionGoal && (
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Set Nutrition Goals
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
