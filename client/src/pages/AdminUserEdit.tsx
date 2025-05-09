@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useParams, useLocation } from 'wouter';
@@ -7,11 +7,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Loader2, ArrowLeft, Save, User, Mail, Shield, Dumbbell } from 'lucide-react';
+import { 
+  Loader2, ArrowLeft, Save, User, Mail, Shield, Dumbbell, 
+  UserX, Link, Link2Off, Calendar, Users, AlertTriangle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Form,
   FormControl,
@@ -21,7 +25,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { format } from 'date-fns';
 import { Switch } from "@/components/ui/switch";
+import { 
+  Table, TableBody, TableCell, 
+  TableHead, TableHeader, TableRow 
+} from "@/components/ui/table";
+import { 
+  Tabs, TabsContent, TabsList, TabsTrigger 
+} from "@/components/ui/tabs";
 
 const userFormSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -32,11 +44,30 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
+interface TrainerClient {
+  id: number;
+  trainerId: number;
+  clientId: number;
+  assignedAt: string;
+  notes?: string;
+  trainer?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  client?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+}
+
 export default function AdminUserEdit() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { userId } = useParams();
+  const [selectedTab, setSelectedTab] = useState<'info' | 'relationships'>('info');
   
   // Redirect if not admin
   useEffect(() => {
@@ -56,6 +87,40 @@ export default function AdminUserEdit() {
     queryFn: async () => {
       const res = await apiRequest('GET', `/api/admin/users/${userId}`);
       if (!res.ok) throw new Error('Failed to fetch user details');
+      return await res.json();
+    },
+    enabled: !!user?.isAdmin && !!userId
+  });
+  
+  // Fetch trainer relationships where user is a trainer
+  const { 
+    data: trainerRelationships,
+    isLoading: trainerRelationshipsLoading,
+  } = useQuery({
+    queryKey: ['/api/admin/trainer-relationships', userId, 'trainer'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/admin/trainers/${userId}/clients`);
+      if (!res.ok) {
+        if (res.status === 404) return [];
+        throw new Error('Failed to fetch trainer relationships');
+      }
+      return await res.json();
+    },
+    enabled: !!user?.isAdmin && !!userId && !!userData?.isTrainer
+  });
+
+  // Fetch trainer relationships where user is a client
+  const { 
+    data: clientRelationships,
+    isLoading: clientRelationshipsLoading,
+  } = useQuery({
+    queryKey: ['/api/admin/trainer-relationships', userId, 'client'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/admin/clients/${userId}/trainers`);
+      if (!res.ok) {
+        if (res.status === 404) return [];
+        throw new Error('Failed to fetch client relationships');
+      }
       return await res.json();
     },
     enabled: !!user?.isAdmin && !!userId
@@ -114,6 +179,41 @@ export default function AdminUserEdit() {
       });
     }
   });
+
+  // Remove trainer-client relationship mutation
+  const removeRelationshipMutation = useMutation({
+    mutationFn: async (relationshipId: number) => {
+      const res = await apiRequest('DELETE', `/api/trainer/clients/${relationshipId}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to remove trainer-client relationship');
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Relationship removed",
+        description: "The trainer-client relationship has been removed successfully.",
+      });
+      // Invalidate relationships cache
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/trainer-relationships', userId, 'trainer'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/trainer-relationships', userId, 'client'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error removing relationship",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle relationship removal
+  const handleRemoveRelationship = (relationshipId: number) => {
+    if (window.confirm("Are you sure you want to remove this trainer-client relationship? This action cannot be undone.")) {
+      removeRelationshipMutation.mutate(relationshipId);
+    }
+  };
 
   // Handle form submission
   const onSubmit = (data: UserFormValues) => {
