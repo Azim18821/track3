@@ -312,43 +312,43 @@ export default function EnhancedTrainerClientDetail() {
   }
 
   return (
-    <div className="container px-2 py-4 max-w-full md:max-w-3xl lg:max-w-5xl">
+    <div className="container px-2 sm:px-4 py-3 sm:py-4 max-w-full md:max-w-3xl lg:max-w-5xl">
       {/* Header section with client info and actions */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => navigate('/trainer')}
-              className="text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary p-1 sm:p-2 h-8"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               <span>Back</span>
             </Button>
             
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
+            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
               {clientData?.client?.username}
             </h1>
           </div>
           
-          <div className="flex flex-wrap gap-2 mt-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1 sm:mt-2">
             {clientData?.latestWeight && (
-              <Badge variant="outline" className="flex items-center gap-1">
+              <Badge variant="outline" className="flex items-center gap-1 text-xs h-5 sm:h-6">
                 <Scale className="h-3 w-3" />
                 {clientData.latestWeight.weight} {clientData.latestWeight.unit}
               </Badge>
             )}
             
             {clientData?.client?.fitnessGoal && (
-              <Badge variant="outline" className="flex items-center gap-1">
+              <Badge variant="outline" className="flex items-center gap-1 text-xs h-5 sm:h-6">
                 <Activity className="h-3 w-3" />
                 {clientData.client.fitnessGoal}
               </Badge>
             )}
             
             {clientData?.client?.fitnessLevel && (
-              <Badge variant="outline" className="flex items-center gap-1">
+              <Badge variant="outline" className="flex items-center gap-1 text-xs h-5 sm:h-6">
                 <BarChart className="h-3 w-3" />
                 {clientData.client.fitnessLevel}
               </Badge>
@@ -356,15 +356,15 @@ export default function EnhancedTrainerClientDetail() {
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mt-1 sm:mt-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button 
                 variant="outline" 
                 size="sm"
-                className="flex-1 md:flex-auto"
+                className="flex-1 md:flex-auto h-8 sm:h-9 px-2 sm:px-3"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4 mr-1 sm:mr-2" />
                 Add
               </Button>
             </PopoverTrigger>
@@ -373,7 +373,7 @@ export default function EnhancedTrainerClientDetail() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="justify-start px-4 py-2 h-auto"
+                  className="justify-start px-3 sm:px-4 py-2 h-auto text-sm"
                   onClick={() => navigate(`/trainer/clients/${clientId}/workouts`)}
                 >
                   <Dumbbell className="mr-2 h-4 w-4" />
@@ -382,7 +382,7 @@ export default function EnhancedTrainerClientDetail() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="justify-start px-4 py-2 h-auto"
+                  className="justify-start px-3 sm:px-4 py-2 h-auto text-sm"
                   onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
                 >
                   <Utensils className="mr-2 h-4 w-4" />
@@ -391,7 +391,7 @@ export default function EnhancedTrainerClientDetail() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="justify-start px-4 py-2 h-auto"
+                  className="justify-start px-3 sm:px-4 py-2 h-auto text-sm"
                   onClick={() => navigate(`/enhanced-trainer-plan-creation?clientId=${clientId}`)}
                 >
                   <ClipboardList className="mr-2 h-4 w-4" />
@@ -400,7 +400,7 @@ export default function EnhancedTrainerClientDetail() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="justify-start px-4 py-2 h-auto"
+                  className="justify-start px-3 sm:px-4 py-2 h-auto text-sm"
                   onClick={() => setShowQuickMessageDialog(true)}
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
@@ -415,7 +415,7 @@ export default function EnhancedTrainerClientDetail() {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="text-red-600 border-red-200 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950 dark:border-red-800 flex-1 md:flex-auto"
+                className="text-red-600 border-red-200 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-950 dark:border-red-800 flex-1 md:flex-auto h-8 sm:h-9 px-2 sm:px-3"
               >
                 <UserMinus className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">End Relationship</span>
@@ -467,7 +467,7 @@ export default function EnhancedTrainerClientDetail() {
       
       {/* Quick message dialog */}
       <Dialog open={showQuickMessageDialog} onOpenChange={setShowQuickMessageDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Send Message</DialogTitle>
             <DialogDescription>
@@ -493,12 +493,13 @@ export default function EnhancedTrainerClientDetail() {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowQuickMessageDialog(false)}>
+              <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowQuickMessageDialog(false)}>
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
+                  size="sm"
                   disabled={sendMessageMutation.isPending}
                 >
                   {sendMessageMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -514,16 +515,32 @@ export default function EnhancedTrainerClientDetail() {
       {/* Main content */}
       <Tabs 
         defaultValue="overview" 
-        className="mt-4"
+        className="mt-3 sm:mt-4"
         value={activeTab}
         onValueChange={setActiveTab}
       >
-        <TabsList className="grid grid-cols-5 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="workout" onClick={() => navigate(`/trainer/clients/${clientId}/workouts`)}>Workout</TabsTrigger>
-          <TabsTrigger value="nutrition" onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}>Nutrition</TabsTrigger>
-          <TabsTrigger value="messages">Messages</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 mb-3 sm:mb-4 h-10 overflow-x-auto">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm px-1 sm:px-2 py-1.5">Overview</TabsTrigger>
+          <TabsTrigger value="workout" onClick={() => navigate(`/trainer/clients/${clientId}/workouts`)} className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
+            <Dumbbell className="h-3.5 w-3.5 mr-1 sm:hidden" />
+            <span className="hidden sm:inline">Workout</span>
+            <span className="sm:hidden">Work</span>
+          </TabsTrigger>
+          <TabsTrigger value="nutrition" onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)} className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
+            <Utensils className="h-3.5 w-3.5 mr-1 sm:hidden" />
+            <span className="hidden sm:inline">Nutrition</span>
+            <span className="sm:hidden">Nutri</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
+            <MessageCircle className="h-3.5 w-3.5 mr-1 sm:hidden" />
+            <span className="hidden sm:inline">Messages</span>
+            <span className="sm:hidden">Msgs</span>
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
+            <ClipboardList className="h-3.5 w-3.5 mr-1 sm:hidden" />
+            <span className="hidden sm:inline">Notes</span>
+            <span className="sm:hidden">Notes</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -656,25 +673,25 @@ export default function EnhancedTrainerClientDetail() {
             </CardHeader>
             <CardContent>
               {clientData?.nutritionGoal ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4 text-center">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+                  <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
                     <p className="text-xs text-muted-foreground">Calories</p>
-                    <p className="text-lg font-semibold">{clientData.nutritionGoal.caloriesPerDay}</p>
+                    <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.caloriesPerDay}</p>
                     <p className="text-xs text-muted-foreground">kcal/day</p>
                   </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 text-center">
+                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
                     <p className="text-xs text-muted-foreground">Protein</p>
-                    <p className="text-lg font-semibold">{clientData.nutritionGoal.proteinPerDay}</p>
+                    <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.proteinPerDay}</p>
                     <p className="text-xs text-muted-foreground">g/day</p>
                   </div>
-                  <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center">
+                  <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
                     <p className="text-xs text-muted-foreground">Carbs</p>
-                    <p className="text-lg font-semibold">{clientData.nutritionGoal.carbsPerDay}</p>
+                    <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.carbsPerDay}</p>
                     <p className="text-xs text-muted-foreground">g/day</p>
                   </div>
-                  <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 text-center">
+                  <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
                     <p className="text-xs text-muted-foreground">Fat</p>
-                    <p className="text-lg font-semibold">{clientData.nutritionGoal.fatPerDay}</p>
+                    <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.fatPerDay}</p>
                     <p className="text-xs text-muted-foreground">g/day</p>
                   </div>
                 </div>
@@ -748,14 +765,17 @@ export default function EnhancedTrainerClientDetail() {
                   
                   <Separator className="my-3" />
                   
-                  <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-1 sm:space-y-2">
                     <h4 className="text-xs font-medium">Weekly Schedule:</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2">
                       {Object.entries(clientData.fitnessPlan.workoutPlan.weeklySchedule || {}).map(([day, workout]: [string, any]) => (
-                        <div key={day} className="bg-muted/30 rounded-lg p-2">
+                        <div key={day} className="bg-muted/30 rounded-lg p-1.5 sm:p-2 h-12 sm:h-auto flex flex-col justify-between">
                           <p className="text-xs font-medium capitalize">{day}</p>
                           <p className="text-[10px] text-muted-foreground truncate">
                             {workout.name || `${day.charAt(0).toUpperCase() + day.slice(1)} Workout`}
+                          </p>
+                          <p className="text-[9px] text-muted-foreground/80 mt-0.5">
+                            {workout.exercises?.length || 0} exercises
                           </p>
                         </div>
                       ))}
