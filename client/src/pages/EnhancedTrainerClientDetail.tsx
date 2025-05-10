@@ -312,7 +312,7 @@ export default function EnhancedTrainerClientDetail() {
   }
 
   return (
-    <div className="container px-2 sm:px-4 py-3 sm:py-4 max-w-full md:max-w-3xl lg:max-w-5xl">
+    <div className="container px-2 sm:px-4 py-3 sm:py-4 max-w-full md:max-w-3xl lg:max-w-5xl overflow-x-hidden">
       {/* Header section with client info and actions */}
       <div className="flex flex-col md:flex-row justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="flex-1">
