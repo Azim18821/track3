@@ -1327,7 +1327,7 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
   // Wrap the component render in a try-catch block
   try {
     return (
-      <div className="container max-w-5xl mx-auto px-4 py-6">
+      <div className="container max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <Button 
@@ -1372,10 +1372,10 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
 
       {/* Confirm Cancel Dialog */}
       <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Cancel Plan Creation</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Cancel Plan Creation</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Are you sure you want to cancel? Any unsaved changes will be lost.
             </DialogDescription>
           </DialogHeader>
@@ -1661,10 +1661,10 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
                                           Add Exercise
                                         </Button>
                                       </DialogTrigger>
-                                      <DialogContent>
+                                      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg overflow-y-auto max-h-[90vh]">
                                         <DialogHeader>
-                                          <DialogTitle>Add Exercise</DialogTitle>
-                                          <DialogDescription>
+                                          <DialogTitle className="text-base sm:text-lg">Add Exercise</DialogTitle>
+                                          <DialogDescription className="text-xs sm:text-sm">
                                             Add a new exercise or select from templates.
                                           </DialogDescription>
                                         </DialogHeader>

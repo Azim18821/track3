@@ -422,13 +422,13 @@ export default function EnhancedTrainerClientDetail() {
                 <span className="inline sm:hidden">End</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-[90vw] sm:max-w-md">
+            <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className="flex items-center">
-                  <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
+                <DialogTitle className="flex items-center text-base sm:text-lg">
+                  <AlertTriangle className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
                   End Client Relationship
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-xs sm:text-sm">
                   Are you sure you want to end your trainer-client relationship with {clientData?.client?.username}?
                 </DialogDescription>
               </DialogHeader>
@@ -467,10 +467,10 @@ export default function EnhancedTrainerClientDetail() {
       
       {/* Quick message dialog */}
       <Dialog open={showQuickMessageDialog} onOpenChange={setShowQuickMessageDialog}>
-        <DialogContent className="w-[90vw] max-w-[90vw] sm:max-w-md">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Send Message</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Send Message</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Send a quick message to {clientData?.client?.username}
             </DialogDescription>
           </DialogHeader>
@@ -674,25 +674,25 @@ export default function EnhancedTrainerClientDetail() {
             <CardContent>
               {clientData?.nutritionGoal ? (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-                  <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
-                    <p className="text-xs text-muted-foreground">Calories</p>
+                  <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-2 sm:p-4 text-center h-24 flex flex-col justify-center">
+                    <p className="text-xs text-muted-foreground mb-1">Calories</p>
                     <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.caloriesPerDay}</p>
-                    <p className="text-xs text-muted-foreground">kcal/day</p>
+                    <p className="text-2xs sm:text-xs text-muted-foreground mt-1">kcal/day</p>
                   </div>
-                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
-                    <p className="text-xs text-muted-foreground">Protein</p>
+                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-2 sm:p-4 text-center h-24 flex flex-col justify-center">
+                    <p className="text-xs text-muted-foreground mb-1">Protein</p>
                     <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.proteinPerDay}</p>
-                    <p className="text-xs text-muted-foreground">g/day</p>
+                    <p className="text-2xs sm:text-xs text-muted-foreground mt-1">g/day</p>
                   </div>
-                  <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
-                    <p className="text-xs text-muted-foreground">Carbs</p>
+                  <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-2 sm:p-4 text-center h-24 flex flex-col justify-center">
+                    <p className="text-xs text-muted-foreground mb-1">Carbs</p>
                     <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.carbsPerDay}</p>
-                    <p className="text-xs text-muted-foreground">g/day</p>
+                    <p className="text-2xs sm:text-xs text-muted-foreground mt-1">g/day</p>
                   </div>
-                  <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-2 sm:p-4 text-center h-20 sm:h-auto flex flex-col justify-between">
-                    <p className="text-xs text-muted-foreground">Fat</p>
+                  <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-2 sm:p-4 text-center h-24 flex flex-col justify-center">
+                    <p className="text-xs text-muted-foreground mb-1">Fat</p>
                     <p className="text-base sm:text-lg font-semibold">{clientData.nutritionGoal.fatPerDay}</p>
-                    <p className="text-xs text-muted-foreground">g/day</p>
+                    <p className="text-2xs sm:text-xs text-muted-foreground mt-1">g/day</p>
                   </div>
                 </div>
               ) : (
@@ -769,14 +769,16 @@ export default function EnhancedTrainerClientDetail() {
                     <h4 className="text-xs font-medium">Weekly Schedule:</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 sm:gap-2">
                       {Object.entries(clientData.fitnessPlan.workoutPlan.weeklySchedule || {}).map(([day, workout]: [string, any]) => (
-                        <div key={day} className="bg-muted/30 rounded-lg p-1.5 sm:p-2 h-12 sm:h-auto flex flex-col justify-between">
+                        <div key={day} className="bg-muted/30 rounded-lg p-1.5 sm:p-2 h-16 flex flex-col justify-between">
                           <p className="text-xs font-medium capitalize">{day}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {workout.name || `${day.charAt(0).toUpperCase() + day.slice(1)} Workout`}
-                          </p>
-                          <p className="text-[9px] text-muted-foreground/80 mt-0.5">
-                            {workout.exercises?.length || 0} exercises
-                          </p>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {workout.name || `${day.charAt(0).toUpperCase() + day.slice(1)} Workout`}
+                            </p>
+                            <p className="text-[9px] text-muted-foreground/80 mt-0.5">
+                              {workout.exercises?.length || 0} exercises
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
