@@ -4198,6 +4198,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to end this client relationship" });
       }
       
+      // Get the client details before removing the relationship
+      const clientId = relationship?.client.id;
+      
+      // First, deactivate any active fitness plans for this client
+      if (clientId) {
+        console.log(`Deactivating fitness plans for client ${clientId} due to trainer relationship termination`);
+        try {
+          // Find the active fitness plan
+          const activePlan = await storage.getActiveFitnessPlan(clientId);
+          
+          if (activePlan) {
+            console.log(`Deactivating fitness plan ${activePlan.id} for client ${clientId}`);
+            // Update the plan to be inactive
+            await storage.updateFitnessPlan(activePlan.id, { isActive: false });
+            // Optional: remove workout and meal logs too if needed
+            // await storage.deleteFutureWorkoutsForUser(clientId, new Date());
+            // await storage.deletePlannedMealsForUser(clientId);
+            console.log(`Successfully deactivated fitness plan ${activePlan.id} for client ${clientId}`);
+          } else {
+            console.log(`No active fitness plan found for client ${clientId}`);
+          }
+        } catch (planError) {
+          console.error(`Error deactivating fitness plan for client ${clientId}:`, planError);
+          // Continue with relationship removal even if plan deactivation fails
+        }
+      }
+      
+      // Now remove the trainer-client relationship
       const success = await storage.removeTrainerClient(relationshipId);
       
       if (!success) {
