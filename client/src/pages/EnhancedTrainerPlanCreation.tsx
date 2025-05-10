@@ -2064,10 +2064,10 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
                                                       <Settings className="h-4 w-4" />
                                                     </Button>
                                                   </DialogTrigger>
-                                                  <DialogContent className="sm:max-w-lg">
+                                                  <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg overflow-y-auto max-h-[90vh]">
                                                     <DialogHeader>
-                                                      <DialogTitle>Edit Advanced Set Configuration</DialogTitle>
-                                                      <DialogDescription>
+                                                      <DialogTitle className="text-base sm:text-lg">Edit Advanced Set Configuration</DialogTitle>
+                                                      <DialogDescription className="text-xs sm:text-sm">
                                                         Customize the individual sets for {exercise.name}
                                                       </DialogDescription>
                                                     </DialogHeader>
