@@ -240,7 +240,7 @@ export default function EnhancedTrainerClientDetail() {
     onSuccess: () => {
       toast({
         title: "Client relationship ended",
-        description: "You are no longer the trainer for this client.",
+        description: "You are no longer the trainer for this client. Any active fitness plan for this client has been deactivated.",
       });
       // Navigate back to trainer dashboard
       navigate('/trainer');
@@ -437,7 +437,8 @@ export default function EnhancedTrainerClientDetail() {
                 <ul className="list-disc list-inside mt-1 space-y-1 text-xs text-muted-foreground">
                   <li>You will no longer be able to access this client's data</li>
                   <li>The client will not be able to message you</li>
-                  <li>The client's plans remain but they will be unassigned from you</li>
+                  <li>The client's active fitness plan will be deactivated</li>
+                  <li>Other workout history and records will remain in their account</li>
                 </ul>
               </div>
               <DialogFooter>

@@ -411,12 +411,13 @@ export default function EnhancedTrainerNutritionGoals() {
   }
 
   return (
-    <div className="container py-6 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container px-3 py-4 max-w-3xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4 sticky top-0 z-10 bg-background pb-2 pt-1">
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => navigate(`/trainer/clients/${clientId}`)}
+          className="w-full sm:w-auto"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Client
@@ -425,6 +426,7 @@ export default function EnhancedTrainerNutritionGoals() {
         <Button 
           disabled={isSaving}
           onClick={form.handleSubmit(onSubmit)}
+          className="w-full sm:w-auto"
         >
           {isSaving ? (
             <>
@@ -597,13 +599,13 @@ export default function EnhancedTrainerNutritionGoals() {
           
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
                 <CardTitle className="text-lg flex items-center">
                   <PieChart className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
                   Macronutrient Split
                 </CardTitle>
                 
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-2 sm:flex gap-2 sm:space-x-2">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -611,6 +613,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           variant="outline" 
                           size="sm"
                           onClick={() => adjustMacroSplit('balanced')}
+                          className="w-full text-xs sm:text-sm"
                         >
                           Balanced
                         </Button>
@@ -628,6 +631,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           variant="outline" 
                           size="sm"
                           onClick={() => adjustMacroSplit('high_protein')}
+                          className="w-full text-xs sm:text-sm"
                         >
                           High Protein
                         </Button>
@@ -645,6 +649,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           variant="outline" 
                           size="sm"
                           onClick={() => adjustMacroSplit('low_carb')}
+                          className="w-full text-xs sm:text-sm"
                         >
                           Low Carb
                         </Button>
@@ -662,6 +667,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           variant="outline" 
                           size="sm"
                           onClick={() => adjustMacroSplit('high_carb')}
+                          className="w-full text-xs sm:text-sm"
                         >
                           High Carb
                         </Button>
