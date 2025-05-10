@@ -482,7 +482,7 @@ export default function EnhancedTrainerNutritionGoals() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center">
                 <CardTitle className="text-lg flex items-center">
                   <Flame className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
                   Daily Calories
@@ -490,15 +490,15 @@ export default function EnhancedTrainerNutritionGoals() {
                 
                 <Dialog open={calculatorOpen} onOpenChange={setCalculatorOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
                       <Calculator className="mr-2 h-4 w-4" />
                       Calculate TDEE
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-sm mx-auto p-4 sm:p-6">
                     <DialogHeader>
-                      <DialogTitle>Calculate Daily Calories</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-center">Calculate Daily Calories</DialogTitle>
+                      <DialogDescription className="text-center">
                         Estimate your client's total daily energy expenditure (TDEE) based on their weight,
                         activity level, and goals.
                       </DialogDescription>
@@ -509,10 +509,12 @@ export default function EnhancedTrainerNutritionGoals() {
                         <Label>Client Weight (kg)</Label>
                         <Input
                           type="number"
+                          inputMode="decimal"
                           min="30"
                           max="200"
                           value={form.getValues('clientWeight')}
                           onChange={e => form.setValue('clientWeight', parseFloat(e.target.value) || 0)}
+                          className="text-base py-5"
                         />
                       </div>
                       
@@ -522,7 +524,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           value={form.getValues('activityLevel')}
                           onValueChange={value => form.setValue('activityLevel', value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base py-5">
                             <SelectValue placeholder="Select activity level" />
                           </SelectTrigger>
                           <SelectContent>
@@ -539,7 +541,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           value={form.getValues('goal')}
                           onValueChange={value => form.setValue('goal', value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="text-base py-5">
                             <SelectValue placeholder="Select goal" />
                           </SelectTrigger>
                           <SelectContent>
@@ -551,11 +553,18 @@ export default function EnhancedTrainerNutritionGoals() {
                       </div>
                     </div>
                     
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setCalculatorOpen(false)}>
+                    <DialogFooter className="flex-col space-y-2 sm:space-y-0 sm:flex-row pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setCalculatorOpen(false)}
+                        className="w-full sm:w-auto"
+                      >
                         Cancel
                       </Button>
-                      <Button onClick={calculateTDEE}>
+                      <Button 
+                        onClick={calculateTDEE}
+                        className="w-full sm:w-auto"
+                      >
                         Calculate
                       </Button>
                     </DialogFooter>
@@ -583,7 +592,7 @@ export default function EnhancedTrainerNutritionGoals() {
                         step={50}
                         value={[field.value]}
                         onValueChange={(values) => field.onChange(values[0])}
-                        className="py-4"
+                        className="py-4 touch-none"
                       />
                     </FormControl>
                     <div className="flex justify-between text-xs text-muted-foreground">
@@ -685,39 +694,39 @@ export default function EnhancedTrainerNutritionGoals() {
             </CardHeader>
             <CardContent className="pt-4 pb-2 space-y-6">
               {/* Visual representation of the macronutrient split */}
-              <div className="w-full h-8 rounded-full overflow-hidden flex">
+              <div className="w-full h-10 sm:h-8 rounded-full overflow-hidden flex">
                 <div 
-                  className="bg-blue-500 h-full flex items-center justify-center text-xs text-white font-medium"
+                  className="bg-blue-500 h-full flex items-center justify-center text-xs sm:text-sm text-white font-medium"
                   style={{ width: `${caloricSplit.protein}%` }}
                 >
-                  {caloricSplit.protein}%
+                  {caloricSplit.protein > 15 ? `${caloricSplit.protein}%` : ""}
                 </div>
                 <div 
-                  className="bg-amber-500 h-full flex items-center justify-center text-xs text-white font-medium"
+                  className="bg-amber-500 h-full flex items-center justify-center text-xs sm:text-sm text-white font-medium"
                   style={{ width: `${caloricSplit.carbs}%` }}
                 >
-                  {caloricSplit.carbs}%
+                  {caloricSplit.carbs > 15 ? `${caloricSplit.carbs}%` : ""}
                 </div>
                 <div 
-                  className="bg-red-500 h-full flex items-center justify-center text-xs text-white font-medium"
+                  className="bg-red-500 h-full flex items-center justify-center text-xs sm:text-sm text-white font-medium"
                   style={{ width: `${caloricSplit.fat}%` }}
                 >
-                  {caloricSplit.fat}%
+                  {caloricSplit.fat > 15 ? `${caloricSplit.fat}%` : ""}
                 </div>
               </div>
               
-              <div className="flex justify-center space-x-4">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
-                  <span className="text-xs">Protein</span>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                  <span className="text-xs sm:text-sm">Protein: {caloricSplit.protein}%</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-amber-500 rounded-full mr-1"></div>
-                  <span className="text-xs">Carbs</span>
+                  <div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>
+                  <span className="text-xs sm:text-sm">Carbs: {caloricSplit.carbs}%</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-3 h-3 bg-red-500 rounded-full mr-1"></div>
-                  <span className="text-xs">Fat</span>
+                  <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                  <span className="text-xs sm:text-sm">Fat: {caloricSplit.fat}%</span>
                 </div>
               </div>
               
@@ -744,6 +753,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           max={60}
                           step={5}
                           value={[field.value]}
+                          className="py-4 touch-none"
                           onValueChange={(values) => {
                             // Ensure percentages add up to 100%
                             const newProtein = values[0];
@@ -778,7 +788,6 @@ export default function EnhancedTrainerNutritionGoals() {
                             
                             field.onChange(newProtein);
                           }}
-                          className="py-2"
                         />
                       </FormControl>
                       <FormMessage />
@@ -808,6 +817,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           max={70}
                           step={5}
                           value={[field.value]}
+                          className="py-4 touch-none"
                           onValueChange={(values) => {
                             // Ensure percentages add up to 100%
                             const newCarbs = values[0];
@@ -842,7 +852,6 @@ export default function EnhancedTrainerNutritionGoals() {
                             
                             field.onChange(newCarbs);
                           }}
-                          className="py-2"
                         />
                       </FormControl>
                       <FormMessage />
@@ -872,6 +881,7 @@ export default function EnhancedTrainerNutritionGoals() {
                           max={60}
                           step={5}
                           value={[field.value]}
+                          className="py-4 touch-none"
                           onValueChange={(values) => {
                             // Ensure percentages add up to 100%
                             const newFat = values[0];
@@ -906,7 +916,6 @@ export default function EnhancedTrainerNutritionGoals() {
                             
                             field.onChange(newFat);
                           }}
-                          className="py-2"
                         />
                       </FormControl>
                       <FormMessage />
@@ -939,28 +948,28 @@ export default function EnhancedTrainerNutritionGoals() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl">
-                  <div className="text-sm text-muted-foreground">Calories</div>
-                  <div className="text-2xl font-bold mt-1">{form.getValues('caloriesPerDay')}</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-3 sm:p-4 rounded-xl flex flex-col justify-between h-24 sm:h-auto">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Calories</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1">{form.getValues('caloriesPerDay')}</div>
                   <div className="text-xs text-muted-foreground">kcal/day</div>
                 </div>
                 
-                <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl">
-                  <div className="text-sm text-muted-foreground">Protein</div>
-                  <div className="text-2xl font-bold mt-1">{form.getValues('proteinPerDay')}</div>
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-3 sm:p-4 rounded-xl flex flex-col justify-between h-24 sm:h-auto">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Protein</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1">{form.getValues('proteinPerDay')}</div>
                   <div className="text-xs text-muted-foreground">g/day</div>
                 </div>
                 
-                <div className="bg-amber-50 dark:bg-amber-900/30 p-4 rounded-xl">
-                  <div className="text-sm text-muted-foreground">Carbs</div>
-                  <div className="text-2xl font-bold mt-1">{form.getValues('carbsPerDay')}</div>
+                <div className="bg-amber-50 dark:bg-amber-900/30 p-3 sm:p-4 rounded-xl flex flex-col justify-between h-24 sm:h-auto">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Carbs</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1">{form.getValues('carbsPerDay')}</div>
                   <div className="text-xs text-muted-foreground">g/day</div>
                 </div>
                 
-                <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-xl">
-                  <div className="text-sm text-muted-foreground">Fat</div>
-                  <div className="text-2xl font-bold mt-1">{form.getValues('fatPerDay')}</div>
+                <div className="bg-red-50 dark:bg-red-900/30 p-3 sm:p-4 rounded-xl flex flex-col justify-between h-24 sm:h-auto">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Fat</div>
+                  <div className="text-xl sm:text-2xl font-bold mt-1">{form.getValues('fatPerDay')}</div>
                   <div className="text-xs text-muted-foreground">g/day</div>
                 </div>
               </div>
