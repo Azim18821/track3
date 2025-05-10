@@ -471,10 +471,6 @@ export default function EnhancedTrainerClientWorkouts() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Client
           </Button>
-          
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            {clientData?.client?.username}'s Workouts
-          </h1>
         </div>
         
         <Button 
