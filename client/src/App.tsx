@@ -353,7 +353,6 @@ function App() {
                       <ProtectedLayout>
                         <div className="w-full h-full">
                           <div className="container py-8 px-4">
-                            <h1 className="text-2xl font-bold mb-6 text-center">Fitness Plan Creation</h1>
                             <div className="bg-card p-4 rounded-lg shadow">
                               <EnhancedTrainerPlanCreation />
                             </div>
