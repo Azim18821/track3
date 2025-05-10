@@ -2802,10 +2802,10 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
                                 Add Snack
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md overflow-y-auto max-h-[90vh]">
                               <DialogHeader>
-                                <DialogTitle>Add Snack</DialogTitle>
-                                <DialogDescription>
+                                <DialogTitle className="text-base sm:text-lg">Add Snack</DialogTitle>
+                                <DialogDescription className="text-xs sm:text-sm">
                                   Add a new snack to the meal plan
                                 </DialogDescription>
                               </DialogHeader>
@@ -2911,10 +2911,10 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
 
                           {/* Add Custom Meal Dialog */}
                           <Dialog open={isAddingCustomMeal} onOpenChange={setIsAddingCustomMeal}>
-                            <DialogContent>
+                            <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md overflow-y-auto max-h-[90vh]">
                               <DialogHeader>
-                                <DialogTitle>Add Custom Meal</DialogTitle>
-                                <DialogDescription>
+                                <DialogTitle className="text-base sm:text-lg">Add Custom Meal</DialogTitle>
+                                <DialogDescription className="text-xs sm:text-sm">
                                   Add a custom meal to supplement the core nutrition plan
                                 </DialogDescription>
                               </DialogHeader>
