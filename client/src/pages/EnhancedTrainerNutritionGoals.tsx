@@ -411,7 +411,7 @@ export default function EnhancedTrainerNutritionGoals() {
   }
 
   return (
-    <div className="container px-3 py-4 max-w-3xl mx-auto">
+    <div className="container px-2 sm:px-4 py-3 sm:py-4 max-w-3xl mx-auto overflow-x-hidden">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4 sticky top-0 z-10 bg-background pb-2 pt-1">
         <Button 
           variant="outline" 

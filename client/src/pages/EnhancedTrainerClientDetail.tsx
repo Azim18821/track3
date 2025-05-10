@@ -544,10 +544,10 @@ export default function EnhancedTrainerClientDetail() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-4 overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Client Stats Card */}
-            <Card>
+            <Card className="overflow-hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
                   <User className="mr-2 h-4 w-4" />
@@ -555,38 +555,38 @@ export default function EnhancedTrainerClientDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pb-3 space-y-2">
-                <div className="flex justify-between">
+                <div className="flex flex-wrap justify-between break-words">
                   <span className="text-sm text-muted-foreground">Email:</span>
-                  <span className="text-sm font-medium">{clientData?.client?.email}</span>
+                  <span className="text-sm font-medium max-w-[170px] sm:max-w-none text-right">{clientData?.client?.email}</span>
                 </div>
                 
                 {clientData?.client?.age && (
-                  <div className="flex justify-between">
+                  <div className="flex flex-wrap justify-between">
                     <span className="text-sm text-muted-foreground">Age:</span>
-                    <span className="text-sm font-medium">{clientData.client.age} years</span>
+                    <span className="text-sm font-medium text-right">{clientData.client.age} years</span>
                   </div>
                 )}
                 
                 {clientData?.client?.gender && (
-                  <div className="flex justify-between">
+                  <div className="flex flex-wrap justify-between">
                     <span className="text-sm text-muted-foreground">Gender:</span>
-                    <span className="text-sm font-medium">{clientData.client.gender}</span>
+                    <span className="text-sm font-medium text-right">{clientData.client.gender}</span>
                   </div>
                 )}
                 
                 {clientData?.client?.height && (
-                  <div className="flex justify-between">
+                  <div className="flex flex-wrap justify-between">
                     <span className="text-sm text-muted-foreground">Height:</span>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-right">
                       {clientData.client.height} {clientData.client.heightUnit || 'cm'}
                     </span>
                   </div>
                 )}
                 
                 {clientData?.client?.activityLevel && (
-                  <div className="flex justify-between">
+                  <div className="flex flex-wrap justify-between">
                     <span className="text-sm text-muted-foreground">Activity Level:</span>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-right max-w-[170px] sm:max-w-none">
                       {clientData.client.activityLevel.replace('_', ' ')}
                     </span>
                   </div>

@@ -459,7 +459,7 @@ export default function EnhancedTrainerClientWorkouts() {
   }
 
   return (
-    <div className="container py-6 max-w-4xl">
+    <div className="container px-2 sm:px-6 py-4 sm:py-6 max-w-4xl overflow-x-hidden">
       {/* Header with navigation */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -488,13 +488,13 @@ export default function EnhancedTrainerClientWorkouts() {
       
       {/* Create Workout Dialog */}
       <Dialog open={isAddingWorkout} onOpenChange={setIsAddingWorkout}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[600px] md:max-w-[800px] overflow-y-auto max-h-[90vh]">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[600px] md:max-w-[800px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
-              <Dumbbell className="mr-2 h-5 w-5 text-indigo-500" />
+            <DialogTitle className="flex items-center text-base sm:text-lg">
+              <Dumbbell className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />
               Create Workout for {clientData?.client?.username}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Design a workout for your client including sets, reps, and weights.
             </DialogDescription>
           </DialogHeader>
