@@ -495,18 +495,18 @@ export default function EnhancedTrainerNutritionGoals() {
                       Calculate TDEE
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-sm mx-auto p-4 sm:p-6">
-                    <DialogHeader>
-                      <DialogTitle className="text-center">Calculate Daily Calories</DialogTitle>
-                      <DialogDescription className="text-center">
+                  <DialogContent className="max-w-sm mx-auto p-4 sm:p-6 overflow-y-auto max-h-[95vh] sm:max-h-[85vh]">
+                    <DialogHeader className="mb-2">
+                      <DialogTitle className="text-center text-base sm:text-lg">Calculate Daily Calories</DialogTitle>
+                      <DialogDescription className="text-center text-xs sm:text-sm px-1">
                         Estimate your client's total daily energy expenditure (TDEE) based on their weight,
                         activity level, and goals.
                       </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="space-y-4 py-2">
-                      <div className="space-y-2">
-                        <Label>Client Weight (kg)</Label>
+                    <div className="space-y-3 sm:space-y-4 py-1 sm:py-2">
+                      <div className="space-y-1 sm:space-y-2">
+                        <Label className="text-sm">Client Weight (kg)</Label>
                         <Input
                           type="number"
                           inputMode="decimal"
@@ -518,8 +518,8 @@ export default function EnhancedTrainerNutritionGoals() {
                         />
                       </div>
                       
-                      <div className="space-y-2">
-                        <Label>Activity Level</Label>
+                      <div className="space-y-1 sm:space-y-2">
+                        <Label className="text-sm">Activity Level</Label>
                         <Select 
                           value={form.getValues('activityLevel')}
                           onValueChange={value => form.setValue('activityLevel', value)}
@@ -535,8 +535,8 @@ export default function EnhancedTrainerNutritionGoals() {
                         </Select>
                       </div>
                       
-                      <div className="space-y-2">
-                        <Label>Goal</Label>
+                      <div className="space-y-1 sm:space-y-2">
+                        <Label className="text-sm">Goal</Label>
                         <Select 
                           value={form.getValues('goal')}
                           onValueChange={value => form.setValue('goal', value)}
