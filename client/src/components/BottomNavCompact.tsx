@@ -12,18 +12,12 @@ import {
   Dna
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import CenterNavButton from '@/components/CenterNavButton';
+import CenterNavButton from '@/components/CenterNavButtonCompact';
 import { Capacitor } from '@capacitor/core';
 
-export function BottomNavCircular() {
+export function BottomNavCompact() {
   const [location] = useLocation();
   const { user } = useAuth();
-  const [hasHomeIndicator, setHasHomeIndicator] = useState(false);
-  
-  // We're not using home indicator detection for now
-  useEffect(() => {
-    setHasHomeIndicator(false);
-  }, []);
   
   const isActive = (path: string) => {
     if (path === '/' && location === '/dashboard') return true;
@@ -128,27 +122,26 @@ export function BottomNavCircular() {
         borderTopRightRadius: '20px',
       }}
     >
-      {/* iOS safe area padding bottom is handled with pb-safe class and home indicator detection */}
-      <div className="grid h-20 grid-cols-5 px-1">
+      {/* iOS safe area padding bottom is handled with pb-safe class */}
+      <div className="grid h-16 grid-cols-5 px-1 py-0">
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
             key={`left-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="inline-flex flex-col items-center justify-center h-full px-1 py-0 touch-none"
           >
             <div 
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
                 item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
+                  ? 'bg-primary/15 text-primary scale-105' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
               style={{
-                WebkitTapHighlightColor: 'transparent',
-                transform: item.active ? 'translateY(-2px)' : 'none'
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              <item.icon className={`w-5 h-5 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
               {item.active && (
                 <>
                   <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
@@ -157,7 +150,7 @@ export function BottomNavCircular() {
               )}
             </div>
             <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
+              className={`text-[9px] font-medium whitespace-nowrap max-w-[70px] text-center truncate mt-0 ${
                 item.active 
                   ? 'text-primary' 
                   : 'text-gray-600 dark:text-gray-300'
@@ -178,20 +171,19 @@ export function BottomNavCircular() {
           <Link 
             key={`right-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="inline-flex flex-col items-center justify-center h-full px-1 py-0 touch-none"
           >
             <div 
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
                 item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
+                  ? 'bg-primary/15 text-primary scale-105' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
               style={{
-                WebkitTapHighlightColor: 'transparent',
-                transform: item.active ? 'translateY(-2px)' : 'none'
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              <item.icon className={`w-5 h-5 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
               {item.active && (
                 <>
                   <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
@@ -200,7 +192,7 @@ export function BottomNavCircular() {
               )}
             </div>
             <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
+              className={`text-[9px] font-medium whitespace-nowrap max-w-[70px] text-center truncate mt-0 ${
                 item.active 
                   ? 'text-primary' 
                   : 'text-gray-600 dark:text-gray-300'
@@ -215,4 +207,4 @@ export function BottomNavCircular() {
   );
 }
 
-export default BottomNavCircular;
+export default BottomNavCompact;

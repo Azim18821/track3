@@ -311,7 +311,7 @@
     /* iOS Navigation Bar Fixes */
     .bottom-nav {
       padding-bottom: env(safe-area-inset-bottom) !important;
-      height: 5rem !important; /* Fixed height */
+      height: calc(5rem + env(safe-area-inset-bottom)) !important;
       z-index: 100 !important;
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
@@ -323,8 +323,8 @@
       /* Rounded top corners for modern iOS look */
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
-      /* Prevent overflow */
-      overflow: hidden;
+      /* Ensure proper height with home indicator */
+      min-height: calc(80px + env(safe-area-inset-bottom));
     }
     
     /* iOS-specific container styling */
@@ -377,39 +377,13 @@
     
     /* For tab layouts that need to accommodate iOS home indicator */
     .pb-safe {
-      padding-bottom: min(env(safe-area-inset-bottom), 10px) !important;
+      padding-bottom: env(safe-area-inset-bottom) !important;
     }
     
-    /* Extra styling for iOS home indicator area */
+    /* Simple iOS home indicator handling */
     @supports (padding: env(safe-area-inset-bottom)) {
-      /* Remove the after pseudo-element that was causing black space */
       .bottom-nav {
-        /* Make sure we don't add too much padding */
         padding-bottom: env(safe-area-inset-bottom) !important;
-      }
-      
-      /* Special handling for home indicator - keep it minimal */
-      .bottom-nav.has-home-indicator {
-        padding-bottom: max(env(safe-area-inset-bottom), 10px) !important;
-      }
-      
-      /* Add a subtle home indicator line */
-      .bottom-nav.has-home-indicator:before {
-        content: '';
-        position: absolute;
-        bottom: 5px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 36px; /* Smaller, more subtle indicator */
-        height: 4px;
-        background-color: rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-        z-index: 10;
-      }
-      
-      /* Dark mode version */
-      .dark .bottom-nav.has-home-indicator:before {
-        background-color: rgba(255, 255, 255, 0.2);
       }
     }
     
