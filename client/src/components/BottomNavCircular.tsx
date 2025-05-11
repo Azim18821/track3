@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { 
   Home, 
@@ -13,10 +13,35 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import CenterNavButton from '@/components/CenterNavButton';
+import { Capacitor } from '@capacitor/core';
 
-export function BottomNav() {
+export function BottomNavCircular() {
   const [location] = useLocation();
   const { user } = useAuth();
+  const [hasHomeIndicator, setHasHomeIndicator] = useState(false);
+  
+  // Detect iOS devices and check for home indicator
+  useEffect(() => {
+    const isIOS = Capacitor.getPlatform() === 'ios';
+    
+    // Modern iOS devices with Face ID typically have the home indicator
+    // Check if we have a safe area at the bottom as a proxy for home indicator
+    const checkForHomeIndicator = () => {
+      if (isIOS) {
+        // Use root CSS variable as indicator
+        const safeAreaBottom = parseInt(
+          getComputedStyle(document.documentElement).getPropertyValue('--sat-safe-area-bottom') || '0'
+        );
+        setHasHomeIndicator(safeAreaBottom > 0);
+      }
+    };
+    
+    checkForHomeIndicator();
+    
+    // Also check on resize as orientation changes can affect this
+    window.addEventListener('resize', checkForHomeIndicator);
+    return () => window.removeEventListener('resize', checkForHomeIndicator);
+  }, []);
   
   const isActive = (path: string) => {
     if (path === '/' && location === '/dashboard') return true;
@@ -114,9 +139,15 @@ export function BottomNav() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe">
-      {/* iOS safe area padding bottom is handled with pb-safe class */}
-      <div className="grid h-20 grid-cols-5 px-1">
+    <div 
+      className={`fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200 ${hasHomeIndicator ? 'has-home-indicator' : ''}`}
+      style={{
+        borderTopLeftRadius: hasHomeIndicator ? '26px' : '20px',
+        borderTopRightRadius: hasHomeIndicator ? '26px' : '20px',
+      }}
+    >
+      {/* iOS safe area padding bottom is handled with pb-safe class and home indicator detection */}
+      <div className={`grid h-20 grid-cols-5 px-1 ${hasHomeIndicator ? 'mb-1' : ''}`}>
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
@@ -125,13 +156,23 @@ export function BottomNav() {
             className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
           >
             <div 
-              className={`flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
                 item.active 
                   ? 'bg-primary/15 text-primary scale-110' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                transform: item.active ? 'translateY(-2px)' : 'none'
+              }}
             >
               <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              {item.active && (
+                <>
+                  <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                  <div className="absolute inset-0 rounded-full ring-2 ring-primary/20"></div>
+                </>
+              )}
             </div>
             <span 
               className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
@@ -158,13 +199,23 @@ export function BottomNav() {
             className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
           >
             <div 
-              className={`flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
                 item.active 
                   ? 'bg-primary/15 text-primary scale-110' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                transform: item.active ? 'translateY(-2px)' : 'none'
+              }}
             >
               <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              {item.active && (
+                <>
+                  <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                  <div className="absolute inset-0 rounded-full ring-2 ring-primary/20"></div>
+                </>
+              )}
             </div>
             <span 
               className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
@@ -182,4 +233,4 @@ export function BottomNav() {
   );
 }
 
-export default BottomNav;
+export default BottomNavCircular;

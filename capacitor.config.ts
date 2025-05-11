@@ -31,12 +31,9 @@ const config: CapacitorConfig = {
     contentInset: 'never',
     backgroundColor: '#1e3a8a',
     allowsLinkPreview: false,
-    // Include resource files that may contain configuration
     limitsNavigationsToAppBoundDomains: true,
-    // Enable responsive layout adjustments based on screen size
     preferredContentMode: 'mobile',
     scrollEnabled: false,
-    // Prevent horizontal scroll/bouncing
     overrideUserAgent: 'TrackMadeEazE iOS App',
   },
   plugins: {
@@ -53,11 +50,15 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true,
     },
-    // Handle status bar properly
+    // Handle status bar properly for iOS
     StatusBar: {
-      style: 'LIGHT_CONTENT',
-      backgroundColor: '#1e3a8a',
+      style: 'DARK',
+      backgroundColor: '#ffffff',
       overlaysWebView: true,
+      // Add animation when status bar changes
+      animation: 'FADE',
+      // iOS-specific: Hide status bar by default (user can show with swipe)
+      hide: false,
     },
     // Push Notifications configuration
     PushNotifications: {

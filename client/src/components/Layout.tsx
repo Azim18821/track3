@@ -7,7 +7,7 @@ const hasMessagingAccess = (user: any) => {
 
 import React, { ReactNode, useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
-import BottomNav from "./BottomNav";
+import BottomNav from "./BottomNavCircular";
 import { Menu, X, RefreshCw, Trash2, AlertCircle, LogOut, User, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main content area with fixed header and scrollable content */}
       <div className="fixed inset-0 flex flex-col">
         {/* Mobile Header - Fixed at top, non-scrollable */}
-        <header className="flex items-center justify-between border-b border-border bg-white dark:bg-gray-900 dark:text-white px-4 app-header h-14">
+        <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14">
           <div className="flex items-center">
             <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               TrackMadeEazE

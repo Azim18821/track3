@@ -6,13 +6,15 @@ interface PageContainerProps {
   className?: string;
   fullHeight?: boolean;
   respectSafeArea?: boolean;
+  transparentHeader?: boolean;
 }
 
 const PageContainer: React.FC<PageContainerProps> = ({ 
   children,
   className = "",
   fullHeight = false,
-  respectSafeArea = true
+  respectSafeArea = true,
+  transparentHeader = false
 }) => {
   const isIOS = Capacitor.getPlatform() === 'ios';
   
@@ -20,8 +22,17 @@ const PageContainer: React.FC<PageContainerProps> = ({
     <main 
       className={`container py-6 px-4 max-w-5xl mx-auto 
         ${fullHeight ? 'h-full flex flex-col' : ''}
-        ${respectSafeArea && isIOS ? 'pt-safe pb-safe pl-safe pr-safe pb-20' : ''}
+        ${respectSafeArea && isIOS ? 'pt-safe pb-safe pl-safe pr-safe pb-24' : 'pb-20'}
+        ${transparentHeader && isIOS ? 'ios-transparent-header' : ''}
+        ${isIOS ? 'ios-container' : ''}
         ${className}`}
+      style={{
+        // Apply iOS-specific styles for better native look and feel
+        ...(isIOS && {
+          WebkitOverflowScrolling: 'touch', // Enable momentum scrolling on iOS
+          WebkitTapHighlightColor: 'rgba(0,0,0,0)', // Remove tap highlight
+        })
+      }}
     >
       {children}
     </main>

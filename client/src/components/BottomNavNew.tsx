@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import CenterNavButton from '@/components/CenterNavButton';
 
-export function BottomNav() {
+export function BottomNavNew() {
   const [location] = useLocation();
   const { user } = useAuth();
   
@@ -114,7 +114,7 @@ export function BottomNav() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe">
+    <div className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200">
       {/* iOS safe area padding bottom is handled with pb-safe class */}
       <div className="grid h-20 grid-cols-5 px-1">
         {/* Left side items */}
@@ -125,13 +125,23 @@ export function BottomNav() {
             className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
           >
             <div 
-              className={`flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
                 item.active 
                   ? 'bg-primary/15 text-primary scale-110' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                transform: item.active ? 'translateY(-2px)' : 'none'
+              }}
             >
               <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              {item.active && (
+                <>
+                  <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                  <div className="absolute inset-0 rounded-2xl ring-2 ring-primary/20"></div>
+                </>
+              )}
             </div>
             <span 
               className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
@@ -158,13 +168,23 @@ export function BottomNav() {
             className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
           >
             <div 
-              className={`flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
                 item.active 
                   ? 'bg-primary/15 text-primary scale-110' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                transform: item.active ? 'translateY(-2px)' : 'none'
+              }}
             >
               <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              {item.active && (
+                <>
+                  <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                  <div className="absolute inset-0 rounded-2xl ring-2 ring-primary/20"></div>
+                </>
+              )}
             </div>
             <span 
               className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
@@ -182,4 +202,4 @@ export function BottomNav() {
   );
 }
 
-export default BottomNav;
+export default BottomNavNew;

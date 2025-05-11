@@ -155,25 +155,36 @@ export function CenterNavButton() {
   
   return (
     <div className="relative flex justify-center items-center">
-      <div className="absolute -top-6 flex justify-center">
+      <div className="absolute -top-7 flex justify-center">
         <Link
           href={targetPath}
           className="inline-flex flex-col items-center touch-none"
         >
           <div 
-            className={`flex items-center justify-center w-16 h-16 rounded-full shadow-md border-4 border-white dark:border-gray-900 ${
+            className={`relative flex items-center justify-center w-18 h-18 rounded-full shadow-lg border-[3px] border-white dark:border-gray-900 ${
               isActive 
-                ? 'bg-primary text-white' 
-                : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
+                ? 'bg-primary text-white scale-105 transition-transform duration-200' 
+                : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transition-all duration-200'
             } translate-z-0`}
+            style={{
+              width: '4.25rem',
+              height: '4.25rem',
+              boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+            }}
           >
             {buttonIcon}
+            {isActive && (
+              <>
+                <div className="absolute -bottom-1 w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                <div className="absolute inset-0 rounded-full ring-2 ring-white/20"></div>
+              </>
+            )}
           </div>
           <span 
-            className={`text-xs font-medium mt-1 ${
+            className={`text-[11px] font-semibold mt-1 ${
               isActive 
                 ? 'text-primary' 
-                : 'text-gray-600 dark:text-gray-300'
+                : 'text-gray-700 dark:text-gray-300'
             }`}
           >
             {buttonText}
