@@ -311,7 +311,7 @@
     /* iOS Navigation Bar Fixes */
     .bottom-nav {
       padding-bottom: env(safe-area-inset-bottom) !important;
-      height: calc(5rem + env(safe-area-inset-bottom)) !important;
+      height: 5rem !important; /* Fixed height */
       z-index: 100 !important;
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
@@ -323,8 +323,8 @@
       /* Rounded top corners for modern iOS look */
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
-      /* Ensure proper height with home indicator */
-      min-height: calc(80px + env(safe-area-inset-bottom));
+      /* Prevent overflow */
+      overflow: hidden;
     }
     
     /* iOS-specific container styling */
@@ -377,49 +377,39 @@
     
     /* For tab layouts that need to accommodate iOS home indicator */
     .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom) !important;
+      padding-bottom: min(env(safe-area-inset-bottom), 10px) !important;
     }
     
     /* Extra styling for iOS home indicator area */
     @supports (padding: env(safe-area-inset-bottom)) {
-      /* Add a smooth gradient under the navigation that blends with the home indicator */
-      .bottom-nav:after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: calc(env(safe-area-inset-bottom));
-        background: inherit;
-        z-index: -1;
-        /* Add a subtle gradient to blend with the home indicator */
-        background: linear-gradient(to bottom, var(--background), rgba(255, 255, 255, 0.85));
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+      /* Remove the after pseudo-element that was causing black space */
+      .bottom-nav {
+        /* Make sure we don't add too much padding */
+        padding-bottom: env(safe-area-inset-bottom) !important;
       }
       
-      /* Special handling for home indicator */
+      /* Special handling for home indicator - keep it minimal */
       .bottom-nav.has-home-indicator {
-        padding-bottom: max(env(safe-area-inset-bottom), 20px) !important;
+        padding-bottom: max(env(safe-area-inset-bottom), 10px) !important;
       }
       
-      /* Add a home indicator outline to frame the space */
+      /* Add a subtle home indicator line */
       .bottom-nav.has-home-indicator:before {
         content: '';
         position: absolute;
-        bottom: 8px;
+        bottom: 5px;
         left: 50%;
         transform: translateX(-50%);
-        width: 134px; /* Standard iOS home indicator width */
-        height: 5px;
-        background-color: rgba(0, 0, 0, 0.3);
-        border-radius: 3px;
+        width: 36px; /* Smaller, more subtle indicator */
+        height: 4px;
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
         z-index: 10;
       }
       
       /* Dark mode version */
       .dark .bottom-nav.has-home-indicator:before {
-        background-color: rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.2);
       }
     }
     

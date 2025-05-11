@@ -20,27 +20,10 @@ export function BottomNavCircular() {
   const { user } = useAuth();
   const [hasHomeIndicator, setHasHomeIndicator] = useState(false);
   
-  // Detect iOS devices and check for home indicator
+  // For now let's just disable the home indicator detection since it's causing layout issues
   useEffect(() => {
-    const isIOS = Capacitor.getPlatform() === 'ios';
-    
-    // Modern iOS devices with Face ID typically have the home indicator
-    // Check if we have a safe area at the bottom as a proxy for home indicator
-    const checkForHomeIndicator = () => {
-      if (isIOS) {
-        // Use root CSS variable as indicator
-        const safeAreaBottom = parseInt(
-          getComputedStyle(document.documentElement).getPropertyValue('--sat-safe-area-bottom') || '0'
-        );
-        setHasHomeIndicator(safeAreaBottom > 0);
-      }
-    };
-    
-    checkForHomeIndicator();
-    
-    // Also check on resize as orientation changes can affect this
-    window.addEventListener('resize', checkForHomeIndicator);
-    return () => window.removeEventListener('resize', checkForHomeIndicator);
+    // Force disable home indicator styling until we can test on real device
+    setHasHomeIndicator(false);
   }, []);
   
   const isActive = (path: string) => {
@@ -140,14 +123,14 @@ export function BottomNavCircular() {
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200 ${hasHomeIndicator ? 'has-home-indicator' : ''}`}
+      className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
       style={{
-        borderTopLeftRadius: hasHomeIndicator ? '26px' : '20px',
-        borderTopRightRadius: hasHomeIndicator ? '26px' : '20px',
+        borderTopLeftRadius: '20px',
+        borderTopRightRadius: '20px',
       }}
     >
       {/* iOS safe area padding bottom is handled with pb-safe class and home indicator detection */}
-      <div className={`grid h-20 grid-cols-5 px-1 ${hasHomeIndicator ? 'mb-1' : ''}`}>
+      <div className="grid h-20 grid-cols-5 px-1">
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
