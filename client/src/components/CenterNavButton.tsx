@@ -158,14 +158,14 @@ export function CenterNavButton() {
       <div className="absolute -top-6 flex justify-center">
         <Link
           href={targetPath}
-          className="inline-flex flex-col items-center"
+          className="inline-flex flex-col items-center touch-none"
         >
           <div 
             className={`flex items-center justify-center w-16 h-16 rounded-full shadow-md border-4 border-white dark:border-gray-900 ${
               isActive 
                 ? 'bg-primary text-white' 
                 : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700'
-            }`}
+            } translate-z-0`}
           >
             {buttonIcon}
           </div>

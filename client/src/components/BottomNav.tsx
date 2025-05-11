@@ -114,14 +114,15 @@ export function BottomNav() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div className="fixed bottom-0 left-0 z-50 w-full h-20 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav">
-      <div className="grid h-full grid-cols-5">
+    <div className="fixed bottom-0 left-0 z-50 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe">
+      {/* iOS safe area padding bottom is handled with pb-safe class */}
+      <div className="grid h-20 grid-cols-5">
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
             key={`left-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-2"
+            className="inline-flex flex-col items-center justify-center h-full px-1 py-2 touch-none"
           >
             <div 
               className={`flex items-center justify-center w-11 h-11 rounded-full mb-1 ${
@@ -154,7 +155,7 @@ export function BottomNav() {
           <Link 
             key={`right-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-2"
+            className="inline-flex flex-col items-center justify-center h-full px-1 py-2 touch-none"
           >
             <div 
               className={`flex items-center justify-center w-11 h-11 rounded-full mb-1 ${

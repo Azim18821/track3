@@ -55,8 +55,9 @@ const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
     <div
       className={cn(
         'w-full',
-        fullHeight ? 'min-h-[100svh]' : '',
+        fullHeight ? 'min-h-[100svh] max-h-[100svh] h-[100svh]' : '',
         isIOS && safeAreaPaddingClass,
+        isIOS ? 'overflow-hidden ios-fixed-container' : '',
         className
       )}
     >
@@ -66,7 +67,13 @@ const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
           maxWidthClass,
           centered ? 'mx-auto' : '',
           'w-full',
+          isIOS ? 'overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch' : ''
         )}
+        style={isIOS ? {
+          height: fullHeight ? 'calc(100svh - var(--sat) - var(--sab))' : 'auto',
+          width: '100%',
+          maxWidth: '100%'
+        } : undefined}
       >
         {children}
       </div>

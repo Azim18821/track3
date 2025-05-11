@@ -24,18 +24,80 @@ const setIOSFullHeight = () => {
   // Then set the value in the --vh custom property to the root of the document
   document.documentElement.style.setProperty('--vh', `${vh}px`);
   
-  // Also run on resize and orientation change
+  // Run on resize and orientation change with debounce
+  let resizeTimeout: number | null = null;
   window.addEventListener('resize', () => {
+    if (resizeTimeout) {
+      window.clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = window.setTimeout(() => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }, 100);
+  });
+  
+  window.addEventListener('orientationchange', () => {
     const vh = window.innerHeight * 0.01;
     document.documentElement.style.setProperty('--vh', `${vh}px`);
   });
 
-  // Prevent iOS bounce effect
+  // Prevent all iOS bounce effects
   document.body.addEventListener('touchmove', (e) => {
+    // Check if this is the body being touched and not an inner scrollable element
+    if (e.target === document.body || (e.target as HTMLElement).classList.contains('no-bounce')) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+  
+  // Prevent pinch zoom
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+  }, { passive: false });
+  
+  // We're not locking orientation here - that's handled in Capacitor's native layer
+};
+
+// Fix iOS pinch zooming issues
+const disablePinchZoom = () => {
+  // Add event listener to disable pinch zoom
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+    // Adding a return false for older iOS versions
+    return false;
+  }, { passive: false });
+  
+  document.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
+    return false;
+  }, { passive: false });
+  
+  document.addEventListener('gestureend', (e) => {
+    e.preventDefault();
+    return false;
+  }, { passive: false });
+  
+  // Also handle direct touch events
+  document.addEventListener('touchmove', (e) => {
+    // Only prevent if more than one touch point (pinch)
     if (e.touches.length > 1) {
       e.preventDefault();
     }
   }, { passive: false });
+};
+
+// Add class to body for iOS detection
+const detectIOSPlatform = () => {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  if (isIOS) {
+    document.body.classList.add('ios-device');
+    // iOS viewport adjustment
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (meta) {
+      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, height=device-height');
+    }
+  }
 };
 
 // Initialize Capacitor if available
@@ -48,6 +110,12 @@ const initializeApp = async () => {
   
   // Fix iOS full screen issues
   setIOSFullHeight();
+  
+  // Detect iOS platform and apply fixes
+  detectIOSPlatform();
+  
+  // Disable pinch zoom on iOS
+  disablePinchZoom();
   
   console.log('App initialization complete');
 };

@@ -156,36 +156,37 @@ function App() {
               <TooltipProvider>
                 <SafeAreaProvider>
                   <AppInitializer />
-                  <div className="min-h-[100svh] w-screen full-screen-container notch-friendly-container">
-                  <Switch>
-                    {/* Public Routes */}
-                    <Route path="/" component={ConditionalHome} />
-                    <Route path="/auth" component={AuthPage} />
-                    <Route path="/forgot-password" component={ForgotPassword} />
-                    <Route path="/reset-password" component={ResetPassword} />
-                    {/* Marketing routes removed */}
-                    
-                    {/* Protected Routes - All wrapped in ProtectedLayout */}
-                    <Route path="/dashboard">
-                      <ProtectedLayout>
-                        <Dashboard />
-                      </ProtectedLayout>
-                    </Route>
-                    <Route path="/nutrition">
-                      <ProtectedLayout>
-                        <NutritionTracker />
-                      </ProtectedLayout>
-                    </Route>
-                    <Route path="/workouts">
-                      <ProtectedLayout>
-                        <WorkoutTracker />
-                      </ProtectedLayout>
-                    </Route>
-                    <Route path="/workout-mode/:id">
-                      <ProtectedLayout>
-                        <WorkoutModePage />
-                      </ProtectedLayout>
-                    </Route>
+                  <div className="fixed inset-0 overflow-hidden ios-fixed-container h-[100svh] w-screen max-w-screen">
+                    <div className="h-full w-full overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch">
+                      <Switch>
+                        {/* Public Routes */}
+                        <Route path="/" component={ConditionalHome} />
+                        <Route path="/auth" component={AuthPage} />
+                        <Route path="/forgot-password" component={ForgotPassword} />
+                        <Route path="/reset-password" component={ResetPassword} />
+                        {/* Marketing routes removed */}
+                        
+                        {/* Protected Routes - All wrapped in ProtectedLayout */}
+                        <Route path="/dashboard">
+                          <ProtectedLayout>
+                            <Dashboard />
+                          </ProtectedLayout>
+                        </Route>
+                        <Route path="/nutrition">
+                          <ProtectedLayout>
+                            <NutritionTracker />
+                          </ProtectedLayout>
+                        </Route>
+                        <Route path="/workouts">
+                          <ProtectedLayout>
+                            <WorkoutTracker />
+                          </ProtectedLayout>
+                        </Route>
+                        <Route path="/workout-mode/:id">
+                          <ProtectedLayout>
+                            <WorkoutModePage />
+                          </ProtectedLayout>
+                        </Route>
                     <Route path="/coach">
                       <ProtectedLayout aiCoachPath>
                         <FitnessCoach />
@@ -361,12 +362,13 @@ function App() {
                       </ProtectedLayout>
                     </Route>
 
-                    {/* Fallback route */}
-                    <Route>
-                      <NotFound />
-                    </Route>
-                  </Switch>
-                </div>
+                        {/* Fallback route */}
+                        <Route>
+                          <NotFound />
+                        </Route>
+                      </Switch>
+                    </div>
+                  </div>
                 <OfflineIndicator />
                 <InstallPrompt />
                 <ProfilePrompt />

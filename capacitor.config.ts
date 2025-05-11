@@ -28,14 +28,16 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: serverConfig,
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     backgroundColor: '#1e3a8a',
-    allowsLinkPreview: true,
+    allowsLinkPreview: false,
     // Include resource files that may contain configuration
     limitsNavigationsToAppBoundDomains: true,
     // Enable responsive layout adjustments based on screen size
     preferredContentMode: 'mobile',
-    scrollEnabled: true,
+    scrollEnabled: false,
+    // Prevent horizontal scroll/bouncing
+    overrideUserAgent: 'TrackMadeEazE iOS App',
   },
   plugins: {
     SplashScreen: {
