@@ -513,7 +513,7 @@ html, body, #root {
     /* Bottom Navigation Bar Fix for iOS */
     .bottom-nav {
       position: fixed !important;
-      bottom: 0 !important;
+      bottom: -5px !important; /* Slightly lower than the viewport edge to ensure no gap */
       left: 0 !important;
       right: 0 !important;
       width: 100% !important;
