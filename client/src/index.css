@@ -328,44 +328,7 @@ html, body, #root {
       bottom: 0;
     }
     
-    /* iOS Navigation Bar Fixes */
-    .bottom-nav {
-      padding-bottom: env(safe-area-inset-bottom) !important;
-      height: calc(5rem + env(safe-area-inset-bottom)) !important;
-      z-index: 100 !important;
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-      touch-action: none;
-      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);
-      /* Add subtle glass effect */
-      box-shadow: 0 -1px 10px rgba(0, 0, 0, 0.05);
-      /* Rounded top corners for modern iOS look */
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-      /* Ensure proper height with home indicator and no gap at bottom */
-      min-height: calc(80px + env(safe-area-inset-bottom));
-      /* Additional fixes to eliminate any black gap */
-      overflow: visible;
-      position: relative;
-    }
-    
-    /* Create an extension to cover any gap at the bottom */
-    .bottom-nav::after {
-      content: '';
-      position: absolute;
-      bottom: -20px; /* Extend below the visible area */
-      left: 0;
-      right: 0;
-      height: 30px; /* Make sure it's tall enough */
-      background-color: inherit;
-      z-index: -1;
-    }
-    
-    /* Dark mode specific fixes */
-    .dark .bottom-nav::after {
-      background-color: rgba(17, 24, 39, 0.9); /* Match dark mode navbar color */
-    }
+    /* Removed conflicting iOS Navigation Bar styles */
     
     /* iOS-specific container styling */
     .ios-container {
@@ -430,12 +393,7 @@ html, body, #root {
     }
     
     /* Ensure bottom nav extends all the way to the bottom of the screen */
-    @supports (padding: env(safe-area-inset-bottom)) {
-      .bottom-nav {
-        padding-bottom: calc(env(safe-area-inset-bottom) + 1px) !important;
-        margin-bottom: -1px !important; /* Ensure no gap at the bottom */
-      }
-    }
+    /* Removed duplicate padding styles */
     
     /* iOS-specific touch feedback */
     @media (hover: hover) {
@@ -479,22 +437,48 @@ html, body, #root {
     padding-right: env(safe-area-inset-right);
   }
   
-  /* iOS-specific bottom nav settings */
+  /* Single consolidated bottom nav settings for iOS */
   @supports (-webkit-touch-callout: none) {
     /* iOS specific styles */
     .bottom-nav {
-      /* Absolute positioning at bottom */
+      /* Force absolute positioning at bottom without any gap */
       position: fixed !important;
       bottom: 0 !important;
-      /* Fill width and prevent overflow */
+      left: 0 !important;
+      right: 0 !important;
+      /* iOS-specific dimensions and fill */
       width: 100% !important;
-      /* Ensure rounded corners only at top */
+      min-height: auto !important;
+      /* Reset any other positioning that might interfere */
+      margin: 0 !important;
+      border-bottom: 0 !important;
+      /* Ensure the nav sits flush with the bottom edge */
+      margin-bottom: -1px !important;
+      /* Rounded corners only at top */
+      border-top-left-radius: 16px !important;
+      border-top-right-radius: 16px !important;
       border-bottom-left-radius: 0 !important;
       border-bottom-right-radius: 0 !important;
-      /* Extend full height including home indicator area */
+      /* Add padding for the home indicator */
       padding-bottom: env(safe-area-inset-bottom, 20px) !important;
-      /* Remove any margin that might create gaps */
-      margin-bottom: 0 !important;
+      /* Stack order */
+      z-index: 999 !important;
+      /* Ensure proper rendering */
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+    }
+
+    /* Create an extension to cover any gap at the bottom */
+    .bottom-nav::after {
+      content: '';
+      position: absolute;
+      display: block;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background-color: inherit;
+      z-index: -1;
     }
   }
   
