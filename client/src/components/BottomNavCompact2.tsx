@@ -123,7 +123,7 @@ export function BottomNavCompact2() {
         bottom: '0',
         left: '0',
         right: '0',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        // No padding bottom
       }}
     >
       <div className="grid h-14 grid-cols-5 px-1">

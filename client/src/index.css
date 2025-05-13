@@ -444,13 +444,13 @@ html, body, #root {
     left: 0;
     right: 0;
     width: 100%;
-    padding-bottom: env(safe-area-inset-bottom);
+    /* No padding bottom */
     z-index: 10; /* Ensure it stays on top */
   }
 
   /* Make sure the main content has enough padding for the nav */
   .main-content {
-    padding-bottom: calc(56px + env(safe-area-inset-bottom)); /* 56px is navigation height */
+    padding-bottom: 56px; /* 56px is navigation height */
   }
   
   /* iOS-specific adjustments */
@@ -470,14 +470,9 @@ html, body, #root {
       -webkit-overflow-scrolling: touch;
     }
     
-    /* Safe area adjustments for iOS */
-    #root {
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    
     /* Ensure nav bar sits flush with bottom edge on iOS */
     .bottom-nav {
-      padding-bottom: env(safe-area-inset-bottom);
+      /* No padding bottom */
       margin-bottom: 0;
       box-sizing: border-box;
     }
