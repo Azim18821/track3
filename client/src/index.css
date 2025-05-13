@@ -483,6 +483,14 @@ html, body, #root {
   .bottom-nav {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     margin-bottom: env(safe-area-inset-bottom);
+    margin-top: 10px; /* Add consistent top margin for all devices */
+  }
+  
+  /* iOS-specific bottom nav adjustment */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .bottom-nav {
+      margin-top: max(10px, env(safe-area-inset-bottom)); /* Larger margin for iOS */
+    }
   }
   
   /* Header spacing for notch */
