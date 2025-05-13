@@ -119,6 +119,11 @@ export function BottomNavCompact2() {
       style={{
         borderTopLeftRadius: '16px',
         borderTopRightRadius: '16px',
+        position: 'fixed',
+        bottom: '0',
+        left: '0',
+        right: '0',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div className="grid h-14 grid-cols-5 px-1">
