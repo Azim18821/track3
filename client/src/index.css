@@ -371,7 +371,7 @@ html, body, #root {
     .ios-container {
       /* Better spacing for iOS */
       padding-top: max(16px, env(safe-area-inset-top));
-      margin-bottom: calc(env(safe-area-inset-bottom) + 40px); /* Add extra bottom margin for nav bar */
+      margin-bottom: calc(env(safe-area-inset-bottom) + 56px); /* Add extra bottom margin for nav bar */
       
       /* Smoother transitions */
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
