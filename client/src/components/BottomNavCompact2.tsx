@@ -120,12 +120,11 @@ export function BottomNavCompact2() {
         borderTopLeftRadius: '16px',
         borderTopRightRadius: '16px',
         position: 'fixed',
-        bottom: '0',
+        bottom: '-25px', // Move the navbar down significantly
         left: '0',
         right: '0',
         backgroundColor: '#111827', // Dark background
-        // No padding bottom for a truly flush bottom
-        marginBottom: '-5px', // Negative margin to ensure no gap
+        paddingTop: '25px', // Add padding to the top to compensate for the negative bottom value
         transform: 'translateZ(0)',
         height: 'auto',
         zIndex: 999,
