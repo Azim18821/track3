@@ -115,7 +115,7 @@ export function BottomNavCompact2() {
 
   return (
     <div 
-      className="fixed inset-x-0 bottom-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav transition-all duration-200"
+      className="fixed inset-x-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav transition-all duration-200"
       style={{
         borderTopLeftRadius: '16px',
         borderTopRightRadius: '16px',
