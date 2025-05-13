@@ -123,7 +123,7 @@ const Dashboard = () => {
   const isAdmin = user?.isAdmin || false;
 
   return (
-    <div className={isMobile ? "mx-auto px-4 pt-3 pb-56" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"}>
+    <div className={isMobile ? "mx-auto px-4 pt-3 mb-24" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"}>
       {/* Welcome Header - Simplified for Mobile */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">

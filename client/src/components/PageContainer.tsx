@@ -22,9 +22,10 @@ const PageContainer: React.FC<PageContainerProps> = ({
     <main 
       className={`container py-6 px-4 max-w-5xl mx-auto 
         ${fullHeight ? 'h-full flex flex-col' : ''}
-        ${respectSafeArea && isIOS ? 'pt-safe pb-safe pl-safe pr-safe pb-48' : 'pb-48'}
+        ${respectSafeArea && isIOS ? 'pt-safe pb-safe pl-safe pr-safe' : ''}
         ${transparentHeader && isIOS ? 'ios-transparent-header' : ''}
         ${isIOS ? 'ios-container' : ''}
+        mb-24
         ${className}`}
       style={{
         // Apply iOS-specific styles for better native look and feel
