@@ -479,15 +479,15 @@ html, body, #root {
     padding-right: env(safe-area-inset-right);
   }
   
-  /* Bottom navigation positioning just above safe area */
+  /* Bottom navigation flush with device bottom edge */
   .bottom-nav {
-    /* Remove padding-bottom to position exactly at bottom */
-    padding-bottom: 0;
-    /* Reset any margins */
-    margin-top: 0;
-    margin-bottom: 0;
-    /* Position it directly at the bottom edge, just above safe area */
-    bottom: env(safe-area-inset-bottom);
+    /* Reset all positioning */
+    padding: 0;
+    margin: 0;
+    /* Force position to absolute bottom of viewport */
+    bottom: 0;
+    /* Add padding inside the nav for safe area */
+    padding-bottom: env(safe-area-inset-bottom);
   }
   
   /* Header spacing for notch */
