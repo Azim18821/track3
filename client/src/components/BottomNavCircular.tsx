@@ -126,6 +126,8 @@ export function BottomNavCircular() {
       style={{
         borderTopLeftRadius: '20px',
         borderTopRightRadius: '20px',
+        transform: 'translateY(0)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 20px)'
       }}
     >
       {/* iOS safe area padding bottom is handled with pb-safe class and home indicator detection */}

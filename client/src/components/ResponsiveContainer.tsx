@@ -48,7 +48,7 @@ const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
       : 'px-6 py-4';
 
   const safeAreaPaddingClass = padSafeArea 
-    ? 'pt-safe pb-safe pl-safe pr-safe' 
+    ? 'pt-safe pb-safe pl-safe pr-safe pb-32' 
     : '';
 
   return (
@@ -72,7 +72,8 @@ const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
         style={isIOS ? {
           height: fullHeight ? 'calc(100svh - var(--sat) - var(--sab))' : 'auto',
           width: '100%',
-          maxWidth: '100%'
+          maxWidth: '100%',
+          paddingBottom: deviceType === 'mobile' ? '8rem' : '0'
         } : undefined}
       >
         {children}

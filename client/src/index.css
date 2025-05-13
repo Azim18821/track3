@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure the app is always full-height and properly sized */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Remove all browser tap highlights for better native feel */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling for better native feel */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
 :root {
   --sat-safe-area-top: env(safe-area-inset-top);
   --sat-safe-area-bottom: env(safe-area-inset-bottom);
@@ -323,8 +343,28 @@
       /* Rounded top corners for modern iOS look */
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
-      /* Ensure proper height with home indicator */
+      /* Ensure proper height with home indicator and no gap at bottom */
       min-height: calc(80px + env(safe-area-inset-bottom));
+      /* Additional fixes to eliminate any black gap */
+      overflow: visible;
+      position: relative;
+    }
+    
+    /* Create an extension to cover any gap at the bottom */
+    .bottom-nav::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; /* Extend below the visible area */
+      left: 0;
+      right: 0;
+      height: 30px; /* Make sure it's tall enough */
+      background-color: inherit;
+      z-index: -1;
+    }
+    
+    /* Dark mode specific fixes */
+    .dark .bottom-nav::after {
+      background-color: rgba(17, 24, 39, 0.9); /* Match dark mode navbar color */
     }
     
     /* iOS-specific container styling */
@@ -375,15 +415,25 @@
       }
     }
     
-    /* For tab layouts that need to accommodate iOS home indicator */
+    /* Refined padding for iOS home indicator - not too much, not too little */
     .pb-safe {
       padding-bottom: env(safe-area-inset-bottom) !important;
     }
     
-    /* Simple iOS home indicator handling */
+    /* Make sure content doesn't ever get cut off on any device */
+    .ios-screen-container {
+      min-height: 100%;
+      height: 100%;
+      /* Ensure proper content boundaries */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Ensure bottom nav extends all the way to the bottom of the screen */
     @supports (padding: env(safe-area-inset-bottom)) {
       .bottom-nav {
-        padding-bottom: env(safe-area-inset-bottom) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom) + 1px) !important;
+        margin-bottom: -1px !important; /* Ensure no gap at the bottom */
       }
     }
     

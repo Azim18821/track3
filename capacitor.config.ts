@@ -28,17 +28,17 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: serverConfig,
   ios: {
-    contentInset: 'never',
+    contentInset: 'automatic',
     backgroundColor: '#1e3a8a',
     allowsLinkPreview: false,
     limitsNavigationsToAppBoundDomains: true,
     preferredContentMode: 'mobile',
-    scrollEnabled: false,
+    scrollEnabled: true,
     overrideUserAgent: 'TrackMadeEazE iOS App',
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 3000,
+      launchShowDuration: 2000,
       launchAutoHide: true,
       backgroundColor: "#1e3a8a",
       androidSplashResourceName: "splash",
