@@ -120,14 +120,14 @@ export function BottomNavCompact2() {
         borderTopLeftRadius: '16px',
         borderTopRightRadius: '16px',
         position: 'fixed',
-        bottom: '-25px', // Move the navbar down significantly
+        bottom: '0',
         left: '0',
         right: '0',
         backgroundColor: '#111827', // Dark background
-        paddingTop: '25px', // Add padding to the top to compensate for the negative bottom value
-        transform: 'translateZ(0)',
+        transform: 'translateY(25px)', // Move down with transform instead of bottom
         height: 'auto',
         zIndex: 999,
+        overflow: 'visible', // Allow content to be visible outside the element
       }}
     >
       <div className="grid h-14 grid-cols-5 px-1">
