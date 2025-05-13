@@ -123,11 +123,7 @@ export function BottomNavCompact2() {
         bottom: '0',
         left: '0',
         right: '0',
-        backgroundColor: '#111827', // Dark background
-        transform: 'translateY(25px)', // Move down with transform instead of bottom
-        height: 'auto',
-        zIndex: 999,
-        overflow: 'visible', // Allow content to be visible outside the element
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
       <div className="grid h-14 grid-cols-5 px-1">
