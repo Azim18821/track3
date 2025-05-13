@@ -120,10 +120,12 @@ export function BottomNavCompact2() {
         borderTopLeftRadius: '16px',
         borderTopRightRadius: '16px',
         position: 'fixed',
-        bottom: '0',
+        bottom: '-1px', // Slightly negative bottom value
         left: '0',
         right: '0',
-        // No padding bottom
+        marginBottom: '-50px', // Extreme negative margin
+        height: 'calc(100% + 50px)', // Increase height to compensate for margin
+        backgroundColor: '#111827', // Dark background to fill gap
       }}
     >
       <div className="grid h-14 grid-cols-5 px-1">
