@@ -444,7 +444,6 @@ html, body, #root {
     left: 0;
     right: 0;
     width: 100%;
-    /* No padding bottom */
     z-index: 10; /* Ensure it stays on top */
   }
 
@@ -455,26 +454,69 @@ html, body, #root {
   
   /* iOS-specific adjustments */
   @supports (-webkit-touch-callout: none) {
-    /* Full-height container fix */
-    html, body, #root {
-      height: 100%;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
+    /* Fix for global container to eliminate any gap at the bottom */
+    html, body {
+      /* Use full height with no overflow at body level */
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      /* Eliminate bounce effects */
+      overscroll-behavior: none !important;
+      -webkit-overflow-scrolling: none !important;
+      /* Prevent any resizing */
+      touch-action: pan-y !important;
+      /* Force hardware acceleration */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
     }
     
-    /* Eliminate iOS bounce effect */
-    body {
-      overscroll-behavior: none;
-      -webkit-overflow-scrolling: touch;
+    /* Make the root element scrollable instead */
+    #root, .app-container {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      /* Fill the entire safe area, including notches and home indicator */
+      padding: env(safe-area-inset-top, 0px) 
+               env(safe-area-inset-right, 0px) 
+               env(safe-area-inset-bottom, 0px) 
+               env(safe-area-inset-left, 0px) !important;
+      /* Force hardware acceleration */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      /* Ensure it fills viewport */
+      min-height: -webkit-fill-available !important;
+      min-height: 100vh !important;
+      min-height: 100svh !important;
+      /* Force it to extend all the way to the bottom */
+      margin-bottom: 0 !important;
+      /* Prevent any potential extra whitespace */
+      box-sizing: border-box !important;
     }
     
-    /* Ensure nav bar sits flush with bottom edge on iOS */
+    /* Bottom Navigation Bar Fix */
     .bottom-nav {
-      /* No padding bottom */
-      margin-bottom: 0;
-      box-sizing: border-box;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      padding-bottom: env(safe-area-inset-bottom);
+      background-color: #111827; /* Adjust to your theme color */
+      z-index: 10; /* Ensure it stays on top */
     }
   }
   
