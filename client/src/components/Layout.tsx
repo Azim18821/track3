@@ -7,7 +7,7 @@ const hasMessagingAccess = (user: any) => {
 
 import React, { ReactNode, useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
-import BottomNav from "./BottomNavCircular";
+import BottomNav from "./BottomNavCompact2";
 import { Menu, X, RefreshCw, Trash2, AlertCircle, LogOut, User, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
