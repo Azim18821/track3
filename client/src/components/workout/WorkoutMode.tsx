@@ -67,6 +67,19 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isExitAlertOpen, setIsExitAlertOpen] = useState(false);
+  // Add state to track if this is a plan mode workout
+  const [isPlanModeWorkout, setIsPlanModeWorkout] = useState<boolean>(!!workout.isPlanMode);
+  
+  // Show a toast notification if this is a plan mode workout
+  useEffect(() => {
+    if (isPlanModeWorkout) {
+      toast({
+        title: "Plan Mode Workout",
+        description: "Enter the actual weights and reps for each set as you complete them.",
+      });
+    }
+  }, [isPlanModeWorkout, toast]);
+  
   const [workoutState, setWorkoutState] = useState<Workout>({
     ...workout,
     exercises: workout.exercises.map(ex => ({
@@ -74,9 +87,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // Initialize setsData if it doesn't exist
       setsData: ex.setsData || Array.from({ length: ex.sets }, () => ({
         // Handle plan mode workouts that might not have reps/weight defined
-        // For plan mode, we'll initialize with default values that can be changed during the workout
-        reps: typeof ex.reps === 'number' ? ex.reps : 10, // Use default of 10 reps if not specified
-        weight: typeof ex.weight === 'number' ? ex.weight : 0, // Use default of 0 weight if not specified
+        // For plan mode, we'll initialize with empty/default values that can be filled during the workout
+        reps: typeof ex.reps === 'number' ? ex.reps : isPlanModeWorkout ? undefined : 10, // Leave empty for plan mode
+        weight: typeof ex.weight === 'number' ? ex.weight : isPlanModeWorkout ? undefined : 0, // Leave empty for plan mode
         completed: false
       }))
     }))
@@ -167,14 +180,40 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     setWorkoutState(prevState => {
       const updatedExercises = [...prevState.exercises];
       const updatedSetsData = [...updatedExercises[exerciseIndex].setsData!];
+      const currentSet = updatedSetsData[setIndex];
+      const currentlyCompleted = currentSet.completed;
       
-      // Toggle completion status
+      // If trying to mark as complete, check if values are filled in
+      if (!currentlyCompleted && isPlanModeWorkout) {
+        // For plan mode, validate that values are properly set before marking complete
+        if (typeof currentSet.reps !== 'number' || currentSet.reps <= 0) {
+          // Show toast error and don't toggle
+          toast({
+            title: "Missing reps",
+            description: "Please enter the number of reps before marking this set as complete.",
+            variant: "destructive",
+          });
+          return prevState; // Don't update state
+        }
+        
+        if (typeof currentSet.weight !== 'number') {
+          // Show toast error and don't toggle
+          toast({
+            title: "Missing weight",
+            description: "Please enter the weight value before marking this set as complete.",
+            variant: "destructive",
+          });
+          return prevState; // Don't update state
+        }
+      }
+      
+      // If validation passes or marking as incomplete, update the set
       updatedSetsData[setIndex] = {
         ...updatedSetsData[setIndex],
         // Initialize with default values if they're not set (for plan mode workouts)
         reps: updatedSetsData[setIndex].reps ?? 10, // Make sure reps has a value when completed
         weight: updatedSetsData[setIndex].weight ?? 0, // Make sure weight has a value when completed
-        completed: !updatedSetsData[setIndex].completed
+        completed: !currentlyCompleted
       };
       
       updatedExercises[exerciseIndex] = {
@@ -235,9 +274,14 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     });
   };
 
-  // Check if all sets for all exercises are completed
+  // Check if all sets for all exercises are completed and have valid values
   const allExercisesCompleted = workoutState.exercises.every(exercise => 
-    exercise.setsData?.every(set => set.completed)
+    exercise.setsData?.every(set => 
+      set.completed && 
+      typeof set.reps === 'number' && 
+      set.reps > 0 && 
+      typeof set.weight === 'number'
+    )
   );
 
   // Calculate progress
@@ -252,14 +296,25 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     mutationFn: async (updatedWorkout: Workout) => {
       return await apiRequest("PUT", `/api/workouts/${workout.id}`, {
         ...updatedWorkout,
-        completed: true // Mark as completed
+        completed: true, // Mark as completed
+        isPlanMode: false // Convert from plan mode to regular workout
       });
     },
     onSuccess: () => {
-      toast({
-        title: "Workout completed",
-        description: "Your workout has been saved successfully",
-      });
+      // Show appropriate toast based on whether this was a plan mode workout
+      if (isPlanModeWorkout) {
+        toast({
+          title: "Plan completed!",
+          description: "Your plan has been converted to a completed workout with your actual weights and reps.",
+        });
+      } else {
+        toast({
+          title: "Workout completed",
+          description: "Your workout has been saved successfully",
+        });
+      }
+      
+      // Invalidate queries to update the UI
       queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
       onExit();
@@ -275,6 +330,42 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
   // Handle save and complete workout
   const saveAndCompleteWorkout = () => {
+    // For plan mode workouts, check if any sets are missing values
+    if (isPlanModeWorkout) {
+      let missingValues = false;
+      
+      // Check each exercise and each set for missing values
+      for (const exercise of workoutState.exercises) {
+        if (!exercise.setsData) continue;
+        
+        // Use regular for loop to avoid TypeScript iterator issues
+        for (let i = 0; i < exercise.setsData.length; i++) {
+          const set = exercise.setsData[i];
+          if (set.completed) {
+            // If completed, the toggleCompletion function already validated it
+            continue;
+          }
+          
+          // For incomplete sets, let user know they need to be completed
+          if (!set.completed) {
+            toast({
+              title: "Incomplete workout",
+              description: `Some sets in "${exercise.name}" are not marked as completed. Please complete all sets or remove them.`,
+              variant: "destructive",
+            });
+            missingValues = true;
+            break;
+          }
+        }
+        
+        if (missingValues) break;
+      }
+      
+      if (missingValues) {
+        return; // Don't save if there are missing values
+      }
+    }
+    
     // Transform the workout state back to the format expected by the API
     // Include all per-set data
     const apiWorkout = {
@@ -341,9 +432,17 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold">{workout.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-bold">{workout.name}</h1>
+              {isPlanModeWorkout && (
+                <Badge className="bg-blue-500 hover:bg-blue-600">Plan Mode</Badge>
+              )}
+            </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
               Progress: {completedSets}/{totalSets} sets ({progressPercentage}%)
+              {isPlanModeWorkout && (
+                <span className="ml-2 text-blue-500">Fill in your actual weights and reps</span>
+              )}
             </div>
           </div>
         </div>
@@ -522,15 +621,31 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium mb-1 block">Weight (kg)</label>
-                      <div className="bg-muted rounded h-10 px-3 flex items-center font-medium text-base">
-                        {setData.weight === 0 ? "-" : setData.weight}
-                      </div>
+                      <Input
+                        type="number"
+                        value={setData.weight === undefined ? '' : setData.weight}
+                        min={0}
+                        onChange={(e) => {
+                          const newWeight = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          updateSetWeight(activeExerciseIndex, setIndex, newWeight);
+                        }}
+                        className="h-10"
+                        placeholder="Enter weight"
+                      />
                     </div>
                     <div>
                       <label className="text-xs font-medium mb-1 block">Reps</label>
-                      <div className="bg-muted rounded h-10 px-3 flex items-center font-medium text-base">
-                        {setData.reps === 0 ? "-" : setData.reps}
-                      </div>
+                      <Input
+                        type="number"
+                        value={setData.reps === undefined ? '' : setData.reps}
+                        min={1}
+                        onChange={(e) => {
+                          const newReps = e.target.value === '' ? 0 : parseInt(e.target.value);
+                          updateSetReps(activeExerciseIndex, setIndex, newReps);
+                        }}
+                        className="h-10"
+                        placeholder="Enter reps"
+                      />
                     </div>
                   </div>
                 </div>
