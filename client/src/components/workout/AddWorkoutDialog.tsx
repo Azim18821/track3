@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import {
   AdaptiveDialogTitle,
   AdaptiveDialogFooter,
 } from "@/components/ui/adaptive-dialog";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,22 +45,36 @@ const setDataSchema = z.object({
 });
 
 // Form schema
-const exerciseSchema = z.object({
-  name: z.string().min(1, "Exercise name is required"),
-  sets: z.coerce.number().positive("Sets must be positive"),
-  reps: z.coerce.number().positive("Reps must be positive"),
-  weight: z.coerce.number().nonnegative("Weight cannot be negative").optional(),
-  unit: z.string().default("kg"),
-  setsData: z.array(setDataSchema).optional()
-});
+const createExerciseSchema = (isPlanMode: boolean) => {
+  return z.object({
+    name: z.string().min(1, "Exercise name is required"),
+    sets: z.coerce.number().positive("Sets must be positive"),
+    reps: isPlanMode 
+      ? z.coerce.number().optional() 
+      : z.coerce.number().positive("Reps must be positive"),
+    weight: isPlanMode 
+      ? z.coerce.number().optional() 
+      : z.coerce.number().nonnegative("Weight cannot be negative").optional(),
+    unit: z.string().default("kg"),
+    setsData: isPlanMode 
+      ? z.array(setDataSchema).optional().or(z.undefined()) 
+      : z.array(setDataSchema).optional()
+  });
+};
 
-const formSchema = z.object({
-  name: z.string().min(1, "Workout name is required"),
-  date: z.string().min(1, "Date is required"),
-  duration: z.coerce.number().positive("Duration must be positive"),
-  notes: z.string().optional(),
-  exercises: z.array(exerciseSchema).min(1, "Add at least one exercise"),
-});
+// We'll create the actual schema in the component based on the plan mode state
+
+// Create a dynamic form schema based on plan mode
+const createFormSchema = (isPlanMode: boolean) => {
+  return z.object({
+    name: z.string().min(1, "Workout name is required"),
+    date: z.string().min(1, "Date is required"),
+    duration: z.coerce.number().positive("Duration must be positive"),
+    notes: z.string().optional(),
+    isPlanMode: z.boolean().optional(),
+    exercises: z.array(createExerciseSchema(isPlanMode)).min(1, "Add at least one exercise"),
+  });
+};
 
 const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   isOpen,
@@ -70,23 +85,29 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   const { toast } = useToast();
   const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [isPlanMode, setIsPlanMode] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  // Create a memoized form schema based on the current plan mode state
+  const currentFormSchema = useMemo(() => createFormSchema(isPlanMode), [isPlanMode]);
+  
+  const form = useForm<z.infer<typeof currentFormSchema>>({
+    resolver: zodResolver(currentFormSchema),
     defaultValues: initialData || {
       name: "",
       date: initialDate || format(new Date(), "yyyy-MM-dd"),
       duration: 45,
       notes: "",
+      isPlanMode: isPlanMode,
       exercises: [{ 
         name: "", 
         sets: 3, 
-        reps: 10, 
-        weight: 0, 
+        reps: isPlanMode ? undefined : 10, 
+        weight: isPlanMode ? undefined : 0, 
         unit: "kg",
-        setsData: Array(3).fill({ reps: 10, weight: 0, completed: false })
+        setsData: isPlanMode ? undefined : Array(3).fill({ reps: 10, weight: 0, completed: false })
       }],
     },
+    mode: "onChange"
   });
 
   const { fields, append, remove, update } = useFieldArray({
@@ -96,7 +117,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
 
   // Mutation for adding a workout
   const addWorkoutMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
+    mutationFn: async (data: z.infer<typeof currentFormSchema>) => {
       return await apiRequest("POST", "/api/workouts", data);
     },
     onSuccess: () => {
@@ -117,7 +138,9 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
     }
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
+  const onSubmit = (data: z.infer<typeof currentFormSchema>) => {
+    // Include the plan mode flag in the submitted data
+    data.isPlanMode = isPlanMode;
     addWorkoutMutation.mutate(data);
   };
 
