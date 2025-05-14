@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface SetData {
-  reps: number;
-  weight: number;
+  reps?: number;
+  weight?: number;
   completed: boolean;
 }
 
@@ -39,8 +39,9 @@ interface Exercise {
   id?: number;
   name: string;
   sets: number;
-  reps: number; // Default reps value
-  weight?: number; // Default weight value
+  reps?: number; // Make reps optional for plan mode
+  weight?: number; // Default weight value is already optional
+  unit?: string; // Weight unit (kg, lbs, etc.)
   setsData?: SetData[]; // Per-set data
 }
 
@@ -52,6 +53,7 @@ interface Workout {
   notes?: string;
   exercises: Exercise[];
   completed?: boolean;
+  isPlanMode?: boolean; // Add support for isPlanMode flag
 }
 
 interface WorkoutModeProps {
@@ -72,8 +74,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // Initialize setsData if it doesn't exist
       setsData: ex.setsData || Array.from({ length: ex.sets }, () => ({
         // Handle plan mode workouts that might not have reps/weight defined
-        reps: ex.reps || 10, // Use default of 10 reps if not specified (for plan mode)
-        weight: typeof ex.weight === 'number' ? ex.weight : 0,
+        // For plan mode, we'll initialize with default values that can be changed during the workout
+        reps: typeof ex.reps === 'number' ? ex.reps : 10, // Use default of 10 reps if not specified
+        weight: typeof ex.weight === 'number' ? ex.weight : 0, // Use default of 0 weight if not specified
         completed: false
       }))
     }))
@@ -168,6 +171,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // Toggle completion status
       updatedSetsData[setIndex] = {
         ...updatedSetsData[setIndex],
+        // Initialize with default values if they're not set (for plan mode workouts)
+        reps: updatedSetsData[setIndex].reps ?? 10, // Make sure reps has a value when completed
+        weight: updatedSetsData[setIndex].weight ?? 0, // Make sure weight has a value when completed
         completed: !updatedSetsData[setIndex].completed
       };
       
@@ -278,12 +284,15 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       exercises: workoutState.exercises.map(ex => {
         // Get average actual values from setsData to update the exercise defaults
         const completedSets = ex.setsData?.filter(set => set.completed) || [];
+        
+        // Handle possible undefined weights by using 0 as default
         const avgWeight = completedSets.length > 0
-          ? completedSets.reduce((sum, set) => sum + set.weight, 0) / completedSets.length
+          ? completedSets.reduce((sum, set) => sum + (set.weight || 0), 0) / completedSets.length
           : (ex.weight || 0);
         
+        // Handle possible undefined reps by using 10 as default
         const avgReps = completedSets.length > 0
-          ? Math.round(completedSets.reduce((sum, set) => sum + set.reps, 0) / completedSets.length)
+          ? Math.round(completedSets.reduce((sum, set) => sum + (set.reps || 10), 0) / completedSets.length)
           : (ex.reps || 10);
           
         return {
