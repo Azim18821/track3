@@ -480,11 +480,16 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
         </Form>
         
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="manual" className="flex items-center gap-2">
               <Edit className="h-4 w-4" />
               <span className="hidden sm:inline">Manual Entry</span>
               <span className="inline sm:hidden text-xs">Manual</span>
+            </TabsTrigger>
+            <TabsTrigger value="photo" className="flex items-center gap-2">
+              <Camera className="h-4 w-4" />
+              <span className="hidden sm:inline">Photo Scan</span>
+              <span className="inline sm:hidden text-xs">Photo</span>
             </TabsTrigger>
             <TabsTrigger value="personal" className="flex items-center gap-2">
               <BookUser className="h-4 w-4" />
@@ -526,34 +531,7 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
                   )}
                 />
 
-                {/* Hidden file input for image upload */}
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  capture="environment"
-                />
 
-                {/* Camera button for taking food pictures */}
-                <div className="flex justify-center my-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                    onClick={triggerFileInput}
-                    disabled={imageRecognitionLoading}
-                  >
-                    {imageRecognitionLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                    ) : (
-                      <Camera className="h-4 w-4 mr-1" />
-                    )}
-                    {imageRecognitionLoading ? "Analyzing..." : "Take food photo"}
-                  </Button>
-                </div>
 
                 <div className="grid grid-cols-2 sm:flex sm:items-stretch gap-2 mb-2">
                   <FormField
@@ -715,6 +693,88 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
                 </div>
               </form>
             </Form>
+          </TabsContent>
+          
+          <TabsContent value="photo" className="space-y-4">
+            <div className="bg-primary-50 dark:bg-primary-950/50 p-6 rounded-lg flex flex-col items-center">
+              <div className="mb-4 text-center">
+                <h3 className="text-lg font-semibold mb-1">Food Recognition</h3>
+                <p className="text-sm text-muted-foreground">
+                  Take a photo of your food to automatically identify and calculate nutrition information
+                </p>
+              </div>
+              
+              {/* Hidden file input for camera functionality */}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+                capture="environment"
+              />
+              
+              <div className="w-full max-w-[300px] aspect-square bg-muted/30 rounded-lg mb-4 flex flex-col items-center justify-center border-2 border-dashed border-primary/30">
+                {imageRecognitionLoading ? (
+                  <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto mb-2 text-primary" />
+                    <p className="text-sm font-medium">Analyzing your food...</p>
+                    <p className="text-xs text-muted-foreground mt-1">This may take a few moments</p>
+                  </div>
+                ) : (
+                  <div className="text-center p-4">
+                    <Camera className="h-12 w-12 mx-auto mb-2 text-primary/60" />
+                    <p className="text-sm text-muted-foreground">Tap the button below to take a photo of your food</p>
+                  </div>
+                )}
+              </div>
+              
+              <Button
+                type="button"
+                variant="default"
+                size="lg"
+                className="flex items-center gap-2 w-full max-w-[300px]"
+                onClick={triggerFileInput}
+                disabled={imageRecognitionLoading}
+              >
+                {imageRecognitionLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <Camera className="h-4 w-4 mr-1" />
+                )}
+                {imageRecognitionLoading ? "Analyzing..." : "Take Photo"}
+              </Button>
+              
+              <div className="mt-6 text-sm text-muted-foreground text-center">
+                <p>After taking a photo, we'll automatically detect the food and calculate nutrition information.</p>
+                <p className="mt-2">You can then edit the details on the Manual Entry tab if needed.</p>
+              </div>
+              
+              {/* If food is recognized, show a button to edit in manual tab */}
+              {form.watch("name") && (
+                <div className="w-full max-w-[300px] mt-4 p-4 bg-white dark:bg-gray-900 rounded-lg border">
+                  <h4 className="font-medium mb-2">Detected Food</h4>
+                  <div className="space-y-1 mb-3">
+                    <p className="text-sm"><strong>Name:</strong> {form.watch("name")}</p>
+                    <p className="text-sm"><strong>Calories:</strong> {form.watch("calories")}</p>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <p><strong>Protein:</strong> {form.watch("protein")}g</p>
+                      <p><strong>Carbs:</strong> {form.watch("carbs")}g</p>
+                      <p><strong>Fat:</strong> {form.watch("fat")}g</p>
+                    </div>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setSelectedTab("manual")}
+                  >
+                    <Edit className="h-3 w-3 mr-1" /> Edit Details
+                  </Button>
+                </div>
+              )}
+            </div>
           </TabsContent>
           
           <TabsContent value="personal">
