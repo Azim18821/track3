@@ -161,10 +161,11 @@ const Dashboard = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="bg-gradient-to-r from-indigo-100 to-purple-100 hover:from-indigo-200 hover:to-purple-200 border-indigo-300"
-                onClick={openRecommendations}
+                className="bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 opacity-60 cursor-not-allowed"
+                disabled
+                title="Temporarily unavailable"
               >
-                <Sparkles className="h-4 w-4 mr-2 text-indigo-600" />
+                <Sparkles className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />
                 Recommendations
               </Button>
             </>
@@ -358,29 +359,31 @@ const Dashboard = () => {
       {/* AI Personal Trainer Card - shown for trainers and users without assigned trainers */}
       {(user?.isTrainer || user?.isAdmin || (data?.hasAccess?.aiCoach !== false)) && (
         <div className="mb-5">
-          <h3 className="text-sm font-medium mb-2 ml-1">AI Personal Trainer</h3>
-          <Card className="bg-indigo-50 dark:bg-gray-800 border-indigo-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+          <h3 className="text-sm font-medium mb-2 ml-1">AI Personal Trainer <span className="text-xs text-gray-500">(Temporarily Unavailable)</span></h3>
+          <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden opacity-75">
             <CardContent className="p-5">
               <div className="flex flex-col items-center py-2">
                 <div className="mb-3 text-center">
-                  <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-3 rounded-full inline-block mb-2">
-                    <Sparkles className="h-8 w-8 text-white" />
+                  <div className="bg-gray-300 dark:bg-gray-700 p-3 rounded-full inline-block mb-2">
+                    <Sparkles className="h-8 w-8 text-gray-500 dark:text-gray-400" />
                   </div>
-                  <p className="text-sm text-indigo-800 dark:text-indigo-300 font-medium">Your AI Fitness Coach</p>
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-3">Get personalized workout and nutrition plans</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Your AI Fitness Coach</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">Get personalized workout and nutrition plans</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
                     variant="outline"
-                    className="mb-2 sm:mb-0 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900 hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full"
-                    onClick={openRecommendations}
+                    className="mb-2 sm:mb-0 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 rounded-full opacity-60 cursor-not-allowed"
+                    disabled
+                    title="Temporarily unavailable"
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Daily Recommendations
                   </Button>
                   <Button 
-                    className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-full"
-                    onClick={() => setLocation(activePlan ? (hasTrainer && !isAdmin ? '/view-plan' : '/fitness-plan') : '/coach')}
+                    className="bg-gray-400 dark:bg-gray-700 text-white rounded-full opacity-60 cursor-not-allowed"
+                    disabled
+                    title="Temporarily unavailable"
                   >
                     {activePlan ? (
                       <>
@@ -396,8 +399,9 @@ const Dashboard = () => {
                   </Button>
                   <Button 
                     variant="outline"
-                    className="border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 rounded-full"
-                    onClick={() => setLocation('/ai-coach')}
+                    className="border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 rounded-full opacity-60 cursor-not-allowed"
+                    disabled
+                    title="Temporarily unavailable"
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Chat with AI Coach
@@ -449,11 +453,11 @@ const Dashboard = () => {
         </>
       )}
       
-      {/* Daily AI Recommendations Dialog */}
-      <DailyRecommendationsDialog 
+      {/* Daily AI Recommendations Dialog - Currently disabled */}
+      {/* <DailyRecommendationsDialog 
         open={showRecommendations} 
         onOpenChange={setShowRecommendations} 
-      />
+      /> */}
     </div>
   );
 };

@@ -90,12 +90,13 @@ export function BottomNavCircular() {
     active: isActive('/trainer') || location.indexOf('/trainer/') === 0
   };
 
-  // AI Coach item
+  // AI Coach item - temporarily unavailable
   const coachItem = {
     name: 'Coach',
     icon: Dna,
-    path: '/coach',
-    active: isActive('/coach')
+    path: '#',  // Disabled link
+    active: false,
+    disabled: true
   };
 
   // Choose which nav items to show based on user type
@@ -177,40 +178,59 @@ export function BottomNavCircular() {
         
         {/* Right side items */}
         {rightItems.map((item, index) => (
-          <Link 
-            key={`right-${index}`}
-            href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full p-0 touch-none"
-          >
-            <div 
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
-                item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
-              }`}
-              style={{
-                WebkitTapHighlightColor: 'transparent',
-                transform: item.active ? 'translateY(-2px)' : 'none'
-              }}
+          item.disabled ? (
+            // Render a div instead of a link for disabled items
+            <div
+              key={`right-${index}`}
+              className="inline-flex flex-col items-center justify-center h-full p-0 touch-none opacity-60 cursor-not-allowed"
+              title="Temporarily unavailable"
             >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
-              {item.active && (
-                <>
-                  <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                  <div className="absolute inset-0 rounded-full ring-2 ring-primary/20"></div>
-                </>
-              )}
+              <div 
+                className="relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 bg-gray-200 dark:bg-gray-700"
+              >
+                <item.icon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+              </div>
+              <span className="text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate text-gray-400 dark:text-gray-500">
+                {item.name}
+              </span>
             </div>
-            <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
-                item.active 
-                  ? 'text-primary' 
-                  : 'text-gray-600 dark:text-gray-300'
-              }`}
+          ) : (
+            // Regular clickable navigation item
+            <Link 
+              key={`right-${index}`}
+              href={item.path}
+              className="inline-flex flex-col items-center justify-center h-full p-0 touch-none"
             >
-              {item.name}
-            </span>
-          </Link>
+              <div 
+                className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
+                  item.active 
+                    ? 'bg-primary/15 text-primary scale-110' 
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
+                }`}
+                style={{
+                  WebkitTapHighlightColor: 'transparent',
+                  transform: item.active ? 'translateY(-2px)' : 'none'
+                }}
+              >
+                <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+                {item.active && (
+                  <>
+                    <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                    <div className="absolute inset-0 rounded-full ring-2 ring-primary/20"></div>
+                  </>
+                )}
+              </div>
+              <span 
+                className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
+                  item.active 
+                    ? 'text-primary' 
+                    : 'text-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {item.name}
+              </span>
+            </Link>
+          )
         ))}
       </div>
     </div>
