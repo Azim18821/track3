@@ -177,26 +177,16 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
   // Toggle a set's completion status
   const toggleSetCompletion = (exerciseIndex: number, setIndex: number) => {
-    console.log(`Toggling completion for exercise ${exerciseIndex}, set ${setIndex}`);
-    
     setWorkoutState(prevState => {
       const updatedExercises = [...prevState.exercises];
       const updatedSetsData = [...updatedExercises[exerciseIndex].setsData!];
       const currentSet = updatedSetsData[setIndex];
       const currentlyCompleted = currentSet.completed;
       
-      // If trying to mark as complete AND in plan mode, check values are filled in
+      // If trying to mark as complete, check if values are filled in
       if (!currentlyCompleted && isPlanModeWorkout) {
-        // Log current values to help with debugging
-        console.log("Current set values:", {
-          reps: currentSet.reps,
-          weight: currentSet.weight,
-          completed: currentSet.completed
-        });
-        
-        // For plan mode, validate that reps are properly set before marking complete
+        // For plan mode, validate that values are properly set before marking complete
         if (typeof currentSet.reps !== 'number' || currentSet.reps <= 0) {
-          console.log("Missing valid reps:", currentSet.reps);
           // Show toast error and don't toggle
           toast({
             title: "Missing reps",
@@ -206,9 +196,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           return prevState; // Don't update state
         }
         
-        // For plan mode, validate that weight is properly set before marking complete
-        if (typeof currentSet.weight !== 'number' || currentSet.weight < 0) {
-          console.log("Missing valid weight:", currentSet.weight);
+        if (typeof currentSet.weight !== 'number') {
           // Show toast error and don't toggle
           toast({
             title: "Missing weight",
@@ -223,16 +211,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       updatedSetsData[setIndex] = {
         ...updatedSetsData[setIndex],
         // Initialize with default values if they're not set (for plan mode workouts)
-        // Only update reps and weight when completing a set, not when uncompleting
-        ...((!currentlyCompleted) ? {
-          reps: currentSet.reps !== undefined ? currentSet.reps : 10,
-          weight: currentSet.weight !== undefined ? currentSet.weight : 0
-        } : {}),
+        reps: updatedSetsData[setIndex].reps ?? 10, // Make sure reps has a value when completed
+        weight: updatedSetsData[setIndex].weight ?? 0, // Make sure weight has a value when completed
         completed: !currentlyCompleted
       };
-      
-      // Log the updated set for debugging
-      console.log("Updated set:", updatedSetsData[setIndex]);
       
       updatedExercises[exerciseIndex] = {
         ...updatedExercises[exerciseIndex],
@@ -248,35 +230,20 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
   // Update set weight
   const updateSetWeight = (exerciseIndex: number, setIndex: number, newWeight: number) => {
-    // Log to help debug
-    console.log(`Updating weight for exercise ${exerciseIndex}, set ${setIndex} to ${newWeight}`);
-    
     setWorkoutState(prevState => {
-      // Create deep copies to ensure state updates properly
       const updatedExercises = [...prevState.exercises];
-      
-      // Make sure setsData exists
-      if (!updatedExercises[exerciseIndex].setsData) {
-        updatedExercises[exerciseIndex].setsData = Array(updatedExercises[exerciseIndex].sets)
-          .fill(null)
-          .map(() => ({ reps: 10, weight: 0, completed: false }));
-      }
-      
       const updatedSetsData = [...updatedExercises[exerciseIndex].setsData!];
       
-      // Update the weight value
       updatedSetsData[setIndex] = {
         ...updatedSetsData[setIndex],
         weight: newWeight
       };
       
-      // Update the exercise with new setsData
       updatedExercises[exerciseIndex] = {
         ...updatedExercises[exerciseIndex],
         setsData: updatedSetsData
       };
 
-      // Return the new state
       return {
         ...prevState,
         exercises: updatedExercises
@@ -286,35 +253,20 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
   // Update set reps
   const updateSetReps = (exerciseIndex: number, setIndex: number, newReps: number) => {
-    // Log to help debug
-    console.log(`Updating reps for exercise ${exerciseIndex}, set ${setIndex} to ${newReps}`);
-    
     setWorkoutState(prevState => {
-      // Create deep copies to ensure state updates properly
       const updatedExercises = [...prevState.exercises];
-      
-      // Make sure setsData exists
-      if (!updatedExercises[exerciseIndex].setsData) {
-        updatedExercises[exerciseIndex].setsData = Array(updatedExercises[exerciseIndex].sets)
-          .fill(null)
-          .map(() => ({ reps: 10, weight: 0, completed: false }));
-      }
-      
       const updatedSetsData = [...updatedExercises[exerciseIndex].setsData!];
       
-      // Update the reps value
       updatedSetsData[setIndex] = {
         ...updatedSetsData[setIndex],
         reps: newReps
       };
       
-      // Update the exercise with new setsData
       updatedExercises[exerciseIndex] = {
         ...updatedExercises[exerciseIndex],
         setsData: updatedSetsData
       };
 
-      // Return the new state
       return {
         ...prevState,
         exercises: updatedExercises
@@ -669,7 +621,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium mb-1 block">Weight (kg)</label>
-                      <input
+                      <Input
                         type="number"
                         value={setData.weight === undefined ? '' : setData.weight}
                         min={0}
@@ -677,13 +629,13 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                           const newWeight = e.target.value === '' ? 0 : parseFloat(e.target.value);
                           updateSetWeight(activeExerciseIndex, setIndex, newWeight);
                         }}
-                        className="h-10 w-full px-3 rounded border border-input bg-background"
+                        className="h-10"
                         placeholder="Enter weight"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-medium mb-1 block">Reps</label>
-                      <input
+                      <Input
                         type="number"
                         value={setData.reps === undefined ? '' : setData.reps}
                         min={1}
@@ -691,7 +643,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                           const newReps = e.target.value === '' ? 0 : parseInt(e.target.value);
                           updateSetReps(activeExerciseIndex, setIndex, newReps);
                         }}
-                        className="h-10 w-full px-3 rounded border border-input bg-background"
+                        className="h-10"
                         placeholder="Enter reps"
                       />
                     </div>
