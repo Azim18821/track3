@@ -70,6 +70,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   // Add state to track if this is a plan mode workout
   const [isPlanModeWorkout, setIsPlanModeWorkout] = useState<boolean>(!!workout.isPlanMode);
   
+  // Add a state to track which set is currently being edited
+  const [editingSet, setEditingSet] = useState<{exerciseIndex: number, setIndex: number, field?: 'weight' | 'reps' | 'both'} | null>(null);
+  const [tempValues, setTempValues] = useState<{weight?: number, reps?: number}>({});
+  
   // Show a toast notification if this is a plan mode workout
   useEffect(() => {
     if (isPlanModeWorkout) {
@@ -621,31 +625,82 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium mb-1 block">Weight (kg)</label>
-                      <Input
-                        type="number"
-                        value={setData.weight === undefined ? '' : setData.weight}
-                        min={0}
-                        onChange={(e) => {
-                          const newWeight = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                          updateSetWeight(activeExerciseIndex, setIndex, newWeight);
-                        }}
-                        className="h-10"
-                        placeholder="Enter weight"
-                      />
+                      {editingSet && 
+                        editingSet.exerciseIndex === activeExerciseIndex && 
+                        editingSet.setIndex === setIndex ? (
+                        // Edit mode
+                        <div className="flex">
+                          <Input
+                            type="number"
+                            value={setData.weight === undefined ? '' : setData.weight}
+                            min={0}
+                            onChange={(e) => {
+                              const newWeight = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                              updateSetWeight(activeExerciseIndex, setIndex, newWeight);
+                            }}
+                            className="h-10 rounded-r-none"
+                            placeholder="Enter weight"
+                            autoFocus
+                          />
+                          <Button 
+                            size="sm" 
+                            className="h-10 rounded-l-none"
+                            onClick={() => setEditingSet(null)}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      ) : (
+                        // View mode with edit button
+                        <div 
+                          className="bg-muted rounded h-10 px-3 flex items-center justify-between cursor-pointer hover:bg-muted/80"
+                          onClick={() => setEditingSet({exerciseIndex: activeExerciseIndex, setIndex})}
+                        >
+                          <span className="font-medium text-base">
+                            {setData.weight === 0 || setData.weight === undefined ? "-" : setData.weight}
+                          </span>
+                          <Button variant="ghost" size="sm" className="h-6 py-0 px-2 text-xs">Edit</Button>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="text-xs font-medium mb-1 block">Reps</label>
-                      <Input
-                        type="number"
-                        value={setData.reps === undefined ? '' : setData.reps}
-                        min={1}
-                        onChange={(e) => {
-                          const newReps = e.target.value === '' ? 0 : parseInt(e.target.value);
-                          updateSetReps(activeExerciseIndex, setIndex, newReps);
-                        }}
-                        className="h-10"
-                        placeholder="Enter reps"
-                      />
+                      {editingSet && 
+                        editingSet.exerciseIndex === activeExerciseIndex && 
+                        editingSet.setIndex === setIndex ? (
+                        // Edit mode
+                        <div className="flex">
+                          <Input
+                            type="number"
+                            value={setData.reps === undefined ? '' : setData.reps}
+                            min={1}
+                            onChange={(e) => {
+                              const newReps = e.target.value === '' ? 0 : parseInt(e.target.value);
+                              updateSetReps(activeExerciseIndex, setIndex, newReps);
+                            }}
+                            className="h-10 rounded-r-none"
+                            placeholder="Enter reps"
+                          />
+                          <Button 
+                            size="sm" 
+                            className="h-10 rounded-l-none"
+                            onClick={() => setEditingSet(null)}
+                          >
+                            Save
+                          </Button>
+                        </div>
+                      ) : (
+                        // View mode with edit button
+                        <div 
+                          className="bg-muted rounded h-10 px-3 flex items-center justify-between cursor-pointer hover:bg-muted/80"
+                          onClick={() => setEditingSet({exerciseIndex: activeExerciseIndex, setIndex})}
+                        >
+                          <span className="font-medium text-base">
+                            {setData.reps === 0 || setData.reps === undefined ? "-" : setData.reps}
+                          </span>
+                          <Button variant="ghost" size="sm" className="h-6 py-0 px-2 text-xs">Edit</Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
