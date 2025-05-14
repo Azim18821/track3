@@ -58,11 +58,20 @@ export function useRecommendations() {
     setShouldCheckRecommendations(false);
   };
   
+  // Function to explicitly open recommendations dialog
+  const openRecommendations = () => {
+    setShowRecommendations(true);
+    // Reset recommendation check flag to ensure we fetch fresh data
+    setShouldCheckRecommendations(true);
+  };
+  
   // Explicitly type the return object
   return {
     showRecommendations,
     setShowRecommendations: handleDismiss,
+    openRecommendations,
     isLoading,
     hasRecommendations: data?.show === true,
+    recommendations: data?.recommendations,
   };
 }
