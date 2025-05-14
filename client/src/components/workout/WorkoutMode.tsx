@@ -82,7 +82,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       if (currentIsPlanMode) {
         currentToast({
           title: "Plan Mode Workout",
-          description: "Enter the actual weights and reps for each set as you complete them.",
+          description: "Track your workout by entering values as you go.",
         });
       }
     };
@@ -320,7 +320,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       if (isPlanModeWorkout) {
         toast({
           title: "Plan completed!",
-          description: "Your plan has been converted to a completed workout with your actual weights and reps.",
+          description: "Your plan has been converted to a completed workout.",
         });
       } else {
         toast({
