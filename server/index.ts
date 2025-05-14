@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initSystemSettings } from "./initSettings";
-import { runProfileColumnsMigration } from "./migrationRunner";
+import { runProfileColumnsMigration, runExerciseSetsTableMigration } from "./migrationRunner";
 import { checkAndRepairPlanGenerationStatus } from "./planGenerationCheck";
 import cors from "cors";
 
@@ -54,8 +54,9 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Run the database migration to add profile columns
+    // Run the database migrations
     await runProfileColumnsMigration();
+    await runExerciseSetsTableMigration();
     
     // Initialize system settings
     await initSystemSettings();

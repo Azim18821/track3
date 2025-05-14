@@ -313,8 +313,8 @@ export type Workout = typeof workouts.$inferSelect;
 
 // SetData type for per-set tracking with enhanced flexibility
 export interface SetData {
-  reps: number;
-  weight: number;
+  reps?: number | null;
+  weight?: number | null;
   completed?: boolean;
   // Additional fields for set variations
   setType?: string;  // regular, drop, super, circuit, etc.
@@ -332,11 +332,27 @@ export const exercises = pgTable("exercises", {
   workoutId: integer("workout_id").notNull().references(() => workouts.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   sets: integer("sets").notNull(),
-  reps: integer("reps"), // Made optional to support plan mode
-  weight: real("weight"), // Optional, already was
+  reps: integer("reps"), // Now mainly used as default value for new sets
+  weight: real("weight"), // Now mainly used as default value for new sets
   unit: text("unit").default("kg"),
   rest: text("rest") // Rest time can be in seconds (integer) or text format like "hold for 60 secs"
-  // Note: setsData is handled in memory and not stored in the database directly
+});
+
+// Exercise Sets (linked to exercises)
+export const exerciseSets = pgTable("exercise_sets", {
+  id: serial("id").primaryKey(),
+  exerciseId: integer("exercise_id").notNull().references(() => exercises.id, { onDelete: 'cascade' }),
+  setNumber: integer("set_number").notNull(),
+  reps: integer("reps"),
+  weight: real("weight"),
+  completed: boolean("completed").default(false),
+  setType: text("set_type"),
+  targetRPE: real("target_rpe"),
+  tempo: text("tempo"),
+  distance: real("distance"),
+  duration: real("duration"),
+  restAfter: real("rest_after"),
+  notes: text("notes"),
 });
 
 // Create the base schema from the database table
@@ -344,7 +360,16 @@ const baseExerciseSchema = createInsertSchema(exercises).omit({
   id: true,
 });
 
-// Add setsData to the insert schema for client-server communication, though it's not stored directly in the database
+// Create the base schema for exercise sets
+const baseExerciseSetSchema = createInsertSchema(exerciseSets).omit({
+  id: true,
+});
+
+export const insertExerciseSetSchema = baseExerciseSetSchema;
+export type InsertExerciseSet = z.infer<typeof insertExerciseSetSchema>;
+export type ExerciseSet = typeof exerciseSets.$inferSelect;
+
+// Add setsData to the insert schema for client-server communication
 export const insertExerciseSchema = baseExerciseSchema.extend({
   // Make reps optional to support plan mode
   reps: z.number().optional(),

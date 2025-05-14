@@ -4,6 +4,54 @@ import { db, pool } from "./db";
  * This script checks and adds any potentially missing columns in the database schema
  * It will run on every startup but only apply changes if needed
  */
+export async function runExerciseSetsTableMigration(): Promise<void> {
+  console.log("Checking if exercise_sets table exists...");
+  
+  try {
+    // Check if exercise_sets table exists
+    const exerciseSetsTable = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_name = 'exercise_sets'
+    `);
+    
+    if (exerciseSetsTable.rows.length === 0) {
+      console.log("exercise_sets table does not exist. Creating it...");
+      
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS exercise_sets (
+          id SERIAL PRIMARY KEY,
+          exercise_id INTEGER NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
+          set_number INTEGER NOT NULL,
+          reps INTEGER,
+          weight REAL,
+          completed BOOLEAN DEFAULT FALSE,
+          set_type TEXT,
+          target_rpe REAL,
+          tempo TEXT,
+          distance REAL,
+          duration REAL,
+          rest_after REAL,
+          notes TEXT,
+          
+          -- Ensure unique combination of exercise_id and set_number
+          UNIQUE(exercise_id, set_number)
+        );
+        
+        -- Create index for faster lookups
+        CREATE INDEX IF NOT EXISTS idx_exercise_sets_exercise_id ON exercise_sets(exercise_id);
+      `);
+      
+      console.log("exercise_sets table created successfully");
+    } else {
+      console.log("exercise_sets table already exists.");
+    }
+  } catch (error) {
+    console.error("Error creating exercise_sets table:", error);
+    throw error;
+  }
+}
+
 export async function runProfileColumnsMigration(): Promise<void> {
   console.log("Checking if database schema update is needed...");
   

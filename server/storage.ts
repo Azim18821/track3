@@ -3,6 +3,7 @@ import {
   meals, type Meal, type InsertMeal,
   workouts, type Workout, type InsertWorkout,
   exercises, type Exercise, type InsertExercise,
+  exerciseSets, type ExerciseSet, type InsertExerciseSet,
   weights, type Weight, type InsertWeight,
   nutritionGoals, type NutritionGoal, type InsertNutritionGoal,
   fitnessPlans, type FitnessPlan, type InsertFitnessPlan,
@@ -97,6 +98,13 @@ export interface IStorage {
   createExercise(exercise: InsertExercise): Promise<Exercise>;
   updateExercise(id: number, exercise: Partial<InsertExercise>): Promise<Exercise | undefined>;
   deleteExercise(id: number): Promise<boolean>;
+  
+  // Exercise Sets management
+  getExerciseSets(exerciseId: number): Promise<ExerciseSet[]>;
+  createExerciseSet(set: InsertExerciseSet): Promise<ExerciseSet>;
+  updateExerciseSet(id: number, set: Partial<InsertExerciseSet>): Promise<ExerciseSet | undefined>;
+  deleteExerciseSet(id: number): Promise<boolean>;
+  deleteExerciseSets(exerciseId: number): Promise<boolean>;
   
   // Weight tracking
   getWeights(userId: number): Promise<Weight[]>;
@@ -538,7 +546,7 @@ export class DatabaseStorage implements IStorage {
   // Exercise management
   async getExercisesByWorkout(workoutId: number): Promise<Exercise[]> {
     try {
-      // Use a simpler approach with Drizzle ORM
+      // Get all exercises for this workout
       const result = await db
         .select({
           id: exercises.id,
@@ -558,24 +566,61 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      // Add missing properties and return a properly typed result
-      const typedResults: Exercise[] = result.map(exercise => {
-        // Initialize setsData based on sets, reps, and weight for every exercise
-        const defaultSetsData: SetData[] = Array.from({ length: exercise.sets }, () => ({
-          reps: exercise.reps,
-          weight: exercise.weight || 0,
-          completed: false
-        }));
+      // Create array to hold exercise objects with sets data
+      const exercisesWithSets: Exercise[] = [];
+      
+      // For each exercise, get its sets and build the complete object
+      for (const exercise of result) {
+        // Get sets for this exercise from the database
+        const sets = await this.getExerciseSets(exercise.id);
         
-        return {
+        let setsData: SetData[];
+        
+        if (sets.length > 0) {
+          // Use the sets from the database
+          setsData = sets.map(set => ({
+            reps: set.reps === null ? undefined : set.reps,
+            weight: set.weight === null ? undefined : set.weight,
+            completed: set.completed === null ? false : set.completed,
+            setType: set.setType || undefined,
+            targetRPE: set.targetRPE || undefined,
+            tempo: set.tempo || undefined,
+            distance: set.distance || undefined,
+            duration: set.duration || undefined,
+            restAfter: set.restAfter || undefined,
+            notes: set.notes || undefined
+          }));
+        } else {
+          // If no sets found in database, create default sets
+          setsData = Array.from({ length: exercise.sets }, () => ({
+            reps: exercise.reps,
+            weight: exercise.weight || 0,
+            completed: false
+          }));
+          
+          // Insert default sets into database for future use
+          for (let i = 0; i < setsData.length; i++) {
+            const set = setsData[i];
+            await this.createExerciseSet({
+              exerciseId: exercise.id,
+              setNumber: i + 1,
+              reps: set.reps || null,
+              weight: set.weight || null,
+              completed: set.completed || false
+            });
+          }
+        }
+        
+        // Add the complete exercise with sets to our result array
+        exercisesWithSets.push({
           ...exercise,
           rest: exercise.rest || null,
           notes: null, // Default value for compatibility
-          setsData: defaultSetsData
-        };
-      }) as Exercise[];
+          setsData: setsData
+        });
+      }
       
-      return typedResults;
+      return exercisesWithSets;
     } catch (error) {
       console.error("Error in getExercisesByWorkout:", error);
       
@@ -598,7 +643,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createExercise(insertExercise: InsertExercise): Promise<Exercise> {
-    // Handle setsData separately since we don't store it in the database
+    // Handle setsData separately since we'll store it in the exercise_sets table
     const setsData = insertExercise.setsData;
     
     // Create a clean insert object without setsData
@@ -627,51 +672,75 @@ export class DatabaseStorage implements IStorage {
     // Perform the database insert without setsData field
     const [exercise] = await db.insert(exercises).values(cleanInsertExercise).returning();
     
-    // Re-add setsData to the returned object
-    if (exercise && setsData) {
-      // Create a copy to avoid modifying the result directly and add setsData property
-      const exerciseWithSetsData = { 
-        ...exercise,
-        setsData: [] as SetData[] // Initialize with a properly typed empty array
-      };
+    // Create a copy to avoid modifying the result directly
+    let exerciseWithSetsData = { 
+      ...exercise,
+      setsData: [] as SetData[] // Initialize with a properly typed empty array
+    };
+    
+    // If setsData was provided, insert each set into the exercise_sets table
+    if (setsData && Array.isArray(setsData)) {
+      // Ensure we have the correct number of sets
+      const resizedSetsData: SetData[] = Array.from({ length: exercise.sets }, (_, index) => {
+        if (index < setsData.length) {
+          return setsData[index];
+        } else {
+          return {
+            reps: exercise.reps,
+            weight: exercise.weight || 0,
+            completed: false
+          };
+        }
+      });
       
-      // If setsData length doesn't match sets, resize it
-      if (Array.isArray(setsData) && setsData.length !== exercise.sets) {
-        const resizedSetsData: SetData[] = Array.from({ length: exercise.sets }, (_, index) => {
-          if (index < setsData.length) {
-            return setsData[index];
-          } else {
-            return {
-              reps: exercise.reps,
-              weight: exercise.weight || 0,
-              completed: false
-            };
-          }
+      // Insert each set into the database
+      for (let i = 0; i < resizedSetsData.length; i++) {
+        const set = resizedSetsData[i];
+        await this.createExerciseSet({
+          exerciseId: exercise.id,
+          setNumber: i + 1,
+          reps: set.reps || null,
+          weight: set.weight || null,
+          completed: set.completed || false,
+          setType: set.setType || null,
+          targetRPE: set.targetRPE || null,
+          tempo: set.tempo || null,
+          distance: set.distance || null,
+          duration: set.duration || null,
+          restAfter: set.restAfter || null,
+          notes: set.notes || null
         });
-        
-        exerciseWithSetsData.setsData = resizedSetsData;
-      } else {
-        exerciseWithSetsData.setsData = Array.isArray(setsData) ? setsData : [];
       }
       
-      return exerciseWithSetsData;
+      exerciseWithSetsData.setsData = resizedSetsData;
+    } else {
+      // If no setsData was provided, generate default setsData and insert into database
+      const defaultSetsData: SetData[] = Array.from({ length: exercise.sets }, () => ({
+        reps: exercise.reps,
+        weight: exercise.weight || 0,
+        completed: false
+      }));
+      
+      // Insert default sets into the database
+      for (let i = 0; i < defaultSetsData.length; i++) {
+        const set = defaultSetsData[i];
+        await this.createExerciseSet({
+          exerciseId: exercise.id,
+          setNumber: i + 1,
+          reps: set.reps || null,
+          weight: set.weight || null,
+          completed: set.completed || false
+        });
+      }
+      
+      exerciseWithSetsData.setsData = defaultSetsData;
     }
     
-    // If no setsData was provided, generate default setsData
-    const defaultSetsData: SetData[] = Array.from({ length: exercise.sets }, () => ({
-      reps: exercise.reps,
-      weight: exercise.weight || 0,
-      completed: false
-    }));
-    
-    return {
-      ...exercise,
-      setsData: defaultSetsData
-    };
+    return exerciseWithSetsData;
   }
 
   async updateExercise(id: number, exerciseUpdate: Partial<InsertExercise>): Promise<Exercise | undefined> {
-    // Handle setsData separately since we don't store it in the database
+    // Handle setsData separately since we'll store it in the exercise_sets table
     const setsData = exerciseUpdate.setsData;
     
     // Create a clean update object without setsData
@@ -681,12 +750,16 @@ export class DatabaseStorage implements IStorage {
       delete cleanExerciseUpdate.setsData;
     }
     
-    // Calculate new reps and weight if setsData is provided
+    // If setsData is provided, update the sets count if needed
     if (setsData && Array.isArray(setsData) && setsData.length > 0) {
-      // Calculate the new reps and weight based on the first set
-      // (We can only store a single value in the database)
-      cleanExerciseUpdate.reps = setsData[0].reps;
-      cleanExerciseUpdate.weight = setsData[0].weight;
+      // Keep the first set's data as the main reference
+      if (setsData[0].reps !== null && setsData[0].reps !== undefined) {
+        cleanExerciseUpdate.reps = setsData[0].reps;
+      }
+      
+      if (setsData[0].weight !== null && setsData[0].weight !== undefined) {
+        cleanExerciseUpdate.weight = setsData[0].weight;
+      }
       
       // Update sets count if needed
       if (!cleanExerciseUpdate.sets) {
@@ -701,46 +774,139 @@ export class DatabaseStorage implements IStorage {
       .where(eq(exercises.id, id))
       .returning();
     
-    // Re-add setsData to the returned object
-    if (updatedExercise && setsData) {
-      // Make a copy to avoid modifying the database result directly
-      const exerciseWithSetsData = { 
-        ...updatedExercise,
-        setsData: [] as SetData[] // Initialize with properly typed empty array
-      };
-      
-      // Set up expected number of sets
-      const sets = updatedExercise.sets;
-      
-      // Ensure setsData array matches the number of sets
-      if (Array.isArray(setsData) && setsData.length !== sets) {
-        const resizedSetsData: SetData[] = Array.from({ length: sets }, (_, index) => {
-          // Use existing data if available, otherwise create default
-          if (index < setsData.length) {
-            return setsData[index];
-          } else {
-            return {
-              reps: updatedExercise.reps,
-              weight: updatedExercise.weight || 0,
-              completed: false
-            };
-          }
-        });
-        
-        exerciseWithSetsData.setsData = resizedSetsData;
-      } else {
-        exerciseWithSetsData.setsData = Array.isArray(setsData) ? setsData : [];
-      }
-      
-      return exerciseWithSetsData;
+    if (!updatedExercise) {
+      return undefined;
     }
     
-    return updatedExercise;
+    // Create a copy with an empty setsData array
+    const exerciseWithSetsData = { 
+      ...updatedExercise,
+      setsData: [] as SetData[] 
+    };
+    
+    // If setsData was provided, update the exercise_sets table
+    if (setsData && Array.isArray(setsData)) {
+      // Delete existing sets
+      await this.deleteExerciseSets(id);
+      
+      // Ensure we have the correct number of sets
+      const resizedSetsData: SetData[] = Array.from({ length: updatedExercise.sets }, (_, index) => {
+        if (index < setsData.length) {
+          return setsData[index];
+        } else {
+          return {
+            reps: updatedExercise.reps,
+            weight: updatedExercise.weight || 0,
+            completed: false
+          };
+        }
+      });
+      
+      // Insert each set into the database
+      for (let i = 0; i < resizedSetsData.length; i++) {
+        const set = resizedSetsData[i];
+        await this.createExerciseSet({
+          exerciseId: updatedExercise.id,
+          setNumber: i + 1,
+          reps: set.reps || null,
+          weight: set.weight || null,
+          completed: set.completed || false,
+          setType: set.setType || null,
+          targetRPE: set.targetRPE || null,
+          tempo: set.tempo || null,
+          distance: set.distance || null,
+          duration: set.duration || null,
+          restAfter: set.restAfter || null,
+          notes: set.notes || null
+        });
+      }
+      
+      exerciseWithSetsData.setsData = resizedSetsData;
+    } else {
+      // Get existing sets from database
+      const existingSets = await this.getExerciseSets(id);
+      
+      if (existingSets.length > 0) {
+        // Convert database sets to SetData format
+        exerciseWithSetsData.setsData = existingSets.map(set => ({
+          reps: set.reps === null ? undefined : set.reps,
+          weight: set.weight === null ? undefined : set.weight,
+          completed: set.completed === null ? false : set.completed,
+          setType: set.setType || undefined,
+          targetRPE: set.targetRPE || undefined,
+          tempo: set.tempo || undefined,
+          distance: set.distance || undefined,
+          duration: set.duration || undefined,
+          restAfter: set.restAfter || undefined,
+          notes: set.notes || undefined
+        }));
+      } else {
+        // Create default sets if none exist
+        const defaultSetsData: SetData[] = Array.from({ length: updatedExercise.sets }, () => ({
+          reps: updatedExercise.reps,
+          weight: updatedExercise.weight || 0,
+          completed: false
+        }));
+        
+        // Insert default sets into the database
+        for (let i = 0; i < defaultSetsData.length; i++) {
+          const set = defaultSetsData[i];
+          await this.createExerciseSet({
+            exerciseId: updatedExercise.id,
+            setNumber: i + 1,
+            reps: set.reps || null,
+            weight: set.weight || null,
+            completed: set.completed || false
+          });
+        }
+        
+        exerciseWithSetsData.setsData = defaultSetsData;
+      }
+    }
+    
+    return exerciseWithSetsData;
   }
 
   async deleteExercise(id: number): Promise<boolean> {
+    // First delete all sets associated with this exercise
+    await db.delete(exerciseSets).where(eq(exerciseSets.exerciseId, id));
+    
+    // Then delete the exercise
     const result = await db.delete(exercises).where(eq(exercises.id, id)).returning({ id: exercises.id });
     return result.length > 0;
+  }
+  
+  // Exercise Sets methods
+  async getExerciseSets(exerciseId: number): Promise<ExerciseSet[]> {
+    return await db
+      .select()
+      .from(exerciseSets)
+      .where(eq(exerciseSets.exerciseId, exerciseId))
+      .orderBy(asc(exerciseSets.setNumber));
+  }
+  
+  async createExerciseSet(set: InsertExerciseSet): Promise<ExerciseSet> {
+    const [newSet] = await db.insert(exerciseSets).values(set).returning();
+    return newSet;
+  }
+  
+  async updateExerciseSet(id: number, setUpdate: Partial<InsertExerciseSet>): Promise<ExerciseSet | undefined> {
+    const [updatedSet] = await db
+      .update(exerciseSets)
+      .set(setUpdate)
+      .where(eq(exerciseSets.id, id))
+      .returning();
+    return updatedSet;
+  }
+  
+  async deleteExerciseSet(id: number): Promise<boolean> {
+    const result = await db.delete(exerciseSets).where(eq(exerciseSets.id, id)).returning({ id: exerciseSets.id });
+    return result.length > 0;
+  }
+  
+  async deleteExerciseSets(exerciseId: number): Promise<boolean> {
+    await db.delete(exerciseSets).where(eq(exerciseSets.exerciseId, exerciseId));
+    return true;
   }
   
   // Weight tracking
