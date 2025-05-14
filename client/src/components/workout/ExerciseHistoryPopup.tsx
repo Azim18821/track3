@@ -22,8 +22,8 @@ import { Loader2, ChevronRight, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SetData {
-  reps: number;
-  weight: number;
+  reps?: number | null;
+  weight?: number | null;
   completed: boolean;
 }
 

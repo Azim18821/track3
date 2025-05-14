@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import ExerciseHistoryPopup from "./ExerciseHistoryPopup";
+// Use dynamic import for ExerciseHistoryPopup to avoid type conflicts
+const ExerciseHistoryPopup = React.lazy(() => import("./ExerciseHistoryPopup"));
 
 interface SetData {
   reps?: number | null;
@@ -676,7 +677,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           <Button 
             variant="outline" 
             className="flex-1"
-            onClick={() => setActiveExerciseIndex(prev => Math.max(0, prev - 1))}
+            onClick={() => {
+              // Navigate to previous exercise
+              setActiveExerciseIndex(prev => Math.max(0, prev - 1));
+            }}
             disabled={activeExerciseIndex === 0}
           >
             <span className="hidden sm:inline">Previous Exercise</span>
@@ -684,7 +688,18 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           </Button>
           <Button 
             className="flex-1"
-            onClick={() => setActiveExerciseIndex(prev => Math.min(workoutState.exercises.length - 1, prev + 1))}
+            onClick={() => {
+              // Navigate to next exercise
+              setActiveExerciseIndex(prev => {
+                const newIndex = Math.min(workoutState.exercises.length - 1, prev + 1);
+                // Only show history popup if we actually changed exercises
+                if (newIndex !== prev) {
+                  // Show exercise history for the next exercise
+                  setIsHistoryPopupOpen(true);
+                }
+                return newIndex;
+              });
+            }}
             disabled={activeExerciseIndex === workoutState.exercises.length - 1}
           >
             <span className="hidden sm:inline">Next Exercise</span>
@@ -731,28 +746,30 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
       {/* Exercise History Popup */}
       {workoutState.exercises.length > 0 && (
-        <ExerciseHistoryPopup
-          isOpen={isHistoryPopupOpen}
-          onClose={() => setIsHistoryPopupOpen(false)}
-          currentExercise={workoutState.exercises[activeExerciseIndex]}
-          nextExercise={
-            activeExerciseIndex < workoutState.exercises.length - 1
-              ? workoutState.exercises[activeExerciseIndex + 1]
-              : null
-          }
-          onStartNextExercise={() => {
-            if (activeExerciseIndex < workoutState.exercises.length - 1) {
-              setActiveExerciseIndex(activeExerciseIndex + 1);
-              setIsHistoryPopupOpen(false);
-              
-              // Show a confirmation toast that we're moving to the next exercise
-              toast({
-                title: "Exercise Changed",
-                description: `Starting: ${workoutState.exercises[activeExerciseIndex + 1].name}`,
-              });
+        <Suspense fallback={<div>Loading exercise history...</div>}>
+          <ExerciseHistoryPopup
+            isOpen={isHistoryPopupOpen}
+            onClose={() => setIsHistoryPopupOpen(false)}
+            currentExercise={workoutState.exercises[activeExerciseIndex]}
+            nextExercise={
+              activeExerciseIndex < workoutState.exercises.length - 1
+                ? workoutState.exercises[activeExerciseIndex + 1]
+                : null
             }
-          }}
-        />
+            onStartNextExercise={() => {
+              if (activeExerciseIndex < workoutState.exercises.length - 1) {
+                setActiveExerciseIndex(activeExerciseIndex + 1);
+                setIsHistoryPopupOpen(false);
+                
+                // Show a confirmation toast that we're moving to the next exercise
+                toast({
+                  title: "Exercise Changed",
+                  description: `Starting: ${workoutState.exercises[activeExerciseIndex + 1].name}`,
+                });
+              }
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );
