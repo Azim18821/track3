@@ -556,13 +556,15 @@ body, html {
   /* Full screen container */
   .full-screen-container {
     min-height: 100vh;
-    min-height: 100svh; /* Modern viewport height units */
+    min-height: 100dvh; /* Modern viewport height units */
     min-height: -webkit-fill-available;
-    height: 100vh;
+    height: 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    position: relative; /* Ensure proper stacking context */
+    padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
   }
   
   /* Workout mode modal specific fixes */

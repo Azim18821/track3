@@ -116,7 +116,7 @@ export function BottomNav() {
   return (
     <div className="bottom-nav backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg">
       {/* iOS safe area padding bottom is handled with the bottom-nav class */}
-      <div className="grid h-20 grid-cols-5 px-1">
+      <div className="grid h-[60px] grid-cols-5 px-1">
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
