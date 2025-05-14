@@ -155,7 +155,7 @@ export function CenterNavButton() {
   
   return (
     <div className="relative flex justify-center items-center">
-      <div className="absolute -top-7 flex justify-center">
+      <div className="absolute -top-3 flex justify-center">
         <Link
           href={targetPath}
           className="inline-flex flex-col items-center touch-none"
