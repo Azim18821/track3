@@ -122,11 +122,10 @@ export function BottomNavCircular() {
 
   return (
     <div 
-      className="fixed left-0 bottom-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
+      className="w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
       style={{
         borderTopLeftRadius: '20px',
         borderTopRightRadius: '20px',
-        transform: 'translateY(-25px)', /* Move it up from the bottom edge */
         paddingBottom: 'max(env(safe-area-inset-bottom, 20px) + 10px)'
       }}
     >
