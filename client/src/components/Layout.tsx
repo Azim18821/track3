@@ -150,12 +150,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-28' : 'p-4 md:p-6'}`}>
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-40' : 'p-4 md:p-6'}`}>
           {children}
         </main>
 
         {/* Bottom Navigation - Mobile only */}
-        {isMobile && <div className="mt-auto">
+        {isMobile && <div className="mt-auto bg-white dark:bg-gray-900">
           <BottomNav />
         </div>}
       </div>

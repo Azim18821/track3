@@ -114,7 +114,7 @@ export function BottomNav() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div className="w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe">
+    <div className="w-full backdrop-blur-lg bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe z-50">
       {/* iOS safe area padding bottom is handled with pb-safe class */}
       <div className="grid h-22 grid-cols-5 px-1 pt-2">
         {/* Left side items */}
