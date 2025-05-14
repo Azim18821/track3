@@ -4,14 +4,11 @@
 
 /* Ensure the app is always full-height and properly sized */
 html, body, #root {
-  height: 100vh; /* Fallback */
-  height: 100svh; /* Use svh for consistent viewport height on mobile */
+  height: 100vh;
   width: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  /* Ensure content doesn't overlap with home indicator */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Remove all browser tap highlights for better native feel */
@@ -35,49 +32,6 @@ html, body, #root {
 
 .dark {
   --background: rgba(17, 24, 39, 0.8); /* dark:bg-gray-900 with opacity */
-}
-
-/* iOS Safe Area Utilities and Fixed Header/Footer Adjustments */
-
-/* Utility class for fixed header and footer layout */
-.ios-fixed-header-footer-layout {
-  padding-top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
-  padding-bottom: calc(var(--navbar-height) + env(safe-area-inset-bottom, 0px));
-}
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.pl-safe {
-  padding-left: env(safe-area-inset-left, 0px);
-}
-
-.pr-safe {
-  padding-right: env(safe-area-inset-right, 0px);
-}
-
-.mt-safe {
-  margin-top: env(safe-area-inset-top, 0px);
-}
-
-.mb-safe {
-  margin-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* Class to handle notch area */
-.notch-friendly-container {
-  padding-left: max(env(safe-area-inset-left, 0px), 0.5rem);
-  padding-right: max(env(safe-area-inset-right, 0px), 0.5rem);
-}
-
-/* Add CSS vars for header and navbar heights */
-:root {
-  --header-height: 3.5rem; /* 56px or h-14 */
-  --navbar-height: 5rem; /* 80px or similar to navbar height */
 }
 
 /* Custom animations for splash screen and other effects */
@@ -385,7 +339,7 @@ html, body, #root {
     /* iOS Navigation Bar Fixes */
     .bottom-nav {
       padding-bottom: env(safe-area-inset-bottom) !important;
-      height: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+      height: calc(5rem + env(safe-area-inset-bottom)) !important;
       z-index: 100 !important;
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
@@ -398,13 +352,10 @@ html, body, #root {
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
       /* Ensure proper height with home indicator and no gap at bottom */
-      min-height: calc(88px + env(safe-area-inset-bottom));
+      min-height: calc(80px + env(safe-area-inset-bottom));
       /* Additional fixes to eliminate any black gap */
       overflow: visible;
       position: relative;
-      /* Push it slightly lower */
-      bottom: -5px;
-      margin-top: 5px;
     }
     
     /* Create an extension to cover any gap at the bottom */
