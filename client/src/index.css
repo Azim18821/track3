@@ -4,7 +4,7 @@
 
 /* Ensure the app is always full-height and properly sized */
 html, body, #root {
-  height: 100vh;
+  height: calc(100vh - env(safe-area-inset-bottom));
   width: 100%;
   margin: 0;
   padding: 0;
@@ -503,14 +503,34 @@ body, html {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 60px; /* Adjust the height as needed */
-    background-color: #fff;
+    height: 60px; /* Height of interactive area */
+    background-color: rgba(255, 255, 255, 0.8); /* Same as the existing nav */
+    backdrop-filter: blur(12px);
     display: flex;
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
     z-index: 10;
     padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
+  }
+  
+  /* Extend background into the safe area */
+  .bottom-nav::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -50px; /* Extend well beyond the safe area */
+    height: 50px;
+    background-color: rgba(255, 255, 255, 0.8); /* Match the nav background */
+    backdrop-filter: blur(12px);
+    z-index: -1;
+  }
+  
+  /* Dark mode version */
+  .dark .bottom-nav::after {
+    background-color: rgba(17, 24, 39, 0.9); /* Dark mode background */
+    backdrop-filter: blur(12px);
   }
   
   @supports (padding: max(0px)) {
