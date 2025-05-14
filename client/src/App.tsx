@@ -156,7 +156,7 @@ function App() {
               <TooltipProvider>
                 <SafeAreaProvider>
                   <AppInitializer />
-                  <div className="fixed inset-0 overflow-hidden ios-fixed-container h-[100svh] w-screen max-w-screen">
+                  <div className="overflow-hidden ios-fixed-container h-[100svh] w-screen max-w-screen">
                     <div className="h-full w-full overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch">
                       <Switch>
                         {/* Public Routes */}
