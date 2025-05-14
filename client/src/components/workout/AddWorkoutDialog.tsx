@@ -145,14 +145,22 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   };
 
   const addExercise = () => {
-    append({ 
-      name: "", 
-      sets: 3, 
-      reps: 10, 
-      weight: 0, 
-      unit: "kg",
-      setsData: Array(3).fill({ reps: 10, weight: 0, completed: false }) 
-    });
+    if (isPlanMode) {
+      append({ 
+        name: "", 
+        sets: 3, 
+        unit: "kg"
+      });
+    } else {
+      append({ 
+        name: "", 
+        sets: 3, 
+        reps: 10, 
+        weight: 0, 
+        unit: "kg",
+        setsData: Array(3).fill({ reps: 10, weight: 0, completed: false }) 
+      });
+    }
   };
 
   return (
@@ -160,6 +168,34 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
       <AdaptiveDialogContent className="sm:max-w-lg max-h-[80vh] md:max-h-[85vh] overflow-y-auto">
         <AdaptiveDialogHeader>
           <AdaptiveDialogTitle>Add Workout</AdaptiveDialogTitle>
+          <div className="flex items-center space-x-2 mt-2">
+            <Switch 
+              id="plan-mode" 
+              checked={isPlanMode}
+              onCheckedChange={(checked) => {
+                setIsPlanMode(checked);
+                // Reset form with new values appropriate for the mode
+                form.reset({
+                  ...form.getValues(),
+                  isPlanMode: checked,
+                  exercises: form.getValues().exercises.map(exercise => ({
+                    ...exercise,
+                    reps: checked ? undefined : (exercise.reps || 10),
+                    weight: checked ? undefined : (exercise.weight || 0),
+                    setsData: checked ? undefined : 
+                      exercise.setsData || Array(exercise.sets).fill({ 
+                        reps: 10, 
+                        weight: 0, 
+                        completed: false 
+                      })
+                  }))
+                });
+              }} 
+            />
+            <Label htmlFor="plan-mode" className="text-sm">
+              Plan Mode (just pick exercises and sets, track actual weights during workout)
+            </Label>
+          </div>
         </AdaptiveDialogHeader>
         
         {/* Exercise Selector Dialog */}
@@ -302,108 +338,138 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                   
                   {/* Per-set configuration */}
                   <div className="pt-3">
-                    <h5 className="text-sm font-medium mb-2">Set Configuration</h5>
-                    <p className="text-xs text-muted-foreground mb-3">Configure each set with different weights and reps</p>
-                    
-                    {(form.watch(`exercises.${index}.setsData`) || []).map((set: SetData, setIndex) => (
-                      <div key={setIndex} className="mb-3 p-3 border rounded-md">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">Set {setIndex + 1}</span>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => {
-                              // Get current sets data and sets count
-                              const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
-                              const currentSetsCount = form.getValues(`exercises.${index}.sets`);
-                              
-                              // Remove this set if we have more than 1 set
-                              if (currentSetsData.length > 1) {
-                                const newSetsData = currentSetsData.filter((_, i) => i !== setIndex);
-                                form.setValue(`exercises.${index}.setsData`, newSetsData);
-                                form.setValue(`exercises.${index}.sets`, currentSetsCount - 1);
-                              }
-                            }}
-                            disabled={(form.watch(`exercises.${index}.setsData`) || []).length <= 1}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs" htmlFor={`set-weight-${setIndex}`}>Weight (kg)</Label>
-                            <Input
-                              id={`set-weight-${setIndex}`}
-                              type="number"
-                              min="0"
-                              value={set.weight === 0 ? "" : set.weight}
-                              onChange={(e) => {
-                                const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
-                                const newSetsData = [...currentSetsData];
-                                newSetsData[setIndex] = {
-                                  ...newSetsData[setIndex],
-                                  weight: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
-                                };
-                                form.setValue(`exercises.${index}.setsData`, newSetsData);
-                              }}
-                              className="mt-1"
-                              placeholder="0"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs" htmlFor={`set-reps-${setIndex}`}>Reps</Label>
-                            <Input
-                              id={`set-reps-${setIndex}`}
-                              type="number"
-                              min="1"
-                              value={set.reps === 0 || set.reps === 1 ? "" : set.reps}
-                              onChange={(e) => {
-                                const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
-                                const newSetsData = [...currentSetsData];
-                                newSetsData[setIndex] = {
-                                  ...newSetsData[setIndex],
-                                  reps: e.target.value === "" ? 0 : parseInt(e.target.value) || 0
-                                };
-                                form.setValue(`exercises.${index}.setsData`, newSetsData);
-                              }}
-                              placeholder="0"
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
+                    {isPlanMode ? (
+                      // Plan mode - just show number of sets selector
+                      <div>
+                        <FormField
+                          control={form.control}
+                          name={`exercises.${index}.sets`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Sets</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="1" 
+                                  {...field} 
+                                  onChange={(e) => {
+                                    const newSets = parseInt(e.target.value) || 1;
+                                    field.onChange(newSets);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
-                    ))}
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
-                        const currentSetsCount = form.getValues(`exercises.${index}.sets`);
-                        const defaultReps = form.getValues(`exercises.${index}.reps`);
-                        const defaultWeight = form.getValues(`exercises.${index}.weight`) || 0;
+                    ) : (
+                      // Normal mode - show full set configuration
+                      <>
+                        <h5 className="text-sm font-medium mb-2">Set Configuration</h5>
+                        <p className="text-xs text-muted-foreground mb-3">Configure each set with different weights and reps</p>
                         
-                        // Add one more set
-                        const newSetsData = [
-                          ...currentSetsData, 
-                          {
-                            reps: defaultReps,
-                            weight: defaultWeight,
-                            completed: false
-                          }
-                        ];
+                        {(form.watch(`exercises.${index}.setsData`) || []).map((set: SetData, setIndex: number) => (
+                          <div key={setIndex} className="mb-3 p-3 border rounded-md">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">Set {setIndex + 1}</span>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => {
+                                  // Get current sets data and sets count
+                                  const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
+                                  const currentSetsCount = form.getValues(`exercises.${index}.sets`);
+                                  
+                                  // Remove this set if we have more than 1 set
+                                  if (currentSetsData.length > 1) {
+                                    const newSetsData = currentSetsData.filter((_: any, i: number) => i !== setIndex);
+                                    form.setValue(`exercises.${index}.setsData`, newSetsData);
+                                    form.setValue(`exercises.${index}.sets`, currentSetsCount - 1);
+                                  }
+                                }}
+                                disabled={(form.watch(`exercises.${index}.setsData`) || []).length <= 1}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs" htmlFor={`set-weight-${setIndex}`}>Weight (kg)</Label>
+                                <Input
+                                  id={`set-weight-${setIndex}`}
+                                  type="number"
+                                  min="0"
+                                  value={set.weight === 0 ? "" : set.weight}
+                                  onChange={(e) => {
+                                    const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
+                                    const newSetsData = [...currentSetsData];
+                                    newSetsData[setIndex] = {
+                                      ...newSetsData[setIndex],
+                                      weight: e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
+                                    };
+                                    form.setValue(`exercises.${index}.setsData`, newSetsData);
+                                  }}
+                                  className="mt-1"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs" htmlFor={`set-reps-${setIndex}`}>Reps</Label>
+                                <Input
+                                  id={`set-reps-${setIndex}`}
+                                  type="number"
+                                  min="1"
+                                  value={set.reps === 0 || set.reps === 1 ? "" : set.reps}
+                                  onChange={(e) => {
+                                    const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
+                                    const newSetsData = [...currentSetsData];
+                                    newSetsData[setIndex] = {
+                                      ...newSetsData[setIndex],
+                                      reps: e.target.value === "" ? 0 : parseInt(e.target.value) || 0
+                                    };
+                                    form.setValue(`exercises.${index}.setsData`, newSetsData);
+                                  }}
+                                  placeholder="0"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                         
-                        // Update both setsData and sets count
-                        form.setValue(`exercises.${index}.setsData`, newSetsData);
-                        form.setValue(`exercises.${index}.sets`, currentSetsCount + 1);
-                      }}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add Another Set
-                    </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
+                            const currentSetsCount = form.getValues(`exercises.${index}.sets`);
+                            const defaultReps = form.getValues(`exercises.${index}.reps`);
+                            const defaultWeight = form.getValues(`exercises.${index}.weight`) || 0;
+                            
+                            // Add one more set
+                            const newSetsData = [
+                              ...currentSetsData, 
+                              {
+                                reps: defaultReps || 10,
+                                weight: defaultWeight || 0,
+                                completed: false
+                              }
+                            ];
+                            
+                            // Update both setsData and sets count
+                            form.setValue(`exercises.${index}.setsData`, newSetsData);
+                            form.setValue(`exercises.${index}.sets`, currentSetsCount + 1);
+                          }}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> Add Another Set
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -459,8 +525,9 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
 
 // Function to update exercise name from library or custom entry
 const handleSelectExercise = (exerciseName: string, form: any, index: number) => {
-  // Get the current exercise
+  // Get the current exercise and isPlanMode status
   const currentExercise = form.getValues(`exercises.${index}`);
+  const isPlanMode = form.getValues('isPlanMode');
   
   // Update just the name field
   form.setValue(`exercises.${index}.name`, exerciseName);

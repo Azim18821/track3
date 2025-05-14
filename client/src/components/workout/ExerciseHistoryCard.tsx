@@ -18,11 +18,22 @@ const ExerciseHistoryCard: React.FC<ExerciseHistoryCardProps> = ({
 }) => {
   // Process workouts to get the last weight used for each exercise
   const exerciseHistory = useMemo(() => {
-    const history: Record<string, { lastWeight: number; lastDate: string; unit: string; count: number }> = {};
+    const history: Record<string, { 
+      lastWeight: number | null; 
+      lastDate: string; 
+      unit: string; 
+      count: number;
+      isPlanMode?: boolean;
+      isCompleted?: boolean;
+    }> = {};
     
     // Process each workout to find the most recent entry for each exercise
     workouts.forEach(workout => {
       if (!workout.exercises) return;
+      
+      // Check if this is a plan mode workout
+      const isPlanMode = (workout as any).isPlanMode === true;
+      const isCompleted = workout.completed || workout.isCompleted;
       
       workout.exercises.forEach((exercise: Exercise) => {
         if (!exercise.name) return;
@@ -30,14 +41,23 @@ const ExerciseHistoryCard: React.FC<ExerciseHistoryCardProps> = ({
         const workoutDate = new Date(workout.date);
         const existingExercise = history[exercise.name];
         
-        // Only update if this is more recent than the previously recorded exercise
-        // or if this is the first time we're seeing this exercise
-        if (!existingExercise || new Date(existingExercise.lastDate) < workoutDate) {
+        // Only update the record if:
+        // 1. We haven't seen this exercise before, or
+        // 2. This is more recent than what we have, or
+        // 3. The existing one is a plan but this one has actual data
+        const shouldUpdate = 
+          !existingExercise || 
+          new Date(existingExercise.lastDate) < workoutDate ||
+          (existingExercise.isPlanMode && !isPlanMode && exercise.weight !== undefined);
+        
+        if (shouldUpdate) {
           history[exercise.name] = {
-            lastWeight: exercise.weight || 0,
+            lastWeight: exercise.weight !== undefined ? exercise.weight : null,
             lastDate: workout.date,
             unit: exercise.unit || 'kg',
-            count: existingExercise ? existingExercise.count + 1 : 1
+            count: existingExercise ? existingExercise.count + 1 : 1,
+            isPlanMode,
+            isCompleted
           };
         } else if (existingExercise) {
           // Just increment the count if we've seen this exercise before
@@ -106,9 +126,20 @@ const ExerciseHistoryCard: React.FC<ExerciseHistoryCardProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="font-medium bg-primary/5 text-primary">
-                  {exercise.lastWeight} {exercise.unit}
-                </Badge>
+                {exercise.lastWeight !== null ? (
+                  <Badge 
+                    variant="outline" 
+                    className={`font-medium ${exercise.isCompleted 
+                      ? 'bg-primary/5 text-primary' 
+                      : 'bg-muted text-muted-foreground'}`}
+                  >
+                    {exercise.lastWeight} {exercise.unit}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
+                    Planned
+                  </Badge>
+                )}
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
