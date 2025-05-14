@@ -503,12 +503,13 @@ body, html {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 60px; /* Base height */
+    height: 60px; /* Adjust height as needed */
     background-color: #fff;
     display: flex;
-    flex-direction: column;
-    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
-    z-index: 40;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
   }
   
   /* Handle the safe area for iPhone X and newer */
@@ -516,13 +517,7 @@ body, html {
     .bottom-nav {
         padding-bottom: constant(safe-area-inset-bottom); /* Older iOS */
         padding-bottom: env(safe-area-inset-bottom); /* Modern iOS */
-        height: calc(60px + env(safe-area-inset-bottom)); /* Adjust height based on safe area */
     }
-  }
-  
-  /* Dark mode override */
-  .dark .bottom-nav {
-    background-color: #111827; /* Match dark mode theme */
   }
   
   /* Header spacing for notch */
