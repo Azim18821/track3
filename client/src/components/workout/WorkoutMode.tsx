@@ -292,6 +292,43 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       };
     });
   };
+  
+  // Add an extra set to an exercise
+  const addExtraSet = (exerciseIndex: number) => {
+    setWorkoutState(prevState => {
+      const updatedExercises = [...prevState.exercises];
+      const currentExercise = updatedExercises[exerciseIndex];
+      
+      // Create a new set data object
+      const newSet: SetData = {
+        reps: null,
+        weight: null,
+        completed: false
+      };
+      
+      // Add the new set to the setsData array
+      const updatedSetsData = [...currentExercise.setsData!, newSet];
+      
+      // Update the exercise object
+      updatedExercises[exerciseIndex] = {
+        ...currentExercise,
+        // Increment the sets count
+        sets: currentExercise.sets + 1,
+        setsData: updatedSetsData
+      };
+      
+      // Show success toast
+      toast({
+        title: "Extra Set Added",
+        description: `Added set ${updatedSetsData.length} to ${currentExercise.name}`,
+      });
+      
+      return {
+        ...prevState,
+        exercises: updatedExercises
+      };
+    });
+  };
 
   // Check if all sets for all exercises are completed and have valid values
   const allExercisesCompleted = workoutState.exercises.every(exercise => 
@@ -668,6 +705,19 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   </div>
                 </div>
               ))}
+              
+              {/* Add Extra Set Button */}
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center gap-2 h-12 border-dashed border-2"
+                onClick={() => addExtraSet(activeExerciseIndex)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                  <path d="M12 5v14"></path>
+                  <path d="M5 12h14"></path>
+                </svg>
+                Add Extra Set
+              </Button>
             </div>
           </CardContent>
         </Card>
