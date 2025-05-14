@@ -339,7 +339,7 @@ html, body, #root {
     /* iOS Navigation Bar Fixes */
     .bottom-nav {
       padding-bottom: env(safe-area-inset-bottom) !important;
-      height: calc(5rem + env(safe-area-inset-bottom)) !important;
+      height: calc(5.5rem + env(safe-area-inset-bottom)) !important;
       z-index: 100 !important;
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
@@ -352,10 +352,13 @@ html, body, #root {
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
       /* Ensure proper height with home indicator and no gap at bottom */
-      min-height: calc(80px + env(safe-area-inset-bottom));
+      min-height: calc(88px + env(safe-area-inset-bottom));
       /* Additional fixes to eliminate any black gap */
       overflow: visible;
       position: relative;
+      /* Push it slightly lower */
+      bottom: -5px;
+      margin-top: 5px;
     }
     
     /* Create an extension to cover any gap at the bottom */
