@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-[100svh] w-screen overflow-hidden bg-background full-screen-container">
+    <div className="flex flex-col h-[100svh] w-screen overflow-hidden bg-background full-screen-container">
       {/* Mobile sidebar backdrop - only visible when sidebar is open on mobile */}
       {sidebarOpen && (
         <div 
@@ -67,10 +67,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Main content area with fixed header and scrollable content */}
-      <div className="fixed inset-0 flex flex-col" style={{ bottom: 'auto' }}>  {/* Removed bottom constraint */}
-        {/* Mobile Header - Fixed at top, non-scrollable */}
-        <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14">
+      {/* Main content area with header and scrollable content */}
+      <div className="flex flex-col flex-1 h-full w-full">
+        {/* Mobile Header */}
+        <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 h-14">
           <div className="flex items-center">
             <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               TrackMadeEazE
@@ -149,13 +149,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </header>
 
-        {/* Page content - With padding for fixed header and bottom nav */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-48 mt-header-height' : 'p-4 md:p-6'}`}>
+        {/* Page content */}
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-28' : 'p-4 md:p-6'}`}>
           {children}
         </main>
 
         {/* Bottom Navigation - Mobile only */}
-        {isMobile && <BottomNav />}
+        {isMobile && <div className="mt-auto">
+          <BottomNav />
+        </div>}
       </div>
 
       {/* Offline indicator */}
