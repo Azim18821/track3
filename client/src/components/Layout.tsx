@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-[100svh] w-screen overflow-hidden bg-background full-screen-container">
+    <div className="flex flex-col h-[100svh] w-screen overflow-hidden bg-background full-screen-container pt-safe pl-safe pr-safe">
       {/* Mobile sidebar backdrop - only visible when sidebar is open on mobile */}
       {sidebarOpen && (
         <div 
