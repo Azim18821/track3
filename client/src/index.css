@@ -11,6 +11,15 @@ html, body, #root {
   overflow-x: hidden;
 }
 
+/* Full width on mobile */
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
 /* Remove all browser tap highlights for better native feel */
 * {
   -webkit-tap-highlight-color: transparent;
@@ -490,7 +499,25 @@ html, body, #root {
   
   /* Bottom navigation spacing for home indicator */
   .bottom-nav {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px; /* Adjust height as needed */
+    background-color: #fff;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+  }
+  
+  /* Handle the safe area for iPhone X and newer */
+  @supports (padding: max(0px)) {
+    .bottom-nav {
+        padding-bottom: constant(safe-area-inset-bottom); /* Older iOS */
+        padding-bottom: env(safe-area-inset-bottom); /* Modern iOS */
+    }
   }
   
   /* Header spacing for notch */
