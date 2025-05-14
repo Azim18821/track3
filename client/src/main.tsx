@@ -95,7 +95,7 @@ const detectIOSPlatform = () => {
     // iOS viewport adjustment - maximize viewport
     const meta = document.querySelector('meta[name="viewport"]');
     if (meta) {
-      meta.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, height=device-height');
+      meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
     }
   }
 };
