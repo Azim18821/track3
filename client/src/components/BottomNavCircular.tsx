@@ -127,17 +127,17 @@ export function BottomNavCircular() {
         borderTopLeftRadius: '20px',
         borderTopRightRadius: '20px',
         transform: 'translateY(0)',
-        paddingBottom: '20px' // Fixed value instead of env variable
+        padding: '0' // No padding at all
       }}
     >
-      {/* Removed iOS safe area padding for testing */}
-      <div className="grid h-20 grid-cols-5 px-1">
+      {/* Removed all padding for testing */}
+      <div className="grid h-16 grid-cols-5 p-0">
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
             key={`left-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="inline-flex flex-col items-center justify-center h-full p-0 touch-none"
           >
             <div 
               className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
@@ -180,7 +180,7 @@ export function BottomNavCircular() {
           <Link 
             key={`right-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="inline-flex flex-col items-center justify-center h-full p-0 touch-none"
           >
             <div 
               className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
