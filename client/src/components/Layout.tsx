@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-[100svh] w-screen overflow-hidden bg-background full-screen-container">
+    <div className="flex h-[100dvh] w-screen overflow-hidden bg-background full-screen-container">
       {/* Mobile sidebar backdrop - only visible when sidebar is open on mobile */}
       {sidebarOpen && (
         <div 
@@ -150,7 +150,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content - With padding for fixed header and bottom nav */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-32 mt-header-height' : 'p-4 md:p-6'}`}>
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-24 mt-header-height' : 'p-4 md:p-6'}`}>
           {children}
         </main>
 
