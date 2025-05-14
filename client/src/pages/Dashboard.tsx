@@ -3,6 +3,7 @@ import SummaryCard from "@/components/dashboard/SummaryCard";
 import NutritionChart from "@/components/dashboard/NutritionChart";
 import WorkoutChart from "@/components/dashboard/WorkoutChart";
 import DashboardWeeklyMealPlan from "@/components/dashboard/DashboardWeeklyMealPlan";
+import DailyRecommendationsDialog from "@/components/recommendations/DailyRecommendationsDialog";
 import { format } from "date-fns";
 import { useState } from "react";
 import { Loader2, RefreshCw, Calendar, Dumbbell, BarChart3, Utensils, Activity, Scale, Brain, Sparkles, CheckCircle2, Play, MessageCircle } from "lucide-react";
@@ -11,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useRecommendations } from "@/hooks/use-recommendations";
 
 // Define the dashboard data structure
 interface NutritionInfo {
@@ -53,6 +55,9 @@ const Dashboard = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [, setLocation] = useLocation();
+  
+  // Use recommendations hook to check for and display daily recommendations
+  const { showRecommendations, setShowRecommendations } = useRecommendations();
 
   // Add refetchOnWindowFocus to ensure updated data appears when coming back to dashboard
   const { data, isLoading, error, refetch } = useQuery<DashboardData>({
@@ -119,7 +124,8 @@ const Dashboard = () => {
     }
   };
 
-  const hasTrainer = user?.hasTrainer || false;
+  // Get hasTrainer value from dashboard data
+  const hasTrainer = (data?.hasAccess?.aiCoach === false) || false;
   const isAdmin = user?.isAdmin || false;
 
   return (
@@ -140,17 +146,28 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Only show refresh button on mobile, both on desktop */}
+        {/* Dashboard controls */}
         <div className="flex space-x-2">
           {!isMobile && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleDateChange}
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              Today
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDateChange}
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Today
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="bg-gradient-to-r from-indigo-100 to-purple-100 hover:from-indigo-200 hover:to-purple-200 border-indigo-300"
+                onClick={() => setShowRecommendations(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-2 text-indigo-600" />
+                Recommendations
+              </Button>
+            </>
           )}
           <Button 
             variant={isMobile ? "ghost" : "outline"}
@@ -354,6 +371,14 @@ const Dashboard = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button 
+                    variant="outline"
+                    className="mb-2 sm:mb-0 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900 hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full"
+                    onClick={() => setShowRecommendations(true)}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Daily Recommendations
+                  </Button>
+                  <Button 
                     className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-full"
                     onClick={() => setLocation(activePlan ? (hasTrainer && !isAdmin ? '/view-plan' : '/fitness-plan') : '/coach')}
                   >
@@ -423,6 +448,12 @@ const Dashboard = () => {
           <DashboardWeeklyMealPlan activeFitnessPlan={dashboard.activeFitnessPlan} />
         </>
       )}
+      
+      {/* Daily AI Recommendations Dialog */}
+      <DailyRecommendationsDialog 
+        open={showRecommendations} 
+        onOpenChange={setShowRecommendations} 
+      />
     </div>
   );
 };

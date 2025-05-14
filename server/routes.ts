@@ -42,6 +42,7 @@ import { FitnessPreferences, generateFitnessPlan, convertWorkoutPlanToDatabaseFo
 import { chatWithAICoach, analyzeUserProgress, getProgressUpdate, generateAdaptiveFitnessPlan } from './adaptive-coach';
 import { updateExercises, updateMeals, updateBothLibraries } from "./adminLibraryUpdates";
 import { resetUserPlanCooldown, forceDeactivateFitnessPlan } from "./adminTools";
+import { generateDailyRecommendations, shouldShowRecommendations } from "./services/dailyRecommendations";
 import adminRoutes from "./adminRoutes";
 import passwordResetRoutes from "./passwordResetRoutes";
 import onboardingRoutes from "./onboardingRoutes";
@@ -211,6 +212,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register step-by-step plan generation routes
   app.use('/api/step-coach', stepRouter);
+  
+  // Daily AI recommendations endpoint
+  app.get('/api/recommendations/daily', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Check if recommendations should be shown today
+      const shouldShow = await shouldShowRecommendations(userId);
+      
+      if (!shouldShow) {
+        return res.status(200).json({ 
+          show: false, 
+          message: "No recommendations available for today" 
+        });
+      }
+      
+      // Generate recommendations
+      const recommendations = await generateDailyRecommendations(userId);
+      
+      return res.status(200).json({
+        show: true,
+        recommendations
+      });
+    } catch (error) {
+      console.error('Error fetching daily recommendations:', error);
+      return res.status(500).json({ 
+        show: false,
+        message: "Failed to generate daily recommendations", 
+        error: (error as Error).message 
+      });
+    }
+  });
   
   // Register push notification routes
   app.use('/api/push-notifications', pushNotificationRoutes);
