@@ -14,6 +14,7 @@ export function useIsMobile() {
   useEffect(() => {
     // Check if running in a native mobile container
     const isNative = Capacitor.isNativePlatform();
+    const isIOS = Capacitor.getPlatform() === 'ios';
     const isAndroid = Capacitor.getPlatform() === 'android';
     
     // Check screen size
@@ -21,17 +22,17 @@ export function useIsMobile() {
       return window.innerWidth <= 768;
     };
 
-    // Check user agent for mobile patterns (excluding iOS patterns)
+    // Check user agent for mobile patterns
     const checkUserAgent = () => {
       const ua = navigator.userAgent.toLowerCase();
       return (
-        /android|webos|blackberry|windows phone/.test(ua)
+        /android|webos|iphone|ipad|ipod|blackberry|windows phone/.test(ua)
       );
     };
 
     // Determine if device is mobile based on all checks
     const checkIsMobile = () => {
-      const byPlatform = isNative || isAndroid;
+      const byPlatform = isNative || isIOS || isAndroid;
       const bySize = checkScreenSize();
       const byUserAgent = checkUserAgent();
       
@@ -55,7 +56,7 @@ export function useIsMobile() {
 
 /**
  * Hook that determines if the current device is a tablet.
- * Now focuses on Android tablets and screen size.
+ * Detects iPads and other large mobile devices.
  */
 export function useIsTablet() {
   const [isTablet, setIsTablet] = useState(false);
@@ -67,13 +68,16 @@ export function useIsTablet() {
       return width >= 600 && width <= 1024;
     };
 
-    // Check user agent for tablet patterns (excluding iPad)
+    // Check user agent for iPad or other tablet patterns
     const checkUserAgent = () => {
       const ua = navigator.userAgent.toLowerCase();
+      // iPad detection, even for newer iPads that report as Macintosh
+      const isIpad = /ipad/.test(ua) || 
+        (/macintosh/.test(ua) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
       // Android tablet detection
       const isAndroidTablet = /android/.test(ua) && !/mobile/.test(ua);
       
-      return isAndroidTablet;
+      return isIpad || isAndroidTablet;
     };
 
     // Determine if device is a tablet
@@ -101,10 +105,9 @@ export function useIsTablet() {
 
 /**
  * Hook to detect if we're on an iOS device
- * Now always returns false as we're not supporting iOS
  */
 export function useIsIOS() {
-  return false;
+  return Capacitor.getPlatform() === 'ios';
 }
 
 /**
