@@ -102,9 +102,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // Initialize setsData if it doesn't exist
       setsData: ex.setsData || Array.from({ length: ex.sets }, () => ({
         // Handle plan mode workouts that might not have reps/weight defined
-        // For plan mode, we'll initialize with empty/default values that can be filled during the workout
-        reps: typeof ex.reps === 'number' ? ex.reps : isPlanModeWorkout ? undefined : 10, // Leave empty for plan mode
-        weight: typeof ex.weight === 'number' ? ex.weight : isPlanModeWorkout ? undefined : 0, // Leave empty for plan mode
+        // For plan mode, we'll initialize with 0 values that can be filled during the workout
+        // Important: Use 0 instead of undefined for controlled inputs
+        reps: typeof ex.reps === 'number' ? ex.reps : 0, // Initialize with 0 for plan mode instead of undefined
+        weight: typeof ex.weight === 'number' ? ex.weight : 0, // Initialize with 0 for plan mode instead of undefined
         completed: false
       }))
     }))
