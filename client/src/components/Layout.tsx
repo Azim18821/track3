@@ -69,8 +69,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main content area with header and scrollable content */}
       <div className="flex flex-col flex-1 h-full w-full">
-        {/* Mobile Header */}
-        <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 h-14">
+        {/* Mobile Header - Fixed at top */}
+        <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 h-14 pt-safe">
           <div className="flex items-center">
             <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               TrackMadeEazE
@@ -150,14 +150,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-40' : 'p-4 md:p-6'}`}>
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'ios-fixed-header-footer-layout' : 'p-4 md:p-6'}`}>
           {children}
         </main>
 
         {/* Bottom Navigation - Mobile only */}
-        {isMobile && <div className="mt-auto bg-white dark:bg-gray-900">
-          <BottomNav />
-        </div>}
+        {/* Bottom Nav is now fixed positioned, so we don't need the container */}
+        {isMobile && <BottomNav />}
       </div>
 
       {/* Offline indicator */}

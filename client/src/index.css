@@ -37,7 +37,13 @@ html, body, #root {
   --background: rgba(17, 24, 39, 0.8); /* dark:bg-gray-900 with opacity */
 }
 
-/* iOS Safe Area Utilities */
+/* iOS Safe Area Utilities and Fixed Header/Footer Adjustments */
+
+/* Utility class for fixed header and footer layout */
+.ios-fixed-header-footer-layout {
+  padding-top: calc(var(--header-height) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--navbar-height) + env(safe-area-inset-bottom, 0px));
+}
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
 }
@@ -64,9 +70,14 @@ html, body, #root {
 
 /* Class to handle notch area */
 .notch-friendly-container {
-  padding-top: max(env(safe-area-inset-top, 0px), 0.5rem);
   padding-left: max(env(safe-area-inset-left, 0px), 0.5rem);
   padding-right: max(env(safe-area-inset-right, 0px), 0.5rem);
+}
+
+/* Add CSS vars for header and navbar heights */
+:root {
+  --header-height: 3.5rem; /* 56px or h-14 */
+  --navbar-height: 5rem; /* 80px or similar to navbar height */
 }
 
 /* Custom animations for splash screen and other effects */
