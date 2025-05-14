@@ -122,15 +122,15 @@ export function BottomNavCircular() {
 
   return (
     <div 
-      className="relative z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
+      className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg transition-all duration-200"
       style={{
         borderTopLeftRadius: '20px',
         borderTopRightRadius: '20px',
         transform: 'translateY(0)',
-        paddingBottom: 'max(env(safe-area-inset-bottom), 20px)'
+        paddingBottom: '20px' // Fixed value instead of env variable
       }}
     >
-      {/* iOS safe area padding bottom is handled with pb-safe class and home indicator detection */}
+      {/* Removed iOS safe area padding for testing */}
       <div className="grid h-20 grid-cols-5 px-1">
         {/* Left side items */}
         {leftItems.map((item, index) => (
