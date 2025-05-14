@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface SetData {
-  reps?: number;
-  weight?: number;
+  reps?: number | null;
+  weight?: number | null;
   completed: boolean;
 }
 
@@ -102,10 +102,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // Initialize setsData if it doesn't exist
       setsData: ex.setsData || Array.from({ length: ex.sets }, () => ({
         // Handle plan mode workouts that might not have reps/weight defined
-        // For plan mode, we'll initialize with 0 values that can be filled during the workout
-        // Important: Use 0 instead of undefined for controlled inputs
-        reps: typeof ex.reps === 'number' ? ex.reps : 0, // Initialize with 0 for plan mode instead of undefined
-        weight: typeof ex.weight === 'number' ? ex.weight : 0, // Initialize with 0 for plan mode instead of undefined
+        // For plan mode, we'll initialize with empty strings that will show just the placeholder
+        // This keeps inputs controlled but visually empty with just placeholders
+        reps: typeof ex.reps === 'number' ? ex.reps : null, // Using null to display empty field with placeholder
+        weight: typeof ex.weight === 'number' ? ex.weight : null, // Using null to display empty field with placeholder
         completed: false
       }))
     }))
@@ -245,7 +245,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   };
 
   // Update set weight
-  const updateSetWeight = (exerciseIndex: number, setIndex: number, newWeight: number) => {
+  const updateSetWeight = (exerciseIndex: number, setIndex: number, newWeight: number | null) => {
     setWorkoutState(prevState => {
       const updatedExercises = [...prevState.exercises];
       const updatedSetsData = [...updatedExercises[exerciseIndex].setsData!];
@@ -268,7 +268,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   };
 
   // Update set reps
-  const updateSetReps = (exerciseIndex: number, setIndex: number, newReps: number) => {
+  const updateSetReps = (exerciseIndex: number, setIndex: number, newReps: number | null) => {
     setWorkoutState(prevState => {
       const updatedExercises = [...prevState.exercises];
       const updatedSetsData = [...updatedExercises[exerciseIndex].setsData!];
@@ -642,7 +642,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                         value={setData.weight === null || setData.weight === undefined ? '' : setData.weight}
                         min={0}
                         onChange={(e) => {
-                          const newWeight = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          // If input is empty, keep it as null to show placeholder
+                          const newWeight = e.target.value === '' ? null : parseFloat(e.target.value);
                           updateSetWeight(activeExerciseIndex, setIndex, newWeight);
                         }}
                         className="h-10"
