@@ -122,7 +122,7 @@ export function BottomNavCircular() {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
+      className="relative z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
       style={{
         borderTopLeftRadius: '20px',
         borderTopRightRadius: '20px',
