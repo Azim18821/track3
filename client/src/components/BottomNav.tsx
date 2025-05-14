@@ -12,7 +12,7 @@ import {
   Dna
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import CenterNavButton from '@/components/CenterNavButton';
+// Using standard bottom navigation without a center button
 
 export function BottomNav() {
   const [location] = useLocation();
@@ -114,63 +114,23 @@ export function BottomNav() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div className="bottom-nav backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg">
-      {/* iOS safe area padding bottom is handled with the bottom-nav class */}
-      <div className="grid h-20 grid-cols-5 px-1">
-        {/* Left side items */}
-        {leftItems.map((item, index) => (
+    <div className="bottom-nav bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+      {/* Standard 5-item bottom navigation for iOS */}
+      <div className="flex justify-around items-center h-16 px-2">
+        {finalItems.map((item, index) => (
           <Link 
-            key={`left-${index}`}
+            key={index}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="flex flex-col items-center justify-center touch-none px-2"
           >
-            <div 
-              className={`flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
-                item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
-              }`}
-            >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+            <div className="mb-1">
+              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-400'}`} />
             </div>
             <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
+              className={`text-xs font-medium ${
                 item.active 
                   ? 'text-primary' 
-                  : 'text-gray-600 dark:text-gray-300'
-              }`}
-            >
-              {item.name}
-            </span>
-          </Link>
-        ))}
-        
-        {/* Center Button */}
-        <div className="relative flex justify-center">
-          <CenterNavButton />
-        </div>
-        
-        {/* Right side items */}
-        {rightItems.map((item, index) => (
-          <Link 
-            key={`right-${index}`}
-            href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
-          >
-            <div 
-              className={`flex items-center justify-center w-12 h-12 rounded-2xl mb-0.5 transition-all duration-200 ${
-                item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
-              }`}
-            >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
-            </div>
-            <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
-                item.active 
-                  ? 'text-primary' 
-                  : 'text-gray-600 dark:text-gray-300'
+                  : 'text-gray-600 dark:text-gray-400'
               }`}
             >
               {item.name}
