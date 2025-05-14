@@ -16,6 +16,7 @@ export function isNativeApp(): boolean {
 /**
  * Initializes Capacitor plugins and sets up event listeners
  * Only call this once at app startup
+ * iOS-specific functionality has been removed
  */
 export async function initializeCapacitor(): Promise<void> {
   if (!isNativeApp()) {
