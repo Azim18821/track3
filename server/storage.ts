@@ -98,6 +98,7 @@ export interface IStorage {
   createExercise(exercise: InsertExercise): Promise<Exercise>;
   updateExercise(id: number, exercise: Partial<InsertExercise>): Promise<Exercise | undefined>;
   deleteExercise(id: number): Promise<boolean>;
+  getExerciseHistory(userId: number, exerciseName: string): Promise<Array<{workout: Workout, exercise: Exercise, sets: ExerciseSet[]}>>;
   
   // Exercise Sets management
   getExerciseSets(exerciseId: number): Promise<ExerciseSet[]>;
@@ -874,6 +875,48 @@ export class DatabaseStorage implements IStorage {
     // Then delete the exercise
     const result = await db.delete(exercises).where(eq(exercises.id, id)).returning({ id: exercises.id });
     return result.length > 0;
+  }
+  
+  async getExerciseHistory(userId: number, exerciseName: string): Promise<Array<{workout: Workout, exercise: Exercise, sets: ExerciseSet[]}>> {
+    try {
+      console.log(`Getting exercise history for user ${userId} and exercise ${exerciseName}`);
+      
+      // Find all exercises with the given name
+      // This requires a join between workouts and exercises
+      const matchingExercises = await db
+        .select({
+          exercise: exercises,
+          workout: workouts,
+        })
+        .from(exercises)
+        .innerJoin(workouts, eq(exercises.workoutId, workouts.id))
+        .where(
+          and(
+            eq(workouts.userId, userId),
+            sql`LOWER(${exercises.name}) = LOWER(${exerciseName})`
+          )
+        )
+        .orderBy(desc(workouts.date));
+      
+      console.log(`Found ${matchingExercises.length} matching exercises`);
+
+      // For each matching exercise, get the corresponding sets
+      const result = await Promise.all(
+        matchingExercises.map(async ({ exercise, workout }) => {
+          const sets = await this.getExerciseSets(exercise.id);
+          return { 
+            workout, 
+            exercise,
+            sets
+          };
+        })
+      );
+
+      return result;
+    } catch (error) {
+      console.error("Error in getExerciseHistory:", error);
+      return [];
+    }
   }
   
   // Exercise Sets methods

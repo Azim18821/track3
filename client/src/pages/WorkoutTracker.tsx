@@ -10,6 +10,7 @@ import AddWorkoutDialog from "@/components/workout/AddWorkoutDialog";
 import WorkoutDetailDialog from "@/components/workout/WorkoutDetailDialog";
 import WeeklyWorkoutView from "@/components/workout/WeeklyWorkoutView";
 import ExerciseHistoryCard from "@/components/workout/ExerciseHistoryCard";
+import ExerciseHistoryDialog from "@/components/workout/ExerciseHistoryDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Calendar, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,10 @@ const WorkoutTracker = () => {
   const [activeTab, setActiveTab] = useState("weekly");
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  
+  // State for exercise history dialog
+  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+  const [isExerciseHistoryOpen, setIsExerciseHistoryOpen] = useState(false);
 
   // Fetch all workouts
   const { data: workouts = [], isLoading } = useQuery<Workout[]>({
@@ -146,18 +151,15 @@ const WorkoutTracker = () => {
           <ExerciseHistoryCard 
             workouts={workouts} 
             onExerciseClick={(exerciseName) => {
-              // Find the most recent workout containing this exercise
-              const workoutWithExercise = workouts
-                .filter(w => w.exercises && w.exercises.some(e => e.name === exerciseName))
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+              // Open the exercise history dialog
+              setSelectedExercise(exerciseName);
+              setIsExerciseHistoryOpen(true);
               
-              if (workoutWithExercise) {
-                toast({
-                  title: "Exercise History",
-                  description: `Last trained "${exerciseName}" on ${format(new Date(workoutWithExercise.date), "MMM d, yyyy")}`,
-                });
-                handleViewWorkout(workoutWithExercise);
-              }
+              // Add a toast notification to indicate the dialog is opening
+              toast({
+                title: "Loading Exercise History",
+                description: `Viewing all "${exerciseName}" workout history`,
+              });
             }}
           />
           
@@ -193,6 +195,18 @@ const WorkoutTracker = () => {
         onClose={() => setSelectedWorkout(null)}
         onStartWorkout={handleStartWorkout}
       />
+      
+      {/* Exercise History Dialog */}
+      {selectedExercise && (
+        <ExerciseHistoryDialog
+          exerciseName={selectedExercise}
+          isOpen={isExerciseHistoryOpen}
+          onClose={() => {
+            setIsExerciseHistoryOpen(false);
+            setSelectedExercise(null);
+          }}
+        />
+      )}
     </div>
   );
 };

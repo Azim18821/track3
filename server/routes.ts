@@ -1147,6 +1147,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete exercise" });
     }
   });
+  
+  // Get exercise history - returns all workouts where user performed a specific exercise
+  app.get("/api/exercise-history/:exerciseName", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const exerciseName = req.params.exerciseName;
+      
+      if (!exerciseName) {
+        return res.status(400).json({ message: "Exercise name is required" });
+      }
+      
+      console.log(`Fetching exercise history for user ${userId} and exercise ${exerciseName}`);
+      
+      const exerciseHistoryRaw = await storage.getExerciseHistory(userId, exerciseName);
+      
+      console.log(`Found ${exerciseHistoryRaw.length} workouts with this exercise`);
+      
+      // Format the data for the frontend
+      const formattedHistory = exerciseHistoryRaw.map(({ workout, exercise, sets }) => {
+        return {
+          id: exercise.id,
+          date: workout.date,
+          workoutId: workout.id,
+          workoutName: workout.name,
+          sets: sets.map(set => ({
+            reps: set.reps || 0,
+            weight: set.weight || 0,
+            completed: set.completed || false
+          })),
+          completed: workout.completed || false
+        };
+      });
+      
+      // Return the formatted exercise history
+      res.json(formattedHistory);
+    } catch (error) {
+      console.error("Error fetching exercise history:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch exercise history",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
 
   // Weight tracking API endpoints
   app.get("/api/weight", ensureAuthenticated, async (req: Request, res: Response) => {

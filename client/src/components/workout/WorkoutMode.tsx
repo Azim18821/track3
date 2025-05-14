@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import ExerciseHistoryPopup from "./ExerciseHistoryPopup";
 
 interface SetData {
   reps?: number | null;
@@ -69,6 +70,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   const [isExitAlertOpen, setIsExitAlertOpen] = useState(false);
   // Add state to track if this is a plan mode workout
   const [isPlanModeWorkout, setIsPlanModeWorkout] = useState<boolean>(!!workout.isPlanMode);
+  // Add state for exercise history popup
+  const [isHistoryPopupOpen, setIsHistoryPopupOpen] = useState<boolean>(true); // Auto-open on first exercise
   
   // Show a toast notification if this is a plan mode workout - only on first mount
   useEffect(() => {
@@ -725,6 +728,32 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Exercise History Popup */}
+      {workoutState.exercises.length > 0 && (
+        <ExerciseHistoryPopup
+          isOpen={isHistoryPopupOpen}
+          onClose={() => setIsHistoryPopupOpen(false)}
+          currentExercise={workoutState.exercises[activeExerciseIndex]}
+          nextExercise={
+            activeExerciseIndex < workoutState.exercises.length - 1
+              ? workoutState.exercises[activeExerciseIndex + 1]
+              : null
+          }
+          onStartNextExercise={() => {
+            if (activeExerciseIndex < workoutState.exercises.length - 1) {
+              setActiveExerciseIndex(activeExerciseIndex + 1);
+              setIsHistoryPopupOpen(false);
+              
+              // Show a confirmation toast that we're moving to the next exercise
+              toast({
+                title: "Exercise Changed",
+                description: `Starting: ${workoutState.exercises[activeExerciseIndex + 1].name}`,
+              });
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
