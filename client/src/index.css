@@ -250,7 +250,15 @@ html, body, #root {
     -webkit-overflow-scrolling: touch;
     /* Use variable height for iOS */
     height: 100vh; /* fallback */
+    height: -webkit-fill-available; /* Better height for iOS safari */
     height: calc(var(--vh, 1vh) * 100);
+    /* Extend to cover safe areas */
+    padding-bottom: env(safe-area-inset-bottom);
+    background-color: #ffffff; /* Match body background */
+  }
+  
+  .dark #root {
+    background-color: #111827; /* Dark mode background color */
   }
 
   /* Fix iOS form input zooming */
@@ -354,10 +362,10 @@ html, body, #root {
     .bottom-nav::after {
       content: '';
       position: absolute;
-      bottom: -20px; /* Extend below the visible area */
+      bottom: -50px; /* Extend further below the visible area to ensure no gap */
       left: 0;
       right: 0;
-      height: 30px; /* Make sure it's tall enough */
+      height: 100px; /* Make sure it's much taller to cover any potential gap */
       background-color: inherit;
       z-index: -1;
     }
@@ -432,8 +440,9 @@ html, body, #root {
     /* Ensure bottom nav extends all the way to the bottom of the screen */
     @supports (padding: env(safe-area-inset-bottom)) {
       .bottom-nav {
-        padding-bottom: calc(env(safe-area-inset-bottom) + 1px) !important;
-        margin-bottom: -1px !important; /* Ensure no gap at the bottom */
+        padding-bottom: calc(env(safe-area-inset-bottom) + 5px) !important;
+        margin-bottom: -5px !important; /* Ensure no gap at the bottom */
+        background-color: var(--background) !important; /* Ensure consistent background color */
       }
     }
     
@@ -556,6 +565,11 @@ html, body, #root {
     width: 100vw; /* Ensure full width */
     max-width: 100%; /* Prevent overflow */
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    background-color: #ffffff; /* Light mode background color */
+  }
+  
+  .dark html {
+    background-color: #111827; /* Dark mode background color */
   }
   
   body {
@@ -565,6 +579,11 @@ html, body, #root {
     overflow-x: hidden;
     overscroll-behavior: none; /* Prevent bounce on iOS */
     touch-action: pan-y; /* Allow vertical panning/scrolling but disable horizontal */
+    background-color: #ffffff; /* Ensure no gap with a matching background color */
+  }
+  
+  .dark body {
+    background-color: #111827; /* Dark mode background color */
   }
   
   /* Safe area utilities */
