@@ -68,7 +68,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Main content area with fixed header and scrollable content */}
-      <div className="fixed inset-0 flex flex-col">
+      <div className="fixed inset-0 flex flex-col" style={{ bottom: 'auto' }}>  {/* Removed bottom constraint */}
         {/* Mobile Header - Fixed at top, non-scrollable */}
         <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14">
           <div className="flex items-center">
@@ -150,7 +150,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
 
         {/* Page content - With padding for fixed header and bottom nav */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-32 mt-header-height' : 'p-4 md:p-6'}`}>
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-48 mt-header-height' : 'p-4 md:p-6'}`}>
           {children}
         </main>
 
