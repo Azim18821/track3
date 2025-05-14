@@ -623,7 +623,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                       <label className="text-xs font-medium mb-1 block">Weight (kg)</label>
                       <Input
                         type="number"
-                        value={setData.weight === undefined ? '' : setData.weight}
+                        value={setData.weight === null || setData.weight === undefined ? '' : setData.weight}
                         min={0}
                         onChange={(e) => {
                           const newWeight = e.target.value === '' ? 0 : parseFloat(e.target.value);
