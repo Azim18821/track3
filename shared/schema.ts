@@ -289,6 +289,7 @@ export const workouts = pgTable("workouts", {
   duration: integer("duration").notNull(), // in minutes
   notes: text("notes"),
   completed: boolean("completed").default(false).notNull(),
+  isPlanMode: boolean("is_plan_mode").default(false), // Flag for workouts in plan mode
 });
 
 // Create a base schema and then modify it to handle the date format issue
@@ -302,7 +303,9 @@ export const insertWorkoutSchema = baseWorkoutSchema.extend({
   date: z.union([
     z.string().transform(dateStr => new Date(dateStr)),
     z.date()
-  ])
+  ]),
+  // Add isPlanMode flag to the schema
+  isPlanMode: z.boolean().optional()
 });
 
 export type InsertWorkout = z.infer<typeof insertWorkoutSchema>;
@@ -329,8 +332,8 @@ export const exercises = pgTable("exercises", {
   workoutId: integer("workout_id").notNull().references(() => workouts.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   sets: integer("sets").notNull(),
-  reps: integer("reps").notNull(),
-  weight: real("weight"),
+  reps: integer("reps"), // Made optional to support plan mode
+  weight: real("weight"), // Optional, already was
   unit: text("unit").default("kg"),
   rest: text("rest") // Rest time can be in seconds (integer) or text format like "hold for 60 secs"
   // Note: setsData is handled in memory and not stored in the database directly
@@ -343,9 +346,11 @@ const baseExerciseSchema = createInsertSchema(exercises).omit({
 
 // Add setsData to the insert schema for client-server communication, though it's not stored directly in the database
 export const insertExerciseSchema = baseExerciseSchema.extend({
+  // Make reps optional to support plan mode
+  reps: z.number().optional(),
   setsData: z.array(z.object({
-    reps: z.number(),
-    weight: z.number(),
+    reps: z.number().optional(), // Make reps optional to support plan mode
+    weight: z.number().optional(), // Make weight optional for consistency
     completed: z.boolean().optional(),
     // Add the extended fields for set variations
     setType: z.string().optional(),
