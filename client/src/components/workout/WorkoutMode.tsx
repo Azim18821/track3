@@ -70,15 +70,30 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   // Add state to track if this is a plan mode workout
   const [isPlanModeWorkout, setIsPlanModeWorkout] = useState<boolean>(!!workout.isPlanMode);
   
-  // Show a toast notification if this is a plan mode workout
+  // Show a toast notification if this is a plan mode workout - only on first mount
   useEffect(() => {
-    if (isPlanModeWorkout) {
-      toast({
-        title: "Plan Mode Workout",
-        description: "Enter the actual weights and reps for each set as you complete them.",
-      });
-    }
-  }, [isPlanModeWorkout, toast]);
+    // Capture the current state of isPlanModeWorkout in the closure
+    const currentIsPlanMode = isPlanModeWorkout;
+    // Function reference to the current toast function
+    const currentToast = toast;
+    
+    // Only show the toast notification on initial mount to avoid re-renders
+    const showToast = () => {
+      if (currentIsPlanMode) {
+        currentToast({
+          title: "Plan Mode Workout",
+          description: "Enter the actual weights and reps for each set as you complete them.",
+        });
+      }
+    };
+    
+    // Small delay to ensure component is fully mounted
+    const timer = setTimeout(showToast, 100);
+    return () => clearTimeout(timer);
+    
+    // Empty dependency array ensures this only runs once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const [workoutState, setWorkoutState] = useState<Workout>({
     ...workout,
@@ -637,7 +652,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                       <label className="text-xs font-medium mb-1 block">Reps</label>
                       <Input
                         type="number"
-                        value={setData.reps === undefined ? '' : setData.reps}
+                        value={setData.reps === null || setData.reps === undefined ? '' : setData.reps}
                         min={1}
                         onChange={(e) => {
                           const newReps = e.target.value === '' ? 0 : parseInt(e.target.value);
