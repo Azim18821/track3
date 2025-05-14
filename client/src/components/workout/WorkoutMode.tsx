@@ -202,7 +202,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // If trying to mark as complete, check if values are filled in
       if (!currentlyCompleted && isPlanModeWorkout) {
         // For plan mode, validate that values are properly set before marking complete
-        if (typeof currentSet.reps !== 'number' || currentSet.reps <= 0) {
+        if (currentSet.reps === null || currentSet.reps === undefined || currentSet.reps <= 0) {
           // Show toast error and don't toggle
           toast({
             title: "Missing reps",
@@ -212,7 +212,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           return prevState; // Don't update state
         }
         
-        if (typeof currentSet.weight !== 'number') {
+        if (currentSet.weight === null || currentSet.weight === undefined) {
           // Show toast error and don't toggle
           toast({
             title: "Missing weight",
@@ -226,9 +226,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       // If validation passes or marking as incomplete, update the set
       updatedSetsData[setIndex] = {
         ...updatedSetsData[setIndex],
-        // Initialize with default values if they're not set (for plan mode workouts)
-        reps: updatedSetsData[setIndex].reps ?? 10, // Make sure reps has a value when completed
-        weight: updatedSetsData[setIndex].weight ?? 0, // Make sure weight has a value when completed
+        // When completing, we've already validated the values exist (for plan mode)
+        // When marking incomplete, keep the values as they are
         completed: !currentlyCompleted
       };
       
@@ -456,9 +455,6 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground">
               Progress: {completedSets}/{totalSets} sets ({progressPercentage}%)
-              {isPlanModeWorkout && (
-                <span className="ml-2 text-blue-500">Fill in your actual weights and reps</span>
-              )}
             </div>
           </div>
         </div>
@@ -657,7 +653,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                         value={setData.reps === null || setData.reps === undefined ? '' : setData.reps}
                         min={1}
                         onChange={(e) => {
-                          const newReps = e.target.value === '' ? 0 : parseInt(e.target.value);
+                          // If input is empty, keep it as null to show placeholder
+                          const newReps = e.target.value === '' ? null : parseInt(e.target.value);
                           updateSetReps(activeExerciseIndex, setIndex, newReps);
                         }}
                         className="h-10"
