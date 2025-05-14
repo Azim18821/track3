@@ -71,8 +71,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       ...ex,
       // Initialize setsData if it doesn't exist
       setsData: ex.setsData || Array.from({ length: ex.sets }, () => ({
-        reps: ex.reps,
-        weight: ex.weight || 0,
+        // Handle plan mode workouts that might not have reps/weight defined
+        reps: ex.reps || 10, // Use default of 10 reps if not specified (for plan mode)
+        weight: typeof ex.weight === 'number' ? ex.weight : 0,
         completed: false
       }))
     }))
@@ -272,15 +273,30 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     // Include all per-set data
     const apiWorkout = {
       ...workoutState,
-      exercises: workoutState.exercises.map(ex => ({
-        id: ex.id,
-        name: ex.name,
-        sets: ex.sets,
-        reps: ex.reps,
-        weight: ex.weight || 0,
-        unit: "kg",
-        setsData: ex.setsData
-      }))
+      // If this was a plan mode workout, mark that it's no longer in plan mode
+      isPlanMode: false,
+      exercises: workoutState.exercises.map(ex => {
+        // Get average actual values from setsData to update the exercise defaults
+        const completedSets = ex.setsData?.filter(set => set.completed) || [];
+        const avgWeight = completedSets.length > 0
+          ? completedSets.reduce((sum, set) => sum + set.weight, 0) / completedSets.length
+          : (ex.weight || 0);
+        
+        const avgReps = completedSets.length > 0
+          ? Math.round(completedSets.reduce((sum, set) => sum + set.reps, 0) / completedSets.length)
+          : (ex.reps || 10);
+          
+        return {
+          id: ex.id,
+          name: ex.name,
+          sets: ex.sets,
+          // Update with actual values from the workout
+          reps: avgReps,
+          weight: avgWeight,
+          unit: ex.unit || "kg",
+          setsData: ex.setsData
+        };
+      })
     };
     
     updateWorkoutMutation.mutate(apiWorkout);
@@ -437,7 +453,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   <span>{activeExercise.sets} sets &times; {activeExercise.reps} reps</span>
                 </div>
                 <Badge variant="outline" className="bg-muted/50">
-                  Previous: {activeExercise.weight} kg
+                  {typeof activeExercise.weight === 'number' 
+                    ? `Previous: ${activeExercise.weight} kg` 
+                    : 'No previous weight'}
                 </Badge>
               </div>
             </div>
