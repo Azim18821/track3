@@ -15,23 +15,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface Workout {
-  id: number;
-  name: string;
-  date: string;
-  duration: number;
-  notes?: string;
-  completed?: boolean;
-  exercises: Exercise[];
-}
-
-interface Exercise {
-  name: string;
-  sets: number;
-  reps: number;
-  weight?: number;
-  unit?: string;
-}
+// Import centralized workout types
+import { Exercise, Workout } from "@/types/workout";
 
 interface WeeklyWorkoutViewProps {
   workouts: Workout[];

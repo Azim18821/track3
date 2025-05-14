@@ -9,31 +9,13 @@ import WorkoutList from "@/components/workout/WorkoutList";
 import AddWorkoutDialog from "@/components/workout/AddWorkoutDialog";
 import WorkoutDetailDialog from "@/components/workout/WorkoutDetailDialog";
 import WeeklyWorkoutView from "@/components/workout/WeeklyWorkoutView";
+import ExerciseHistoryCard from "@/components/workout/ExerciseHistoryCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Calendar, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Define interfaces for our types
-interface Exercise {
-  id?: number;
-  name: string;
-  sets: number;
-  reps: number;
-  weight?: number;
-  unit?: string;
-  completedSets?: number[];
-}
-
-interface Workout {
-  id: number;
-  name: string;
-  date: string;
-  duration: number;
-  notes?: string;
-  completed?: boolean;
-  isCompleted?: boolean;
-  exercises: Exercise[];
-}
+// Import the type definitions from the centralized types file
+import { Exercise, Workout } from "@/types/workout";
 
 const WorkoutTracker = () => {
   const [isAddWorkoutOpen, setIsAddWorkoutOpen] = useState(false);
@@ -160,6 +142,25 @@ const WorkoutTracker = () => {
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">
+          {/* Exercise History Card - Shows exercises and last weight used */}
+          <ExerciseHistoryCard 
+            workouts={workouts} 
+            onExerciseClick={(exerciseName) => {
+              // Find the most recent workout containing this exercise
+              const workoutWithExercise = workouts
+                .filter(w => w.exercises && w.exercises.some(e => e.name === exerciseName))
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+              
+              if (workoutWithExercise) {
+                toast({
+                  title: "Exercise History",
+                  description: `Last trained "${exerciseName}" on ${format(new Date(workoutWithExercise.date), "MMM d, yyyy")}`,
+                });
+                handleViewWorkout(workoutWithExercise);
+              }
+            }}
+          />
+          
           {/* Workout Progress */}
           <ExerciseProgress workouts={workouts} />
 

@@ -22,12 +22,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { Workout } from "@/types/workout";
+
 interface WorkoutListProps {
-  workouts: any[];
+  workouts: Workout[];
   isLoading: boolean;
   onDeleteWorkout: (id: number) => void;
-  onStartWorkout?: (workout: any) => void;
-  onViewWorkout?: (workout: any) => void;
+  onStartWorkout?: (workout: Workout) => void;
+  onViewWorkout?: (workout: Workout) => void;
 }
 
 const WorkoutList: React.FC<WorkoutListProps> = ({

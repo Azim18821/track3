@@ -21,34 +21,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { Exercise, Workout } from "@/types/workout";
+
 interface SetData {
   reps: number;
   weight: number;
   completed: boolean;
-}
-
-interface Exercise {
-  id: number;
-  workoutId: number;
-  name: string;
-  sets: number;
-  reps: number;
-  weight?: number | null;
-  unit?: string;
-  rest?: string;
-  notes?: string;
-  setsData?: Array<{ reps: number; weight: number; completed: boolean }>;
-}
-
-interface Workout {
-  id: number;
-  userId: number;
-  name: string;
-  date: string;
-  duration: number;
-  notes?: string;
-  completed?: boolean;
-  exercises: Exercise[];
 }
 
 interface WorkoutDetailDialogProps {
