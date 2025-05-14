@@ -15,15 +15,9 @@ import { useAuth } from '@/hooks/use-auth';
 import CenterNavButton from '@/components/CenterNavButton';
 import { Capacitor } from '@capacitor/core';
 
-export function BottomNavCircular() {
+export function BottomNavCompact2() {
   const [location] = useLocation();
   const { user } = useAuth();
-  const [hasHomeIndicator, setHasHomeIndicator] = useState(false);
-  
-  // We're not using home indicator detection for now
-  useEffect(() => {
-    setHasHomeIndicator(false);
-  }, []);
   
   const isActive = (path: string) => {
     if (path === '/' && location === '/dashboard') return true;
@@ -109,7 +103,6 @@ export function BottomNavCircular() {
     displayItems = [...navItems.slice(0, 3), trainerItem, coachItem];
   } else {
     // Regular user navigation with messages and possibly AI Coach
-    // We'll check if they have trainers assigned in Dashboard.tsx and FitnessCoach.tsx
     displayItems = [...navItems.slice(0, 4), coachItem, messageItem];
   }
   
@@ -122,44 +115,44 @@ export function BottomNavCircular() {
 
   return (
     <div 
-      className="fixed inset-x-0 bottom-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
+      className="fixed inset-x-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav transition-all duration-200"
       style={{
         borderTopLeftRadius: '16px',
         borderTopRightRadius: '16px',
-        transform: 'translateY(0)',
-        paddingBottom: 'max(env(safe-area-inset-bottom), 8px)'
+        position: 'fixed',
+        bottom: '0',
+        left: '0',
+        right: '0',
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {/* iOS safe area padding bottom is handled with pb-safe class and home indicator detection */}
       <div className="grid h-14 grid-cols-5 px-1">
         {/* Left side items */}
         {leftItems.map((item, index) => (
           <Link 
             key={`left-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="inline-flex flex-col items-center justify-center h-full px-1 py-0 touch-none"
           >
             <div 
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
                 item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
+                  ? 'bg-primary/15 text-primary scale-105' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
               style={{
-                WebkitTapHighlightColor: 'transparent',
-                transform: item.active ? 'translateY(-2px)' : 'none'
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              <item.icon className={`w-5 h-5 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
               {item.active && (
                 <>
                   <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                  <div className="absolute inset-0 rounded-full ring-2 ring-primary/20"></div>
                 </>
               )}
             </div>
             <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
+              className={`text-[9px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
                 item.active 
                   ? 'text-primary' 
                   : 'text-gray-600 dark:text-gray-300'
@@ -180,29 +173,27 @@ export function BottomNavCircular() {
           <Link 
             key={`right-${index}`}
             href={item.path}
-            className="inline-flex flex-col items-center justify-center h-full px-1 py-1 touch-none"
+            className="inline-flex flex-col items-center justify-center h-full px-1 py-0 touch-none"
           >
             <div 
-              className={`relative flex items-center justify-center w-12 h-12 rounded-full mb-0.5 transition-all duration-200 ${
+              className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200 ${
                 item.active 
-                  ? 'bg-primary/15 text-primary scale-110' 
+                  ? 'bg-primary/15 text-primary scale-105' 
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50'
               }`}
               style={{
-                WebkitTapHighlightColor: 'transparent',
-                transform: item.active ? 'translateY(-2px)' : 'none'
+                WebkitTapHighlightColor: 'transparent'
               }}
             >
-              <item.icon className={`w-6 h-6 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
+              <item.icon className={`w-5 h-5 ${item.active ? 'text-primary' : 'text-gray-600 dark:text-gray-300'}`} />
               {item.active && (
                 <>
                   <div className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
-                  <div className="absolute inset-0 rounded-full ring-2 ring-primary/20"></div>
                 </>
               )}
             </div>
             <span 
-              className={`text-[10px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
+              className={`text-[9px] font-medium whitespace-nowrap max-w-[70px] text-center truncate ${
                 item.active 
                   ? 'text-primary' 
                   : 'text-gray-600 dark:text-gray-300'
@@ -217,4 +208,4 @@ export function BottomNavCircular() {
   );
 }
 
-export default BottomNavCircular;
+export default BottomNavCompact2;
