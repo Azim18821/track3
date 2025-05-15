@@ -65,15 +65,25 @@ export function useRecommendations() {
   const openRecommendations = async () => {
     // Make a special request that forces recommendations to show
     try {
+      console.log('Requesting forced recommendations');
       const response = await fetch('/api/recommendations/daily?force=true');
+      console.log('Recommendations response status:', response.status);
       const data = await response.json();
+      console.log('Recommendations response data:', data);
       
       if (data.show && data.recommendations) {
+        console.log('Setting forced recommendations and showing dialog');
         // Store the forced recommendations
         setForcedRecommendations(data.recommendations);
-        setShowRecommendations(true);
+        // IMPORTANT: directly set the state instead of using handleDismiss
+        // which would actually close the dialog
+        setTimeout(() => {
+          setShowRecommendations(true);
+          console.log('Dialog should be open now, showRecommendations =', true);
+        }, 100);
       } else {
         // If we can't show recommendations, display the reason
+        console.log('Cannot show recommendations:', data.message);
         alert(data.message || 'No recommendations available');
       }
     } catch (error) {
@@ -85,7 +95,17 @@ export function useRecommendations() {
   // Explicitly type the return object
   return {
     showRecommendations,
-    setShowRecommendations: handleDismiss,
+    // Provide a direct setter for the dialog component
+    setShowRecommendations: (value: boolean) => {
+      console.log('setShowRecommendations called with value:', value);
+      if (value === false) {
+        // Only run handleDismiss logic when closing the dialog
+        handleDismiss();
+      } else {
+        // Just set the state when opening the dialog
+        setShowRecommendations(value);
+      }
+    },
     openRecommendations,
     isLoading,
     hasRecommendations: data?.show === true || !!forcedRecommendations,
