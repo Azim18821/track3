@@ -320,9 +320,8 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
       submissionData.date = new Date().toString();
     }
     
-    // Use the same structure as the form schema expects
-    // This keeps the field names consistent for the API call
-    const apiData = {
+    // Format the data for submission
+    const processedData = {
       mealName: submissionData.mealName,
       mealType: submissionData.mealType,
       date: submissionData.date,
@@ -338,9 +337,10 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
     };
     
     // Log the data being sent to the API
-    console.log("Submitting meal data to API:", apiData);
+    console.log("Submitting meal data to API:", processedData);
     
-    addMealMutation.mutate(apiData);
+    // Use the already formatted data for the API call
+    addMealMutation.mutate(processedData);
   };
 
   // State to track the selected tab
