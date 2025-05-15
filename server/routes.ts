@@ -250,21 +250,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .then(results => results[0]);
       
       if (existingSettings) {
-        // Update existing record with today's date
+        // Update existing record with today's date (formatted as string)
         await db.update(userRecommendations)
           .set({
-            lastRecommendationDate: today,
-            updatedAt: today
+            lastRecommendationDate: today.toISOString().split('T')[0],
+            updatedAt: sql`now()`
           })
           .where(eq(userRecommendations.id, existingSettings.id));
       } else {
         // Create new record
         await db.insert(userRecommendations)
           .values({
-            userId,
-            lastRecommendationDate: today,
+            userId: userId,
+            lastRecommendationDate: today.toISOString().split('T')[0],
             autoShowEnabled: true,
-            updatedAt: today
+            updatedAt: sql`now()`
           });
       }
       
