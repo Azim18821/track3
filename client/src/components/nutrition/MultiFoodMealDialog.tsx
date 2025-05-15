@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,13 @@ export default function MultiFoodMealDialog({
   const [openState, setOpenState] = useState(false);
   const open = isOpen !== undefined ? isOpen : openState;
   const setOpen = setOpenProp || setOpenState;
+  
+  useEffect(() => {
+    // When defaultMeal changes, update the meal entry state
+    if (defaultMeal) {
+      setMealEntry(defaultMeal);
+    }
+  }, [defaultMeal]);
   
   // Initialize meal entry with default values or provided meal
   const [mealEntry, setMealEntry] = useState<MealEntryType>({
