@@ -32,7 +32,8 @@ import {
   User,
   trainerClients,
   meals,
-  workouts
+  workouts,
+  userRecommendations
 } from "@shared/schema";
 import { getNutritionInfo } from "./openai";
 import { extractIngredientsFromMealPlan } from "../utils/openai";

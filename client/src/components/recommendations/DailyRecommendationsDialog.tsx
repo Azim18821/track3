@@ -99,6 +99,8 @@ export default function DailyRecommendationsDialog({
   }>({
     queryKey: ['/api/recommendations/daily'],
     enabled: open, // Only fetch when dialog is open
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
   
   // Handle error case
@@ -108,14 +110,46 @@ export default function DailyRecommendationsDialog({
       description: error instanceof Error ? error.message : "Failed to load daily recommendations",
       variant: "destructive",
     });
+    
+    // Close dialog on error to prevent infinite loops
+    setTimeout(() => onOpenChange(false), 0);
     return null;
   }
   
   const recommendations = data?.recommendations;
   const noRecommendationsMessage = data?.message;
   
+  // Handle dialog close when no recommendations available
+  const handleDialogOpenChange = (newOpenState: boolean) => {
+    // If closing or if no data yet, just pass through the event
+    if (!newOpenState || !data) {
+      onOpenChange(newOpenState);
+      return;
+    }
+    
+    // If opening but no recommendations available, close automatically
+    if (newOpenState && !data.show && !data.recommendations) {
+      // Store the dismissal in localStorage to prevent showing again today
+      localStorage.setItem('recommendations_dismissed_date', new Date().toISOString());
+      
+      // Show a toast with the explanation message
+      if (data.message) {
+        toast({
+          title: "Recommendations not available",
+          description: data.message,
+        });
+      }
+      
+      // Keep dialog closed
+      onOpenChange(false);
+    } else {
+      // Normal case - pass through the open state change
+      onOpenChange(newOpenState);
+    }
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">

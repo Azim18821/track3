@@ -756,3 +756,27 @@ export const planGenerationStatusRelations = relations(planGenerationStatus, ({ 
     references: [users.id],
   }),
 }));
+
+// User recommendations table (for tracking daily recommendations)
+export const userRecommendations = pgTable("user_recommendations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  lastRecommendationDate: date("last_recommendation_date"),
+  autoShowEnabled: boolean("auto_show_enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertUserRecommendationSchema = createInsertSchema(userRecommendations).omit({
+  id: true,
+  updatedAt: true
+});
+
+export type InsertUserRecommendation = z.infer<typeof insertUserRecommendationSchema>;
+export type UserRecommendation = typeof userRecommendations.$inferSelect;
+
+export const userRecommendationsRelations = relations(userRecommendations, ({ one }: RelationFns) => ({
+  user: one(users, {
+    fields: [userRecommendations.userId],
+    references: [users.id],
+  }),
+}));
