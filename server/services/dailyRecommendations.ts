@@ -542,7 +542,7 @@ Based on this information, provide today's personalized workout and nutrition re
  */
 
 
-export async function shouldShowRecommendations(userId: number): Promise<boolean | { show: boolean, message: string }> {
+export async function shouldShowRecommendations(userId: number, forceShow: boolean = false): Promise<boolean | { show: boolean, message: string }> {
   try {
     console.log(`Checking recommendation eligibility for user ${userId}`);
     
