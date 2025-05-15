@@ -68,7 +68,7 @@ body, html {
   /* Fix the large gap in standalone mode */
   .ios-standalone-mode main {
     padding-top: 0 !important;
-    margin-top: 0 !important;
+    /* Allow margin-top to be set in the component */
   }
   
   /* Completely remove the title gap */
