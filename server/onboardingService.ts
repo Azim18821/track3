@@ -82,7 +82,8 @@ const openai = new OpenAI({
 });
 
 interface OnboardingData {
-  fitnessGoal: string;
+  fitnessGoal: string; // Legacy field for single goal
+  fitnessGoals?: string[]; // New field for multiple goals
   bodyType: string;
   height: number;
   weight: number;
@@ -149,9 +150,25 @@ export async function generateFitnessAnalysis(userId: number, data: OnboardingDa
     const bmi = weightInKg / (heightInMeters * heightInMeters);
 
     // Generate analysis with OpenAI - using more concise prompt per requirements
+    
+    // Determine goals to use in prompt - prefer multiple goals if available
+    let goalsText = '';
+    if (data.fitnessGoals && Array.isArray(data.fitnessGoals) && data.fitnessGoals.length > 0) {
+      // Format multiple goals
+      if (data.fitnessGoals.length === 1) {
+        goalsText = `selected the goal: ${data.fitnessGoals[0]}`;
+      } else {
+        // Format list of goals: "goal1 and goal2"
+        goalsText = `selected multiple goals: ${data.fitnessGoals.join(' and ')}`;
+      }
+    } else {
+      // Fall back to legacy single goal
+      goalsText = `selected the goal: ${data.fitnessGoal}`;
+    }
+    
     const prompt = `
       The user is ${heightInCm}cm tall, weighs ${weightInKg}kg, with BMI ${bmi.toFixed(1)}, is ${age || 'unknown'} years old, ${data.gender || 'gender not specified'},
-      selected the goal: ${data.fitnessGoal}. 
+      ${goalsText}. 
       
       Generate a short, motivational, science-based message explaining what they can realistically achieve and in what timeframe.
       Limit to 100 words. Base it on fitness science: e.g. 0.5kg/week fat loss, 0.25–0.5kg/week muscle gain, 
@@ -171,16 +188,77 @@ export async function generateFitnessAnalysis(userId: number, data: OnboardingDa
     if (!process.env.OPENAI_API_KEY) {
       console.warn("No OpenAI API key found. Using fallback analysis.");
       
-      // Fallback to mock data if no API key
+      // Determine primary goal for fallback analysis
+      const primaryGoal = data.fitnessGoals && Array.isArray(data.fitnessGoals) && data.fitnessGoals.length > 0 
+        ? data.fitnessGoals[0] 
+        : data.fitnessGoal;
+      
+      // Determine secondary goal if available
+      const hasSecondaryGoal = data.fitnessGoals && Array.isArray(data.fitnessGoals) && data.fitnessGoals.length > 1;
+      let secondaryGoal = null;
+      if (hasSecondaryGoal && data.fitnessGoals && Array.isArray(data.fitnessGoals) && data.fitnessGoals.length > 1) {
+        secondaryGoal = data.fitnessGoals[1];
+      }
+      
+      // Create a description based on goals
+      let timeframe, description, recommendations;
+      
+      // Determine timeframe based on primary goal
+      if (primaryGoal === 'weightLoss') {
+        timeframe = '4-6';
+      } else if (primaryGoal === 'muscleBuild') {
+        timeframe = '8-12';
+      } else if (primaryGoal === 'weightGain') {
+        timeframe = '6-8';
+      } else {
+        timeframe = '3-5';
+      }
+      
+      // Add some variation if there's a secondary goal
+      if (hasSecondaryGoal) {
+        timeframe += ` to ${parseInt(timeframe.split('-')[1]) + 2}`;
+      }
+      
+      // Create description with both goals if applicable
+      if (hasSecondaryGoal) {
+        description = `Based on your combined goals of ${primaryGoal} and ${secondaryGoal}, we recommend a balanced approach that incorporates elements for both objectives.`;
+      } else {
+        description = `Based on your ${primaryGoal} goal and current measurements, we recommend a focused approach of ${
+          primaryGoal === 'weightLoss' ? 'calorie deficit with increased physical activity' : 
+          primaryGoal === 'muscleBuild' ? 'progressive resistance training and protein-rich diet' : 
+          primaryGoal === 'weightGain' ? 'calorie surplus with structured weight training' : 
+          'consistent cardio training and endurance-focused exercises'
+        }.`;
+      }
+      
+      // Create recommendations based on primary goal with secondary goal influence if applicable
+      recommendations = [
+        `Focus on ${
+          primaryGoal === 'weightLoss' ? 'creating a moderate calorie deficit of 300-500 calories daily' : 
+          primaryGoal === 'muscleBuild' ? 'consuming 1.6-2.0g of protein per kg of body weight' : 
+          primaryGoal === 'weightGain' ? 'maintaining a calorie surplus of 300-500 calories daily with adequate protein' :
+          'gradually increasing workout duration while maintaining steady intensity'
+        }`,
+        `Include ${
+          primaryGoal === 'weightLoss' ? '3-4 days of mixed cardio and strength training' : 
+          primaryGoal === 'muscleBuild' ? '4-5 days of targeted resistance training with progressive overload' : 
+          primaryGoal === 'weightGain' ? '3-4 days of compound exercises focusing on major muscle groups' :
+          '4-5 days of varied cardio activities with interval training'
+        }`,
+        `Ensure adequate recovery with 7-9 hours of sleep and proper hydration`,
+        `Track your progress weekly and adjust your plan as needed`,
+      ];
+      
+      // Add a recommendation specific to the secondary goal if applicable
+      if (hasSecondaryGoal) {
+        recommendations.push(`Balance your ${primaryGoal} focus with elements supporting your ${secondaryGoal} goal`);
+      }
+      
+      // Construct the final analysis
       analysis = {
-        timeframe: `With consistent effort, you should see noticeable progress within ${data.fitnessGoal === 'weightLoss' ? '4-6' : data.fitnessGoal === 'muscleBuild' ? '8-12' : '3-5'} weeks.`,
-        description: `Based on your ${data.fitnessGoal} goal and current measurements, we recommend a balanced approach of ${data.fitnessGoal === 'weightLoss' ? 'calorie deficit with increased physical activity' : data.fitnessGoal === 'muscleBuild' ? 'progressive resistance training and protein-rich diet' : 'consistent cardio training and endurance-focused exercises'}.`,
-        recommendations: [
-          `Focus on ${data.fitnessGoal === 'weightLoss' ? 'creating a moderate calorie deficit of 300-500 calories daily' : data.fitnessGoal === 'muscleBuild' ? 'consuming 1.6-2.0g of protein per kg of body weight' : 'gradually increasing workout duration while maintaining steady intensity'}`,
-          `Include ${data.fitnessGoal === 'weightLoss' ? '3-4 days of mixed cardio and strength training' : data.fitnessGoal === 'muscleBuild' ? '4-5 days of targeted resistance training with progressive overload' : '4-5 days of varied cardio activities with interval training'}`,
-          `Ensure adequate recovery with 7-9 hours of sleep and proper hydration`,
-          `Track your progress weekly and adjust your plan as needed`,
-        ],
+        timeframe: `With consistent effort, you should see noticeable progress within ${timeframe} weeks.`,
+        description,
+        recommendations,
       };
     } else {
       try {

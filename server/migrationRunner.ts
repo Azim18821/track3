@@ -1,4 +1,6 @@
 import { db, pool } from "./db";
+import fs from 'fs';
+import path from 'path';
 
 /**
  * This script checks and adds any potentially missing columns in the database schema
@@ -48,6 +50,45 @@ export async function runExerciseSetsTableMigration(): Promise<void> {
     }
   } catch (error) {
     console.error("Error creating exercise_sets table:", error);
+    throw error;
+  }
+}
+
+/**
+ * Migration to add multiple fitness goals support
+ * Adds a new fitness_goals column as text array to users table
+ */
+export async function runMultipleFitnessGoalsMigration(): Promise<void> {
+  console.log("Checking if fitness_goals column exists in users table...");
+  
+  try {
+    // Check if fitness_goals column exists
+    const fitnessGoalsColumn = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND column_name = 'fitness_goals'
+    `);
+    
+    if (fitnessGoalsColumn.rows.length === 0) {
+      console.log("fitness_goals column does not exist. Adding it...");
+      
+      // Add the column directly
+      await pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS fitness_goals TEXT[];
+        
+        -- Update existing users to convert their single fitness goal to the new array format
+        UPDATE users
+        SET fitness_goals = ARRAY[fitness_goal]
+        WHERE fitness_goal IS NOT NULL AND fitness_goals IS NULL;
+      `);
+      
+      console.log("Multiple fitness goals migration completed successfully");
+    } else {
+      console.log("fitness_goals column already exists. Skipping migration.");
+    }
+  } catch (error) {
+    console.error("Error running multiple fitness goals migration:", error);
     throw error;
   }
 }

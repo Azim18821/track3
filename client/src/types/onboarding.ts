@@ -1,16 +1,21 @@
 // Define onboarding data types
 export interface OnboardingData {
-  // Step 1: Goal selection
-  fitnessGoal: 'weightLoss' | 'muscleBuild' | 'stamina' | 'strength' | null;
+  // Step 1: Gender selection
+  gender: 'male' | 'female' | 'other' | null;
+  
+  // Step 2: Goal selection (now supports multiple goals)
+  fitnessGoals: Array<'weightLoss' | 'weightGain' | 'muscleBuild' | 'stamina' | 'strength'>;
   bodyType: 'ectomorph' | 'mesomorph' | 'endomorph' | null;
   
-  // Step 2: Body measurements
+  // Legacy field for backward compatibility
+  fitnessGoal: 'weightLoss' | 'weightGain' | 'muscleBuild' | 'stamina' | 'strength' | null;
+  
+  // Step 3: Body measurements
   height: number | null;
   weight: number | null;
   heightUnit: 'cm' | 'inches';
   weightUnit: 'kg' | 'lb';
   dateOfBirth: string | null; // Should be in format 'YYYY-MM-DD'
-  gender: 'male' | 'female' | 'other' | null;
   
   // Calculated field
   age?: number;

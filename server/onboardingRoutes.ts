@@ -5,7 +5,8 @@ import { AIAnalysis } from '@shared/schema';
 
 // Define the onboarding data interface
 interface OnboardingData {
-  fitnessGoal: string;
+  fitnessGoal: string; // Legacy field
+  fitnessGoals?: string[]; // New field for multiple goals
   bodyType: string;
   height: number;
   weight: number;

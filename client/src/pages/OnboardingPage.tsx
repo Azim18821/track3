@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import GoalSelection from '@/components/onboarding/GoalSelection';
+import GenderSelection from '@/components/onboarding/GenderSelection';
 import MeasurementsInput from '@/components/onboarding/MeasurementsInput';
 import FinalSummary from '@/components/onboarding/FinalSummary';
 import { useUser } from '@/hooks/use-user';
@@ -15,6 +16,7 @@ export default function OnboardingPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [data, setData] = useState<OnboardingData>({
     fitnessGoal: null,
+    fitnessGoals: [],
     bodyType: null,
     height: null,
     weight: null,
@@ -57,7 +59,7 @@ export default function OnboardingPage() {
         
         // If not completed according to API, fallback to checking user profile data
         const hasCompletedOnboarding = Boolean(
-          user.fitnessGoal &&
+          (user.fitnessGoal || (user.fitnessGoals && user.fitnessGoals.length > 0)) &&
           user.bodyType &&
           user.height &&
           user.weight && 
@@ -82,7 +84,7 @@ export default function OnboardingPage() {
         
         // Fallback to checking user data on API error
         const hasCompletedOnboarding = Boolean(
-          user.fitnessGoal &&
+          (user.fitnessGoal || (user.fitnessGoals && user.fitnessGoals.length > 0)) &&
           user.bodyType &&
           user.height &&
           user.weight && 
@@ -104,8 +106,14 @@ export default function OnboardingPage() {
     // If we have user data, pre-populate the form
     if (user) {
       // User is defined here, so we can safely access its properties
-      const userProfile = {
-        fitnessGoal: user?.fitnessGoal as OnboardingData['fitnessGoal'] || null,
+      const fitnessGoal = user?.fitnessGoal as OnboardingData['fitnessGoal'] || null;
+      
+      // Convert single fitness goal to array for new multi-goal format
+      const fitnessGoals = fitnessGoal ? [fitnessGoal] : [];
+      
+      const userProfile: OnboardingData = {
+        fitnessGoal: fitnessGoal,
+        fitnessGoals: fitnessGoals,
         bodyType: user?.bodyType as OnboardingData['bodyType'] || null,
         height: user?.height || null,
         weight: user?.weight || null,
@@ -143,10 +151,24 @@ export default function OnboardingPage() {
     setActiveStep(prevStep => prevStep - 1);
   };
 
-  const handleGoalSelection = (goal: OnboardingData['fitnessGoal'], bodyType?: OnboardingData['bodyType']) => {
+  // Handler for gender selection
+  const handleGenderSelection = (gender: OnboardingData['gender']) => {
     setData(prev => ({ 
       ...prev, 
-      fitnessGoal: goal,
+      gender
+    }));
+    handleNext();
+  };
+
+  // Handler for goals and body type selection
+  const handleGoalSelection = (goals: OnboardingData['fitnessGoals'], bodyType?: OnboardingData['bodyType']) => {
+    // Set the primary goal as the first selected goal for backward compatibility
+    const primaryGoal = goals.length > 0 ? goals[0] : null;
+    
+    setData(prev => ({ 
+      ...prev, 
+      fitnessGoals: goals,
+      fitnessGoal: primaryGoal, // For backward compatibility
       bodyType: bodyType || prev.bodyType
     }));
     handleNext();
@@ -354,16 +376,27 @@ export default function OnboardingPage() {
   const getStepContent = (step: number) => {
     switch (step) {
       case 0:
-        return <GoalSelection 
-          onSelect={handleGoalSelection} 
-          selectedGoal={data.fitnessGoal}
-          selectedBodyType={data.bodyType}
+        return <GenderSelection
+          onSelect={handleGenderSelection}
+          selectedGender={data.gender}
         />;
       case 1:
-        return <MeasurementsInput data={data} onSubmit={handleMeasurementsSubmit} onBack={handleBack} />;
+        return <GoalSelection 
+          onSelect={handleGoalSelection} 
+          selectedGoals={data.fitnessGoals}
+          selectedBodyType={data.bodyType}
+          userGender={data.gender}
+          onBack={handleBack}
+        />;
       case 2:
+        return <MeasurementsInput data={data} onSubmit={handleMeasurementsSubmit} onBack={handleBack} />;
+      case 3:
         return <FinalSummary 
-          data={data} 
+          data={{
+            ...data,
+            // For backward compatibility with FinalSummary component
+            fitnessGoal: data.fitnessGoal || (data.fitnessGoals.length > 0 ? data.fitnessGoals[0] : null)
+          }} 
           onComplete={handleComplete} 
           analysis={analysis} 
           onGeneratePlan={handleGeneratePlan}
@@ -373,7 +406,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const steps = ['Choose Your Goal', 'Body Details', 'Get Analysis'];
+  const steps = ['About You', 'Your Goals', 'Body Details', 'Get Analysis'];
 
   return (
     <OnboardingLayout>

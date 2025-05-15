@@ -33,7 +33,8 @@ export const users = pgTable("users", {
   weight: real("weight"), // in kg
   weightUnit: text("weight_unit").default("kg"),
   heightUnit: text("height_unit").default("cm"),
-  fitnessGoal: text("fitness_goal"), // weightLoss, muscleBuild, stamina, strength
+  fitnessGoal: text("fitness_goal"), // Legacy: weightLoss, muscleBuild, stamina, strength
+  fitnessGoals: text("fitness_goals").array(), // New field for multiple goals
   bodyType: text("body_type"), // ectomorph, mesomorph, endomorph
   // Additional fitness profile data
   age: integer("age"),
@@ -199,6 +200,7 @@ export const userProfileSchema = createInsertSchema(users).pick({
   heightUnit: true,
   weightUnit: true,
   fitnessGoal: true,
+  fitnessGoals: true,
   bodyType: true,
   age: true,
   activityLevel: true,

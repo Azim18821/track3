@@ -15,7 +15,8 @@ export interface User {
   weight?: number | null;
   weightUnit?: string;
   heightUnit?: string;
-  fitnessGoal?: string | null;
+  fitnessGoal?: string | null; // Legacy field
+  fitnessGoals?: string[] | null; // New field for multiple goals
   bodyType?: string | null;
   
   // AI Analysis 
@@ -37,6 +38,7 @@ export type UserUpdateFields = Partial<
     | 'weightUnit'
     | 'heightUnit'
     | 'fitnessGoal'
+    | 'fitnessGoals'
     | 'bodyType'
   >
 >;
