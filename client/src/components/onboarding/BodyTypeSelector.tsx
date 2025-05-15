@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 // Define SVG code as React components for better styling control
@@ -126,7 +125,7 @@ const FemaleEndomorph = () => (
 );
 
 type BodyType = 'ectomorph' | 'mesomorph' | 'endomorph';
-type Gender = 'male' | 'female';
+type Gender = string | null; // Match OnboardingData['gender'] type which might be null
 
 interface BodyTypeSelectorProps {
   selectedType: BodyType | null;

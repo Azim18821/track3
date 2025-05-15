@@ -222,6 +222,7 @@ export default function GoalSelection({
           <BodyTypeSelector 
             selectedType={selectedBodyType} 
             onSelect={setSelectedBodyType}
+            userGender={userGender}
           />
           
           <div className="flex justify-between mt-5 sm:mt-6 max-w-4xl mx-auto px-1">
