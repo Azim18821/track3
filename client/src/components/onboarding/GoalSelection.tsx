@@ -84,6 +84,31 @@ export default function GoalSelection({
   const [selectedBodyType, setSelectedBodyType] = useState<OnboardingData['bodyType']>(initialBodyType || null);
   const { toast } = useToast();
   
+  // Add CSS to handle any iOS-specific styling issues
+  useEffect(() => {
+    // This adds a style for iOS standalone mode that fixes the gap issue
+    if (isIOSStandalone()) {
+      const style = document.createElement('style');
+      style.innerHTML = `
+        /* Fix iOS standalone gap issues */
+        .ios-standalone-fix {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+        }
+        
+        /* Adjust content height for iOS */
+        .ios-standalone-fix .bg-muted\\/50 {
+          margin-bottom: 8px !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, []);
+  
   const MAX_GOALS = 2;
   
   // Generate fitness goals with personalized descriptions based on gender
@@ -174,11 +199,23 @@ export default function GoalSelection({
     }
   };
 
+  // Check if we're on iOS standalone mode
+  const isiOS = isIOSStandalone();
+
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className={cn(
+      "space-y-5 sm:space-y-6",
+      isiOS && "ios-standalone-fix" // Add custom class for iOS fixes
+    )}>
       {activeStep === 'goal' ? (
-        <div className="space-y-5 sm:space-y-6 py-2">
-          <div className="text-center mb-3 sm:mb-4">
+        <div className={cn(
+          "space-y-5 sm:space-y-6 py-2",
+          isiOS && "pt-0" // Remove top padding on iOS
+        )}>
+          <div className={cn(
+            "text-center",
+            isiOS ? "mb-1 sm:mb-2" : "mb-3 sm:mb-4" // Reduce margin on iOS
+          )}>
             <h2 className="text-xl sm:text-2xl font-medium mb-2">What are your fitness goals?</h2>
             <p className="text-muted-foreground text-sm max-w-2xl mx-auto px-1">
               Select up to {MAX_GOALS} goals that best represent what you want to achieve.
