@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Camera, X } from "lucide-react";
 
 // Weight entry schema
 const weightEntrySchema = z.object({
@@ -34,6 +34,8 @@ const weightEntrySchema = z.object({
     .refine(val => !isNaN(new Date(val).getTime()), {
       message: "Please enter a valid date",
     }),
+  notes: z.string().optional(),
+  imageUrl: z.string().optional(),
 });
 
 type WeightEntry = z.infer<typeof weightEntrySchema>;
@@ -43,15 +45,21 @@ interface Weight {
   weight: number;
   unit: string;
   date: string;
+  notes?: string;
+  imageUrl?: string;
 }
 
 const WeightLog = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Handle dialog close to reset form
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
       form.reset();
+      setImageUrl(undefined);
     }
     setIsDialogOpen(open);
   };
@@ -64,8 +72,76 @@ const WeightLog = () => {
       weight: undefined,
       unit: "kg",
       date: format(new Date(), "yyyy-MM-dd"),
+      notes: "",
+      imageUrl: undefined,
     },
   });
+  
+  // Image upload functionality
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const removeImage = () => {
+    setImageUrl(undefined);
+    form.setValue("imageUrl", undefined);
+  };
+  
+  // Image upload mutation
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      return apiRequest("POST", "/api/weight/upload-image", formData);
+    },
+    onSuccess: (data) => {
+      setImageUrl(data.imageUrl);
+      form.setValue("imageUrl", data.imageUrl);
+      setIsUploading(false);
+      toast({
+        title: "Image uploaded",
+        description: "Your progress photo was uploaded successfully",
+      });
+    },
+    onError: (error: Error) => {
+      setIsUploading(false);
+      toast({
+        title: "Failed to upload image",
+        description: error.message || "An error occurred while uploading the image",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    
+    if (file) {
+      // Check if file is an image
+      if (!file.type.match('image.*')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setIsUploading(true);
+      uploadImageMutation.mutate(file);
+    }
+  };
 
   // Fetch weight entries
   const { data: weights = [], isLoading } = useQuery<Weight[]>({
@@ -122,7 +198,9 @@ const WeightLog = () => {
       const formattedData = {
         weight: Number(data.weight),   // Ensure it's a number
         unit: data.unit || "kg",      // Provide default if empty
-        date: data.date               // Keep as string, server will convert this to a Date
+        date: data.date,              // Keep as string, server will convert this to a Date
+        notes: data.notes || "",
+        imageUrl: data.imageUrl || undefined
       };
       
       // Log the actual date value for debugging
@@ -271,9 +349,82 @@ const WeightLog = () => {
                     )}
                   />
                   
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes (optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="How was your day? Any diet or workout changes?" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Hidden file input for image upload */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                  
+                  {/* Image preview or upload button */}
+                  <FormItem className="mt-4">
+                    <FormLabel>Progress Photo (optional)</FormLabel>
+                    <FormControl>
+                      <div>
+                        {imageUrl ? (
+                          <div className="relative mt-2 rounded-md overflow-hidden border border-input">
+                            <img 
+                              src={imageUrl} 
+                              alt="Progress" 
+                              className="w-full h-auto max-h-56 object-cover"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 hover:bg-background"
+                              onClick={removeImage}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-16 border-dashed gap-2"
+                            onClick={triggerFileInput}
+                            disabled={isUploading}
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Camera className="h-4 w-4" />
+                                Add Photo
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                  
                   <Button 
                     type="submit" 
-                    className="w-full"
+                    className="w-full mt-6"
                     disabled={addWeightMutation.isPending}
                   >
                     {addWeightMutation.isPending ? (
@@ -411,6 +562,8 @@ const WeightLog = () => {
                       <th className="text-left p-2">Date</th>
                       <th className="text-left p-2">Weight</th>
                       <th className="text-left p-2">Unit</th>
+                      <th className="text-left p-2">Notes</th>
+                      <th className="text-left p-2">Photo</th>
                       <th className="text-right p-2">Actions</th>
                     </tr>
                   </thead>
@@ -422,6 +575,27 @@ const WeightLog = () => {
                           <td className="p-2">{format(new Date(entry.date), "MMMM dd, yyyy")}</td>
                           <td className="p-2">{entry.weight}</td>
                           <td className="p-2">{entry.unit}</td>
+                          <td className="p-2">
+                            {entry.notes ? (
+                              <span className="text-sm">{entry.notes}</span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">None</span>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            {entry.imageUrl ? (
+                              <div className="relative w-14 h-14">
+                                <img 
+                                  src={entry.imageUrl} 
+                                  alt="Progress photo" 
+                                  className="w-full h-full object-cover rounded-md cursor-pointer"
+                                  onClick={() => window.open(entry.imageUrl, '_blank')}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">None</span>
+                            )}
+                          </td>
                           <td className="p-2 text-right">
                             <Button 
                               variant="ghost" 
@@ -439,26 +613,47 @@ const WeightLog = () => {
               </div>
               
               {/* Mobile view - cards */}
-              <div className="md:hidden space-y-2">
+              <div className="md:hidden space-y-4">
                 {[...weights]
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map((entry) => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{entry.weight} {entry.unit}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(entry.date), "MMM dd, yyyy")}
-                        </span>
+                    <div key={entry.id} className="border rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between p-3 bg-card">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{entry.weight} {entry.unit}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(entry.date), "MMM dd, yyyy")}
+                          </span>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteWeight(entry.id)}
+                          disabled={deleteWeightMutation.isPending}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDeleteWeight(entry.id)}
-                        disabled={deleteWeightMutation.isPending}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
+                      
+                      {/* Show notes if available */}
+                      {entry.notes && (
+                        <div className="px-3 py-2 border-t">
+                          <p className="text-sm">{entry.notes}</p>
+                        </div>
+                      )}
+                      
+                      {/* Show image if available */}
+                      {entry.imageUrl && (
+                        <div className="border-t">
+                          <img 
+                            src={entry.imageUrl} 
+                            alt="Progress" 
+                            className="w-full h-auto max-h-48 object-cover"
+                            onClick={() => window.open(entry.imageUrl, '_blank')}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
