@@ -469,6 +469,52 @@ body, html {
       height: calc(3.5rem + env(safe-area-inset-top)) !important;
     }
     
+    /* iOS standalone mode specific classes */
+    .ios-standalone-mode {
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Safe area inset utility classes */
+    .pt-safe {
+      padding-top: env(safe-area-inset-top) !important;
+    }
+    
+    .pr-safe {
+      padding-right: env(safe-area-inset-right) !important;
+    }
+    
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom) !important;
+    }
+    
+    .pl-safe {
+      padding-left: env(safe-area-inset-left) !important;
+    }
+    
+    .top-safe {
+      top: env(safe-area-inset-top) !important;
+    }
+    
+    /* Onboarding specific iOS adjustments */
+    .ios-standalone-mode .onboarding-stepper {
+      margin-top: env(safe-area-inset-top) !important;
+    }
+    
+    /* iOS specific stepper class */
+    .ios-stepper {
+      padding-top: 8px !important;
+    }
+    
+    /* Fix for iOS in standalone mode to prevent content from being hidden under the notch */
+    @supports (padding-top: env(safe-area-inset-top)) {
+      .ios-standalone-mode .onboarding-stepper {
+        padding-top: env(safe-area-inset-top) !important;
+      }
+    }
+    
     /* For any touch-targeted elements */
     .touch-none {
       touch-action: none !important;

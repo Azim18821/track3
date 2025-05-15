@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 export default function OnboardingPage() {
   const [activeStep, setActiveStep] = useState(0);
+  const [isIOSStandalone, setIsIOSStandalone] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     fitnessGoal: null,
     fitnessGoals: [],
@@ -25,6 +26,23 @@ export default function OnboardingPage() {
     dateOfBirth: null,
     gender: null
   });
+  
+  // Detect if running as standalone PWA on iOS
+  useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone;
+    
+    setIsIOSStandalone(isIOS && isStandalone);
+    
+    // If running as PWA on iOS, we need to adjust the viewport for notches and home indicator
+    if (isIOS && isStandalone) {
+      // Add a small delay to ensure rendering is complete
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    }
+  }, []);
   
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const { toast } = useToast();
@@ -409,13 +427,19 @@ export default function OnboardingPage() {
 
   return (
     <OnboardingLayout>
-      <div className="w-full max-w-5xl px-2 sm:px-4 py-2 sm:py-4 min-h-[calc(100vh-80px)] flex items-center justify-center">
+      <div className={cn(
+        "w-full max-w-5xl px-2 sm:px-4 py-2 sm:py-4 flex items-center justify-center",
+        isIOSStandalone 
+          ? "min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))]" 
+          : "min-h-[calc(100vh-80px)]"
+      )}>
         <Card className={cn(
           "mx-auto p-3 sm:p-4 md:p-6 border-0 shadow-lg sm:shadow-xl",
           "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
           "transition-all duration-500",
           "rounded-lg sm:rounded-xl",
-          "w-full overflow-hidden"
+          "w-full overflow-hidden",
+          isIOSStandalone && "ios-card"
         )}>
           <div className="text-center mb-3 sm:mb-4 md:mb-6">
             <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">Shape Your Fitness Journey</CardTitle>
@@ -424,9 +448,13 @@ export default function OnboardingPage() {
             </p>
           </div>
           
-          <div className="mb-4 sm:mb-6 md:mb-8 overflow-visible px-0 sm:px-4">
+          <div className={`mb-4 sm:mb-6 md:mb-8 overflow-visible px-0 sm:px-4 ${isIOSStandalone ? 'pt-safe' : ''}`}>
             <div className="max-w-3xl mx-auto">
-              <Stepper activeStep={activeStep} alternativeLabel className="min-w-[300px] w-full">
+              <Stepper 
+                activeStep={activeStep} 
+                alternativeLabel 
+                className={`min-w-[300px] w-full onboarding-stepper ${isIOSStandalone ? 'ios-stepper' : ''}`}
+              >
                 {steps.map((label) => (
                   <Step key={label}>
                     <StepLabel>{label}</StepLabel>
