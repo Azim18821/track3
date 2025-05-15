@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 import {
   AdaptiveDialog,
@@ -157,23 +158,11 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
       const today = format(new Date(), 'yyyy-MM-dd');
       queryClient.invalidateQueries({ queryKey: [`/api/nutrition/meals?date=${today}`] });
       
-      // Also invalidate specific date-based query for the meal date if available
-      if (data && data.meal && data.meal.date) {
-        try {
-          const mealDate = new Date(data.meal.date);
-          const dateString = format(mealDate, 'yyyy-MM-dd');
-          queryClient.invalidateQueries({ queryKey: [`/api/nutrition/meals?date=${dateString}`] });
-        } catch (error) {
-          console.error("Error formatting meal date for query invalidation:", error);
-        }
-      }
+      // Also invalidate dashboard queries
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
       
       // Close the dialog after successful submission
       onClose();
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/nutrition/meals?date=${dateString}`] 
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
     },
     onError: (error) => {
       console.error("Error adding meal:", error);
@@ -343,12 +332,12 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
       submissionData.date = new Date().toString();
     }
     
-    // Format the data for submission
+    // Format the data to match the server's expected schema
     const processedData = {
-      mealName: submissionData.mealName,
+      name: submissionData.mealName, // Server expects 'name' not 'mealName'
       mealType: submissionData.mealType,
       date: submissionData.date,
-      foodItems: submissionData.foodItems.map(item => ({
+      items: submissionData.foodItems.map(item => ({
         name: item.name,
         servingSize: item.servingSize,
         servingUnit: item.servingUnit,

@@ -19,21 +19,28 @@ router.post('/multi-item-meal', async (req: Request, res: Response) => {
 
     const userId = req.user.id;
 
-    // Adapt the client-side form data to match our schema
-    const adaptedData = {
-      name: req.body.mealName,
-      mealType: req.body.mealType,
-      date: req.body.date,
-      items: req.body.foodItems.map((item: any) => ({
-        name: item.name,
-        servingSize: item.servingSize,
-        servingUnit: item.servingUnit,
-        calories: item.calories,
-        protein: item.protein,
-        carbs: item.carbs,
-        fat: item.fat
-      }))
-    };
+    // Log the received request body for debugging
+    console.log('Received meal data:', JSON.stringify(req.body, null, 2));
+    
+    // The client should now be sending data in the correct format,
+    // but we'll still handle both formats for backward compatibility
+    const adaptedData = req.body.items 
+      ? req.body // Already in the correct format with 'name' and 'items'
+      : {
+          // Convert from old format with 'mealName' and 'foodItems'
+          name: req.body.mealName,
+          mealType: req.body.mealType,
+          date: req.body.date,
+          items: req.body.foodItems?.map((item: any) => ({
+            name: item.name,
+            servingSize: item.servingSize,
+            servingUnit: item.servingUnit,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat
+          })) || []
+        };
 
     // Validate the adapted data
     const validationResult = createMealWithItemsSchema.safeParse(adaptedData);
