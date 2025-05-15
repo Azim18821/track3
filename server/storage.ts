@@ -112,7 +112,7 @@ export interface IStorage {
   getWeights(userId: number): Promise<Weight[]>;
   getWeight(id: number): Promise<Weight | undefined>;
   getLatestWeight(userId: number): Promise<Weight | undefined>;
-  createWeight(weightData: { userId: number; weight: number; unit?: string; date?: Date; notes?: string; imageUrl?: string }): Promise<Weight>;
+  createWeight(weightData: { userId: number; weight: number; unit?: string; date?: Date }): Promise<Weight>;
   deleteWeight(id: number): Promise<boolean>;
   
   // Nutrition goals
@@ -981,23 +981,14 @@ export class DatabaseStorage implements IStorage {
     return latestWeight;
   }
 
-  async createWeight(weightData: { userId: number; weight: number; unit?: string; date?: Date; notes?: string; imageUrl?: string }): Promise<Weight> {
-    const { 
-      userId, 
-      weight: weightValue, 
-      unit = 'kg', 
-      date = new Date(),
-      notes,
-      imageUrl 
-    } = weightData;
+  async createWeight(weightData: { userId: number; weight: number; unit?: string; date?: Date }): Promise<Weight> {
+    const { userId, weight: weightValue, unit = 'kg', date = new Date() } = weightData;
     
     const [weight] = await db.insert(weights).values({
       userId,
       weight: weightValue,
       unit,
-      date,
-      notes,
-      imageUrl
+      date
     }).returning();
     
     return weight;
