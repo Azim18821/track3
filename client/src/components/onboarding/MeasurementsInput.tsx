@@ -8,14 +8,12 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { OnboardingData } from '@/types/onboarding';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, User, Ruler, Weight, ArrowLeft } from "lucide-react";
 import { cn } from '@/lib/utils';
@@ -48,9 +46,11 @@ const convertHeight = (value: number, fromUnit: string, toUnit: string) => {
   if (fromUnit === toUnit) return value;
   
   if (fromUnit === 'cm' && toUnit === 'inches') {
-    return Math.round(value / 2.54 * 10) / 10; // cm to inches
+    // More precise cm to inches conversion
+    return Math.round((value / 2.54) * 10) / 10; // cm to inches
   }
   if (fromUnit === 'inches' && toUnit === 'cm') {
+    // More precise inches to cm conversion
     return Math.round(value * 2.54); // inches to cm
   }
   return value;
@@ -66,12 +66,12 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
     height: z.number({
       required_error: "Height is required",
       invalid_type_error: "Height must be a number",
-    }).positive('Height must be positive').min(100, 'Height must be at least 100cm or 40 inches'),
+    }).positive('Height must be positive'),
     
     weight: z.number({
       required_error: "Weight is required",
       invalid_type_error: "Weight must be a number",
-    }).positive('Weight must be positive').min(30, 'Weight must be at least 30kg or 66lb'),
+    }).positive('Weight must be positive'),
     
     heightUnit: z.enum(['cm', 'inches'], {
       required_error: "Height unit is required",
@@ -116,55 +116,80 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
   // Get form field values for monitoring
   const heightUnit = form.watch('heightUnit');
   const weightUnit = form.watch('weightUnit');
-  const currentHeight = form.watch('height');
 
-  // Update default values when data changes
+  // Initialize feet and inches when component loads
   useEffect(() => {
     if (data) {
-      form.reset({
-        height: data.height || 170,
-        weight: data.weight || 70,
-        heightUnit: data.heightUnit || 'cm',
-        weightUnit: data.weightUnit || 'kg',
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-        gender: data.gender || undefined,
-      });
-      
-      // Initialize feet and inches from height if unit is inches
       if (data.heightUnit === 'inches' && data.height) {
         const { feet: ft, inches: inch } = inchesToFeetAndInches(data.height);
+        setFeet(ft);
+        setInches(inch);
+      } else if (data.height) {
+        // Convert cm to inches for the feet/inches display
+        const inchesValue = convertHeight(data.height, 'cm', 'inches');
+        const { feet: ft, inches: inch } = inchesToFeetAndInches(inchesValue);
         setFeet(ft);
         setInches(inch);
       }
     }
   }, [data]);
-  
-  // Update height when feet/inches change if unit is inches
+
+  // Handle unit changes
   useEffect(() => {
-    if (heightUnit === 'inches') {
-      const totalInches = feetAndInchesToInches(feet, inches);
-      // Only update if there's a meaningful difference to prevent infinite loops
-      if (Math.abs(totalInches - form.getValues('height')) > 0.1) {
-        form.setValue('height', totalInches);
-      }
+    const currentHeight = form.getValues('height');
+    const currentUnit = form.getValues('heightUnit');
+    
+    // If we just switched to inches, convert the cm value to inches
+    if (currentUnit === 'cm' && heightUnit === 'inches') {
+      const inchesValue = convertHeight(currentHeight, 'cm', 'inches');
+      form.setValue('height', inchesValue);
+      
+      // Update feet and inches display
+      const { feet: ft, inches: inch } = inchesToFeetAndInches(inchesValue);
+      setFeet(ft);
+      setInches(inch);
+    } 
+    // If we just switched to cm, convert inches to cm
+    else if (currentUnit === 'inches' && heightUnit === 'cm') {
+      const cmValue = convertHeight(currentHeight, 'inches', 'cm');
+      form.setValue('height', cmValue);
     }
-  }, [feet, inches, heightUnit, form]);
-  
-  // Update feet/inches when height or unit changes
-  useEffect(() => {
-    if (heightUnit === 'inches' && currentHeight > 0) {
-      const { feet: ft, inches: inch } = inchesToFeetAndInches(currentHeight);
+  }, [heightUnit]);
+
+  // Simple handlers for height input changes
+  const handleHeightSliderChange = (newValue: number) => {
+    form.setValue('height', newValue);
+    
+    // If in inches mode, update feet and inches display
+    if (heightUnit === 'inches') {
+      const { feet: ft, inches: inch } = inchesToFeetAndInches(newValue);
       setFeet(ft);
       setInches(inch);
     }
-  }, [heightUnit, currentHeight]);
+  };
+  
+  // When feet or inches change, update the height value
+  const handleFeetChange = (newFeet: number) => {
+    setFeet(newFeet);
+    const totalInches = feetAndInchesToInches(newFeet, inches);
+    form.setValue('height', totalInches);
+  };
+  
+  const handleInchesChange = (newInches: number) => {
+    setInches(newInches);
+    const totalInches = feetAndInchesToInches(feet, newInches);
+    form.setValue('height', totalInches);
+  };
 
   // Get min/max ranges based on units
   const getHeightRange = () => {
-    return heightUnit === 'cm' ? [120, 220] : [48, 87];
+    // Use more appropriate ranges for both units
+    // 120-220 cm is approximately 47-87 inches
+    return heightUnit === 'cm' ? [120, 220] : [47, 87];
   };
   
   const getWeightRange = () => {
+    // 30-160 kg is approximately 66-352 pounds
     return weightUnit === 'kg' ? [30, 160] : [66, 352];
   };
 
@@ -176,6 +201,16 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
       return; // Form validation should prevent this, but double-check
     }
     
+    // Validate minimum height based on unit
+    const minHeight = values.heightUnit === 'cm' ? 100 : 40;
+    if (values.height < minHeight) {
+      form.setError('height', { 
+        type: 'manual', 
+        message: `Height must be at least ${minHeight}${values.heightUnit === 'cm' ? 'cm' : ' inches'}`
+      });
+      return;
+    }
+    
     // Ensure date is formatted correctly
     let formattedDate: string | null = null;
     
@@ -183,7 +218,6 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
       try {
         // Format as YYYY-MM-DD for consistent API handling
         formattedDate = format(values.dateOfBirth, 'yyyy-MM-dd');
-        console.log('Formatted date:', formattedDate);
       } catch (e) {
         console.error('Error formatting date of birth:', e);
         // Use a fallback date instead of null
@@ -194,25 +228,13 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
     }
     
     // Ensure all values are within reasonable ranges
-    const minHeight = values.heightUnit === 'cm' ? 100 : 40; 
-    const maxHeight = values.heightUnit === 'cm' ? 250 : 96;
     const minWeight = values.weightUnit === 'kg' ? 30 : 66;
     const maxWeight = values.weightUnit === 'kg' ? 300 : 660;
     
-    const height = Math.max(minHeight, Math.min(maxHeight, values.height));
     const weight = Math.max(minWeight, Math.min(maxWeight, values.weight));
     
-    console.log('Submitting measurements with validated data:', {
-      height,
-      weight,
-      heightUnit: values.heightUnit,
-      weightUnit: values.weightUnit,
-      dateOfBirth: formattedDate,
-      gender: values.gender
-    });
-    
     onSubmit({
-      height,
+      height: values.height,
       weight,
       heightUnit: values.heightUnit,
       weightUnit: values.weightUnit,
@@ -280,18 +302,24 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                       
                       {heightUnit === 'inches' ? (
                         <div className="space-y-3">
+                          <div className="flex items-center mb-1">
+                            <span className="text-sm font-medium mr-2">Your height: </span>
+                            <span className="font-semibold">{feet}' {inches}"</span>
+                            <span className="text-muted-foreground text-xs ml-1">({Math.round(feet * 30.48 + inches * 2.54)} cm)</span>
+                          </div>
+                          
                           <div className="flex items-center justify-between gap-2">
-                            <Label className="text-sm">Feet</Label>
-                            <div className="flex-1 max-w-[160px]">
-                              <div className="grid grid-cols-6 gap-1">
+                            <Label className="text-sm whitespace-nowrap">Feet</Label>
+                            <div className="flex-1">
+                              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
                                 {[4, 5, 6, 7, 8, 9].map((ft) => (
                                   <Button 
                                     key={ft} 
                                     type="button"
                                     size="sm"
                                     variant={feet === ft ? "default" : "outline"}
-                                    className="h-8 text-xs px-1"
-                                    onClick={() => setFeet(ft)}
+                                    className="h-8 text-xs"
+                                    onClick={() => handleFeetChange(ft)}
                                   >
                                     {ft}'
                                   </Button>
@@ -301,17 +329,17 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                           </div>
                           
                           <div className="flex items-center justify-between gap-2">
-                            <Label className="text-sm">Inches</Label>
-                            <div className="flex-1 max-w-[160px]">
-                              <div className="grid grid-cols-6 gap-1">
+                            <Label className="text-sm whitespace-nowrap">Inches</Label>
+                            <div className="flex-1">
+                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-1">
                                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((inch) => (
                                   <Button 
                                     key={inch} 
                                     type="button"
                                     size="sm"
                                     variant={inches === inch ? "default" : "outline"}
-                                    className="h-8 text-xs px-1"
-                                    onClick={() => setInches(inch)}
+                                    className="h-8 text-xs"
+                                    onClick={() => handleInchesChange(inch)}
                                   >
                                     {inch}"
                                   </Button>
@@ -327,7 +355,7 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                             min={getHeightRange()[0]}
                             max={getHeightRange()[1]}
                             step={1}
-                            onValueChange={(vals) => field.onChange(vals[0])}
+                            onValueChange={(vals) => handleHeightSliderChange(vals[0])}
                             className="py-2 sm:py-3"
                           />
                         </FormControl>
