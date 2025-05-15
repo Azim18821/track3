@@ -131,6 +131,7 @@ type Gender = 'male' | 'female';
 interface BodyTypeSelectorProps {
   selectedType: BodyType | null;
   onSelect: (type: BodyType) => void;
+  userGender: Gender; // Add the gender that was selected in the first step
 }
 
 // Male body type data
@@ -177,34 +178,17 @@ const femaleBodyTypes = [
   }
 ];
 
-export function BodyTypeSelector({ selectedType, onSelect }: BodyTypeSelectorProps) {
-  const [gender, setGender] = useState<Gender>('male');
-  
-  // Select which body type array to use based on gender
-  const bodyTypes = gender === 'male' ? maleBodyTypes : femaleBodyTypes;
+export function BodyTypeSelector({ selectedType, onSelect, userGender }: BodyTypeSelectorProps) {
+  // Select which body type array to use based on the user's gender from the first step
+  const bodyTypes = userGender === 'male' ? maleBodyTypes : femaleBodyTypes;
   
   return (
     <div className="space-y-6 sm:space-y-8 py-2 sm:py-4">
       <div className="text-center mb-4 sm:mb-6">
         <h3 className="text-lg sm:text-xl font-medium mb-2 sm:mb-3">What body type do you have?</h3>
         <p className="text-muted-foreground text-sm sm:text-base px-1">
-          Select your gender and the body type that most closely resembles yours
+          Select the body type that most closely resembles yours
         </p>
-      </div>
-      
-      {/* Gender Selection Tabs */}
-      <div className="flex justify-center mb-4 sm:mb-6">
-        <Tabs 
-          defaultValue="male" 
-          value={gender}
-          onValueChange={(value) => setGender(value as Gender)} 
-          className="w-full max-w-sm"
-        >
-          <TabsList className="grid grid-cols-2 mb-2 w-full">
-            <TabsTrigger value="male">Male</TabsTrigger>
-            <TabsTrigger value="female">Female</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto px-1">
