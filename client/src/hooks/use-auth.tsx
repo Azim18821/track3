@@ -51,34 +51,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      try {
-        // Use fetch directly for more control
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(credentials),
-          credentials: 'include'
-        });
-        
-        // Check for errors
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: "Authentication failed" }));
-          
-          // Check for pending approval response (403)
-          if (response.status === 403 && errorData.message?.includes("pending approval")) {
-            throw new Error("Your account is pending admin approval. Please check back later.");
-          }
-          throw new Error(errorData.message || "Login failed");
+      const res = await apiRequest("POST", "/api/login", credentials);
+      if (!res.ok) {
+        const errorData = await res.json();
+        // Check for pending approval response (403)
+        if (res.status === 403 && errorData.message?.includes("pending approval")) {
+          throw new Error("Your account is pending admin approval. Please check back later.");
         }
-        
-        // Parse and return user data
-        return await response.json();
-      } catch (error) {
-        console.error("Login error:", error);
-        throw error;
+        throw new Error(errorData.message || "Login failed");
       }
+      return await res.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -115,9 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
-      console.error('Login error details:', error);
-      
-      // Check for specific error types
+      // Check for pending approval message
       if (error.message.includes("pending approval")) {
         toast({
           title: "Account Pending Approval",
@@ -125,22 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
           duration: 6000, // Show for longer
         });
-      } else if (error.message.includes("No user found") || error.message.includes("Invalid credentials") || error.message.includes("Incorrect password")) {
-        toast({
-          title: "Login failed",
-          description: "Invalid username or password. Please try again.",
-          variant: "destructive",
-        });
-      } else if (error.message.includes("Failed to fetch") || error.message.includes("Network")) {
-        toast({
-          title: "Connection error",
-          description: "Could not connect to the server. Please check your internet connection and try again.",
-          variant: "destructive",
-        });
       } else {
         toast({
           title: "Login failed",
-          description: error.message || "An unexpected error occurred. Please try again.",
+          description: error.message,
           variant: "destructive",
         });
       }
@@ -184,48 +152,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      try {
-        // Use fetch directly instead of apiRequest to avoid parsing JSON
-        const response = await fetch('/api/logout', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        // Don't try to parse response as JSON
-        if (!response.ok) {
-          throw new Error('Logout failed');
-        }
-        
-        // Return void as expected by the mutation type
-        return;
-      } catch (error) {
-        console.error('Logout error:', error);
-        throw error;
+      const res = await apiRequest("POST", "/api/logout");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Logout failed");
       }
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      queryClient.invalidateQueries();
       toast({
         title: "Logout successful",
         description: "You have been logged out.",
       });
-      // Redirect to login page
-      window.location.href = '/';
     },
     onError: (error: Error) => {
-      console.error('Logout error:', error);
       toast({
         title: "Logout failed",
-        description: "There was an issue logging out. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
-      // Even if there's an error, clear local user data and redirect
-      queryClient.setQueryData(["/api/user"], null);
-      window.location.href = '/';
     },
   });
 
