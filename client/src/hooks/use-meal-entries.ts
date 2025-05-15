@@ -192,7 +192,23 @@ export function useSavedMeals() {
     queryKey: ['/api/saved-meals'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/saved-meals');
-      return response as SavedMeal[];
+      // Convert the response to JSON and ensure it's the expected type
+      if (Array.isArray(response)) {
+        // Map each item to ensure they have the correct type
+        return response.map(item => ({
+          id: (item as any).id || 0,
+          name: (item as any).name || '',
+          description: (item as any).description || '',
+          mealType: (item as any).mealType || 'snack',
+          servingSize: (item as any).servingSize || 1,
+          calories: (item as any).calories || 0,
+          protein: (item as any).protein || 0,
+          carbs: (item as any).carbs || 0,
+          fat: (item as any).fat || 0,
+          ingredients: (item as any).ingredients || []
+        }));
+      }
+      return [];
     },
   });
 }
@@ -205,7 +221,24 @@ export function useSavedMeal(id: number) {
     queryKey: ['/api/saved-meals', id],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/saved-meals/${id}`);
-      return response as SavedMeal;
+      // Ensure the response is of the expected type
+      if (response && typeof response === 'object' && 'id' in response) {
+        // Convert explicitly to the SavedMeal type
+        const savedMeal: SavedMeal = {
+          id: response.id as number,
+          name: (response as any).name || '',
+          description: (response as any).description || '',
+          mealType: (response as any).mealType || 'snack',
+          servingSize: (response as any).servingSize || 1,
+          calories: (response as any).calories || 0,
+          protein: (response as any).protein || 0, 
+          carbs: (response as any).carbs || 0,
+          fat: (response as any).fat || 0,
+          ingredients: (response as any).ingredients || []
+        };
+        return savedMeal;
+      }
+      throw new Error('Invalid saved meal data received');
     },
     enabled: !!id,
   });

@@ -40,7 +40,7 @@ export function MealEntriesDisplay({ date, onAddMeal }: MealEntriesDisplayProps)
 
   const handleDeleteMeal = async (mealId: number) => {
     try {
-      await deleteMealEntry.mutateAsync({ id: mealId });
+      await deleteMealEntry.mutateAsync({ id: mealId, date });
       toast({
         title: "Meal deleted",
         description: "Your meal has been successfully deleted"
