@@ -101,13 +101,6 @@ export default function DailyRecommendationsDialog({
     enabled: open, // Only fetch when dialog is open
   });
   
-  // Close dialog if recommendations shouldn't be shown
-  useEffect(() => {
-    if (data && !data.show) {
-      onOpenChange(false);
-    }
-  }, [data, onOpenChange]);
-  
   // Handle error case
   if (isError) {
     toast({
@@ -119,6 +112,7 @@ export default function DailyRecommendationsDialog({
   }
   
   const recommendations = data?.recommendations;
+  const noRecommendationsMessage = data?.message;
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -352,6 +346,15 @@ export default function DailyRecommendationsDialog({
               </Card>
             )}
           </>
+        ) : noRecommendationsMessage ? (
+          <div className="text-center py-6 space-y-4">
+            <div className="rounded-full bg-muted p-4 mx-auto w-fit">
+              <Loader2 className="h-8 w-8 text-primary/50" />
+            </div>
+            <h3 className="text-lg font-semibold">Not Enough Data Yet</h3>
+            <p className="text-muted-foreground px-6 max-w-md mx-auto">{noRecommendationsMessage}</p>
+            <p className="text-sm text-muted-foreground">Your personalized AI recommendations will be available once you've logged enough fitness and nutrition data.</p>
+          </div>
         ) : (
           <div className="text-center py-6">
             <p>No recommendations available for today.</p>

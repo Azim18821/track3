@@ -219,16 +219,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       
       // Check if recommendations should be shown today
-      const shouldShow = await shouldShowRecommendations(userId);
+      const shouldShowResult = await shouldShowRecommendations(userId);
       
-      if (!shouldShow) {
+      // Handle the different return types from shouldShowRecommendations
+      if (typeof shouldShowResult === 'object' && !shouldShowResult.show) {
+        // Return the specific message about what data is missing
+        return res.status(200).json({ 
+          show: false, 
+          message: shouldShowResult.message 
+        });
+      } else if (shouldShowResult !== true) {
+        // Handle other false cases
         return res.status(200).json({ 
           show: false, 
           message: "No recommendations available for today" 
         });
       }
       
-      // Generate recommendations
+      // If we reach here, shouldShowResult is true, so generate recommendations
       const recommendations = await generateDailyRecommendations(userId);
       
       return res.status(200).json({

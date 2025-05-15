@@ -540,14 +540,65 @@ Based on this information, provide today's personalized workout and nutrition re
 /**
  * Check if recommendations should be shown to a user today
  */
-export async function shouldShowRecommendations(userId: number): Promise<boolean> {
+import { userRecommendations } from "../../../shared/schema";
+import { format, isToday } from "date-fns";
+
+export async function shouldShowRecommendations(userId: number): Promise<boolean | { show: boolean, message: string }> {
   try {
-    // Get the last time recommendations were shown from the database
-    // This would typically be stored in a user preferences or settings table
+    // Get workout count - we want at least 2 workouts on different days
+    const workoutCount = await db.select({ 
+      count: sql<number>`count(distinct date)` 
+    })
+    .from(workouts)
+    .where(eq(workouts.userId, userId))
+    .then(result => result[0]?.count || 0);
     
-    // For this implementation, we'll show recommendations every day
-    // In a production environment, you might want to check a lastRecommendationDate field
+    // Get meal count - we want at least 7 days of meal entries
+    const mealDaysCount = await db.select({ 
+      count: sql<number>`count(distinct date)` 
+    })
+    .from(meals)
+    .where(eq(meals.userId, userId))
+    .then(result => result[0]?.count || 0);
     
+    // Check if user has enough data for meaningful recommendations
+    if (workoutCount < 2) {
+      return {
+        show: false,
+        message: `You need to log at least 2 workouts on different days before receiving personalized recommendations. Current: ${workoutCount}/2 days with workouts.`
+      };
+    }
+    
+    if (mealDaysCount < 7) {
+      return {
+        show: false,
+        message: `You need to log meals for at least 7 different days before receiving personalized recommendations. Current: ${mealDaysCount}/7 days with meal logs.`
+      };
+    }
+    
+    // Check if recommendations have already been shown today
+    const today = new Date();
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    
+    // Get user's recommendation settings
+    const userRecSettings = await db.select()
+      .from(userRecommendations)
+      .where(eq(userRecommendations.userId, userId))
+      .then(results => results[0]);
+    
+    // If we have a record and they've already seen recommendations today, don't show again
+    if (userRecSettings?.lastRecommendationDate) {
+      const lastDateShown = new Date(userRecSettings.lastRecommendationDate);
+      
+      if (isToday(lastDateShown)) {
+        return {
+          show: false,
+          message: "You've already viewed today's recommendations. Check back tomorrow for new recommendations!"
+        };
+      }
+    }
+    
+    // If we reach here, user has enough data for recommendations and hasn't seen them today
     return true;
   } catch (error) {
     console.error('Error checking if recommendations should be shown:', error);

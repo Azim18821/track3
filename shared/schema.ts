@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, real, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, real, jsonb, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -485,6 +485,23 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit
 
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
 export type SystemSetting = typeof systemSettings.$inferSelect;
+
+// User Recommendation Settings
+export const userRecommendations = pgTable("user_recommendations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  lastRecommendationDate: date("last_recommendation_date"), // Tracks the last date recommendations were shown
+  autoShowEnabled: boolean("auto_show_enabled").default(true).notNull(), // Whether to automatically show daily recommendations
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertUserRecommendationSchema = createInsertSchema(userRecommendations).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertUserRecommendation = z.infer<typeof insertUserRecommendationSchema>;
+export type UserRecommendation = typeof userRecommendations.$inferSelect;
 
 // Password Reset Tokens
 export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).omit({
