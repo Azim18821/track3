@@ -353,7 +353,9 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                                   min="1" 
                                   {...field} 
                                   onChange={(e) => {
-                                    const newSets = parseInt(e.target.value) || 1;
+                                    // Don't default to 1 if input is invalid
+                                    const parsedValue = parseInt(e.target.value);
+                                    const newSets = isNaN(parsedValue) ? '' : parsedValue;
                                     field.onChange(newSets);
                                   }}
                                 />
