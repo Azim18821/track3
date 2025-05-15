@@ -544,6 +544,8 @@ Based on this information, provide today's personalized workout and nutrition re
 
 export async function shouldShowRecommendations(userId: number): Promise<boolean | { show: boolean, message: string }> {
   try {
+    console.log(`Checking recommendation eligibility for user ${userId}`);
+    
     // Get workout count - we want at least 2 workouts on different days
     const workoutCount = await db.select({ 
       count: sql<number>`count(distinct date)` 
@@ -551,6 +553,8 @@ export async function shouldShowRecommendations(userId: number): Promise<boolean
     .from(workouts)
     .where(eq(workouts.userId, userId))
     .then(result => result[0]?.count || 0);
+    
+    console.log(`User ${userId} has logged workouts on ${workoutCount} different days`);
     
     // Get meal count - we want at least 7 days of meal entries
     const mealDaysCount = await db.select({ 
@@ -560,15 +564,21 @@ export async function shouldShowRecommendations(userId: number): Promise<boolean
     .where(eq(meals.userId, userId))
     .then(result => result[0]?.count || 0);
     
+    console.log(`User ${userId} has logged meals on ${mealDaysCount} different days`);
+    
+    // Skip workout and meal requirements for testing (TEMPORARY)
+    // In production, set this to false to enforce actual data requirements
+    const skipRequirements = true; // DEV MODE: allows recommendations without enough workout/meal data
+    
     // Check if user has enough data for meaningful recommendations
-    if (workoutCount < 2) {
+    if (!skipRequirements && workoutCount < 2) {
       return {
         show: false,
         message: `You need to log at least 2 workouts on different days before receiving personalized recommendations. Current: ${workoutCount}/2 days with workouts.`
       };
     }
     
-    if (mealDaysCount < 7) {
+    if (!skipRequirements && mealDaysCount < 7) {
       return {
         show: false,
         message: `You need to log meals for at least 7 different days before receiving personalized recommendations. Current: ${mealDaysCount}/7 days with meal logs.`
@@ -591,15 +601,24 @@ export async function shouldShowRecommendations(userId: number): Promise<boolean
       const lastDateShown = new Date(userRecSettings.lastRecommendationDate);
       const lastDateFormatted = format(lastDateShown, 'yyyy-MM-dd');
       
-      console.log(`Comparing dates: today=${todayFormatted}, last shown=${lastDateFormatted}`);
+      console.log(`User ${userId} recommendation date check: today=${todayFormatted}, last shown=${lastDateFormatted}`);
+      
+      // For testing: skip the once-per-day check (TEMPORARY)
+      // In production, set this to false to enforce once-per-day limit
+      const skipOncePerDayCheck = false; // DEV MODE: set to true to allow seeing recommendations multiple times per day
       
       // Compare the formatted date strings to avoid time-of-day issues
-      if (todayFormatted === lastDateFormatted) {
+      if (!skipOncePerDayCheck && todayFormatted === lastDateFormatted) {
+        console.log(`User ${userId} already viewed recommendations today, preventing repeat`);
         return {
           show: false,
           message: "You've already viewed today's recommendations. Check back tomorrow for new recommendations!"
         };
+      } else {
+        console.log(`User ${userId} hasn't viewed recommendations today or check is bypassed for testing`);
       }
+    } else {
+      console.log(`User ${userId} has no previous recommendation record`);
     }
     
     // If we reach here, user has enough data for recommendations and hasn't seen them today

@@ -38,7 +38,7 @@ export function useRecommendations() {
   
   // Open recommendations dialog if data.show is true
   useEffect(() => {
-    if (data?.show) {
+    if (data?.show && data?.recommendations) {
       // Show the recommendations dialog after a short delay
       // to let the user see the page first
       const timer = setTimeout(() => {
