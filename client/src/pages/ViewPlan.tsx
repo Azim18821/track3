@@ -761,15 +761,35 @@ export default function ViewPlan() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Primary Goal</Label>
-                    <p className="font-medium capitalize">
+                    <Label className="text-xs text-muted-foreground">
+                      {preferences?.goals && Array.isArray(preferences.goals) && preferences.goals.length > 1 
+                        ? 'Fitness Goals' 
+                        : 'Primary Goal'}
+                    </Label>
+                    <div>
                       {(() => {
-                        // Improved handling of goal field with better fallbacks
-                        const goalValue = preferences?.goal || preferences?.fitnessGoal || "Not specified";
-                        // Replace all underscores with spaces and capitalize properly
-                        return typeof goalValue === 'string' ? goalValue.replace(/_/g, " ") : "Not specified";
+                        // Check for multiple goals first
+                        if (preferences?.goals && Array.isArray(preferences.goals) && preferences.goals.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-1.5">
+                              {preferences.goals.map((goal, index) => (
+                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                  {typeof goal === 'string' ? goal.replace(/_/g, " ") : "Unknown"}
+                                </span>
+                              ))}
+                            </div>
+                          );
+                        } else {
+                          // Fallback to single goal display
+                          const goalValue = preferences?.goal || preferences?.fitnessGoal || "Not specified";
+                          return (
+                            <p className="font-medium capitalize">
+                              {typeof goalValue === 'string' ? goalValue.replace(/_/g, " ") : "Not specified"}
+                            </p>
+                          );
+                        }
                       })()}
-                    </p>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">

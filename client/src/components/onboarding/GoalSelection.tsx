@@ -9,6 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
+// iOS detection helper
+const isIOSStandalone = () => {
+  if (typeof window === 'undefined') return false;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      (window.navigator as any).standalone;
+  return isIOS && isStandalone;
+};
+
 interface GoalSelectionProps {
   onSelect: (goals: OnboardingData['fitnessGoals'], bodyType?: OnboardingData['bodyType']) => void;
   selectedGoals: OnboardingData['fitnessGoals'];

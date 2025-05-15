@@ -217,6 +217,38 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
   
+  // Endpoint to get user's fitness goals
+  app.get("/api/user/fitness-goals", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUserProfile(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Get goals from user profile
+      const fitnessGoals = user.fitnessGoals || [];
+      
+      // If using legacy single goal and no multiple goals set
+      if ((!fitnessGoals || fitnessGoals.length === 0) && user.fitnessGoal) {
+        return res.json({ 
+          primaryGoal: user.fitnessGoal,
+          goals: [user.fitnessGoal]
+        });
+      }
+      
+      // Return both the array of goals and the primary goal (first one)
+      return res.json({
+        primaryGoal: fitnessGoals.length > 0 ? fitnessGoals[0] : null,
+        goals: fitnessGoals
+      });
+    } catch (error) {
+      console.error("Error fetching user fitness goals:", error);
+      return res.status(500).json({ error: "Failed to fetch fitness goals" });
+    }
+  });
+  
   // API endpoint to update user profile
   app.put("/api/user/update", ensureAuthenticated, async (req: Request, res: Response) => {
     try {

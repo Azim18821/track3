@@ -1,6 +1,7 @@
-import { AIAnalysis } from "../shared/schema";
+import { AIAnalysis, InsertGoal } from "../shared/schema";
 import { storage } from "./storage";
 import OpenAI from "openai";
+import { add } from "date-fns";
 
 /**
  * Check if a user has completed the onboarding process
@@ -120,6 +121,286 @@ export async function acknowledgeAnalysis(userId: number): Promise<boolean> {
   } catch (error) {
     console.error("Error acknowledging analysis:", error);
     throw error;
+  }
+}
+
+/**
+ * Create system-generated goals based on the user's fitness goals
+ * @param userId The user ID
+ * @param fitnessGoals The array of fitness goals selected by the user
+ * @returns Boolean indicating success or failure
+ */
+export async function createSystemFitnessGoals(userId: number, fitnessGoals: string[]): Promise<boolean> {
+  try {
+    console.log(`Creating system fitness goals for user ${userId} with goals: ${fitnessGoals.join(', ')}`);
+    
+    // Goal templates based on fitness goals
+    const goalTemplates: Record<string, Omit<InsertGoal, 'userId'>[]> = {
+      'weightLoss': [
+        {
+          title: 'Lose Weight',
+          category: 'weight',
+          description: 'Achieve your target weight through consistent diet and exercise',
+          targetDate: add(new Date(), { months: 3 }),
+          // Don't set target value here as it will be customized
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Daily Calorie Target',
+          category: 'nutrition',
+          description: 'Maintain calorie deficit to support weight loss',
+          targetDate: add(new Date(), { months: 6 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Cardio Workouts',
+          category: 'fitness',
+          description: 'Complete cardio sessions to burn calories',
+          targetDate: add(new Date(), { weeks: 12 }),
+          targetValue: 36, // 3 per week for 12 weeks
+          unit: 'sessions',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'muscleBuild': [
+        {
+          title: 'Increase Muscle Mass',
+          category: 'fitness',
+          description: 'Focus on progressive overload to build muscle',
+          targetDate: add(new Date(), { months: 4 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Protein Intake',
+          category: 'nutrition',
+          description: 'Consume adequate protein to support muscle growth',
+          targetDate: add(new Date(), { months: 3 }),
+          targetValue: 90, // Days with sufficient protein intake
+          unit: 'days',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Strength Training Sessions',
+          category: 'fitness',
+          description: 'Complete strength training workouts for muscle development',
+          targetDate: add(new Date(), { weeks: 12 }),
+          targetValue: 48, // 4 per week for 12 weeks
+          unit: 'sessions',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'stamina': [
+        {
+          title: 'Improve Cardiovascular Endurance',
+          category: 'fitness',
+          description: 'Increase stamina through consistent cardio training',
+          targetDate: add(new Date(), { months: 3 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Running Distance',
+          category: 'fitness',
+          description: 'Gradually increase running distance',
+          targetDate: add(new Date(), { months: 3 }),
+          targetValue: 5, // 5K goal
+          unit: 'km',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Cardio Frequency',
+          category: 'health',
+          description: 'Maintain regular cardio workouts',
+          targetDate: add(new Date(), { weeks: 8 }),
+          targetValue: 24, // 3 per week for 8 weeks
+          unit: 'sessions',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'strength': [
+        {
+          title: 'Increase Overall Strength',
+          category: 'fitness',
+          description: 'Focus on compound lifts to build functional strength',
+          targetDate: add(new Date(), { months: 3 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Deadlift Progress',
+          category: 'fitness',
+          description: 'Gradually increase deadlift weight',
+          targetDate: add(new Date(), { months: 3 }),
+          // Target value will be customized based on user
+          unit: 'kg',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Strength Training Consistency',
+          category: 'fitness',
+          description: 'Maintain consistent strength training schedule',
+          targetDate: add(new Date(), { weeks: 12 }),
+          targetValue: 36, // 3 per week for 12 weeks
+          unit: 'workouts',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'toning': [
+        {
+          title: 'Body Composition Improvement',
+          category: 'fitness',
+          description: 'Focus on body toning through resistance training',
+          targetDate: add(new Date(), { months: 3 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'High-Rep Workouts',
+          category: 'fitness',
+          description: 'Complete high-rep, moderate weight workouts',
+          targetDate: add(new Date(), { weeks: 8 }),
+          targetValue: 24, // 3 per week for 8 weeks
+          unit: 'workouts',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Balanced Nutrition',
+          category: 'nutrition',
+          description: 'Maintain balanced macros for optimal toning',
+          targetDate: add(new Date(), { months: 2 }),
+          targetValue: 60, // Days with balanced nutrition
+          unit: 'days',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'flexibility': [
+        {
+          title: 'Improve Overall Flexibility',
+          category: 'fitness',
+          description: 'Increase range of motion through consistent stretching',
+          targetDate: add(new Date(), { months: 2 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Yoga Sessions',
+          category: 'fitness',
+          description: 'Incorporate yoga for improved flexibility',
+          targetDate: add(new Date(), { weeks: 8 }),
+          targetValue: 24, // 3 per week for 8 weeks
+          unit: 'sessions',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Daily Stretching',
+          category: 'health',
+          description: 'Perform daily stretching routine',
+          targetDate: add(new Date(), { months: 1 }),
+          targetValue: 30, // Days in a month
+          unit: 'days',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'healthyHabits': [
+        {
+          title: 'Establish Healthy Lifestyle',
+          category: 'health',
+          description: 'Create and maintain healthy daily habits',
+          targetDate: add(new Date(), { months: 3 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Water Intake',
+          category: 'health',
+          description: 'Drink adequate water daily',
+          targetDate: add(new Date(), { months: 1 }),
+          targetValue: 30, // Days in a month
+          unit: 'days',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Sleep Quality',
+          category: 'health',
+          description: 'Improve sleep duration and quality',
+          targetDate: add(new Date(), { weeks: 4 }),
+          targetValue: 28, // 7 days a week for 4 weeks
+          unit: 'nights',
+          completed: false,
+          progress: 0
+        }
+      ],
+      'overall': [
+        {
+          title: 'Overall Fitness Improvement',
+          category: 'fitness',
+          description: 'Enhance general fitness level through varied activities',
+          targetDate: add(new Date(), { months: 3 }),
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Weekly Workout Consistency',
+          category: 'fitness',
+          description: 'Maintain consistent workout schedule',
+          targetDate: add(new Date(), { weeks: 12 }),
+          targetValue: 36, // 3 per week for 12 weeks
+          unit: 'workouts',
+          completed: false,
+          progress: 0
+        },
+        {
+          title: 'Balanced Nutrition',
+          category: 'nutrition',
+          description: 'Follow balanced nutrition plan',
+          targetDate: add(new Date(), { months: 3 }),
+          targetValue: 90, // Days with balanced nutrition
+          unit: 'days',
+          completed: false,
+          progress: 0
+        }
+      ]
+    };
+    
+    // Track creation success
+    let successCount = 0;
+    let failCount = 0;
+    
+    // Create goals for each of the user's selected fitness goals
+    for (const fitnessGoal of fitnessGoals) {
+      const templatesForGoal = goalTemplates[fitnessGoal] || goalTemplates['overall'];
+      
+      for (const goalTemplate of templatesForGoal) {
+        try {
+          await storage.createGoal(userId, goalTemplate);
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to create goal for fitness goal ${fitnessGoal}:`, error);
+          failCount++;
+        }
+      }
+    }
+    
+    console.log(`System goals creation complete. Created ${successCount} goals, failed to create ${failCount} goals.`);
+    return successCount > 0;
+  } catch (error) {
+    console.error("Error creating system fitness goals:", error);
+    return false;
   }
 }
 
@@ -365,6 +646,17 @@ export async function generateFitnessAnalysis(userId: number, data: OnboardingDa
     console.log(`[SERVICE:6] Verification - Retrieved analysis from DB: ${savedAnalysis ? 'FOUND' : 'NOT FOUND'}`);
     if (savedAnalysis) {
       console.log(`[SERVICE:7] Analysis timeframe: ${savedAnalysis.timeframe}, description length: ${savedAnalysis.description.length}`);
+    }
+    
+    // Create system-generated goals based on the user's fitness goals
+    console.log(`[SERVICE:8] Creating system goals based on fitness goals for user ${userId}`);
+    if (data.fitnessGoals && Array.isArray(data.fitnessGoals) && data.fitnessGoals.length > 0) {
+      const goalsCreated = await createSystemFitnessGoals(userId, data.fitnessGoals);
+      console.log(`[SERVICE:9] System goals creation result: ${goalsCreated ? 'SUCCESS' : 'FAILED'}`);
+    } else if (data.fitnessGoal) {
+      // Handle legacy single goal
+      const goalsCreated = await createSystemFitnessGoals(userId, [data.fitnessGoal]);
+      console.log(`[SERVICE:9] System goals creation result (legacy mode): ${goalsCreated ? 'SUCCESS' : 'FAILED'}`);
     }
 
     return analysis;

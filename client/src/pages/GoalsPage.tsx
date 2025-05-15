@@ -13,8 +13,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Target, Trophy, TrendingUp, CalendarDays, Edit, Trash2 } from "lucide-react";
+import { Loader2, Target, Trophy, TrendingUp, CalendarDays, Edit, Trash2, Dumbbell, Zap, Heart, Salad } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 
 // Goal schema
 const goalSchema = z.object({
@@ -54,9 +55,17 @@ const GoalsPage = () => {
   });
 
   // Fetch goals
-  const { data: goals = [], isLoading } = useQuery<Goal[]>({
+  const { data: goals = [], isLoading: isLoadingGoals } = useQuery<Goal[]>({
     queryKey: ['/api/goals'],
   });
+  
+  // Fetch user's fitness goals
+  const { data: fitnessGoalsData, isLoading: isLoadingFitnessGoals } = useQuery({
+    queryKey: ['/api/user/fitness-goals'],
+  });
+  
+  // Combine all loading states
+  const isLoading = isLoadingGoals || isLoadingFitnessGoals;
 
   // Goal categories
   const categories = [
@@ -279,6 +288,64 @@ const GoalsPage = () => {
     </Card>
   );
 
+  // Get fitness goal icon
+  const getFitnessGoalIcon = (goal: string) => {
+    switch (goal) {
+      case 'weightLoss':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'muscleBuild':
+        return <Dumbbell className="h-4 w-4" />;
+      case 'stamina':
+        return <Zap className="h-4 w-4" />;
+      case 'strength':
+        return <Trophy className="h-4 w-4" />;
+      case 'flexibility':
+        return <Target className="h-4 w-4" />;
+      case 'healthyHabits':
+        return <Heart className="h-4 w-4" />;
+      case 'toning':
+        return <Dumbbell className="h-4 w-4" />;
+      default:
+        return <Trophy className="h-4 w-4" />;
+    }
+  };
+  
+  // Get human-readable goal name
+  const getGoalDisplayName = (goal: string) => {
+    switch (goal) {
+      case 'weightLoss':
+        return 'Weight Loss';
+      case 'muscleBuild':
+        return 'Muscle Building';
+      case 'stamina':
+        return 'Stamina & Endurance';
+      case 'strength':
+        return 'Strength Training';
+      case 'flexibility':
+        return 'Flexibility';
+      case 'healthyHabits':
+        return 'Healthy Habits';
+      case 'toning':
+        return 'Body Toning';
+      default:
+        return goal.charAt(0).toUpperCase() + goal.slice(1);
+    }
+  };
+  
+  // Render a fitness goal badge
+  const renderFitnessGoalBadge = (goal: string, index: number) => {
+    return (
+      <Badge 
+        key={`goal-${index}`} 
+        variant="outline"
+        className="flex items-center gap-1 text-xs py-1 px-2 border rounded-full font-medium"
+      >
+        {getFitnessGoalIcon(goal)}
+        <span>{getGoalDisplayName(goal)}</span>
+      </Badge>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="md:flex md:items-center md:justify-between mb-6">
@@ -494,6 +561,41 @@ const GoalsPage = () => {
         </AdaptiveDialogContent>
       </AdaptiveDialog>
       
+      {/* User's Fitness Goals Section */}
+      {fitnessGoalsData && fitnessGoalsData.goals && fitnessGoalsData.goals.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary" />
+              Your Fitness Goals
+            </CardTitle>
+            <CardDescription>
+              These are your selected fitness goals that form the basis of your personalized plan
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {fitnessGoalsData.goals.map((goal, index) => renderFitnessGoalBadge(goal, index))}
+            </div>
+            
+            {fitnessGoalsData.primaryGoal && (
+              <div className="mt-4 p-3 bg-muted rounded-md">
+                <div className="flex items-center gap-2 mb-1">
+                  <Trophy className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Primary Focus</span>
+                </div>
+                <p className="text-sm text-muted-foreground">{getGoalDisplayName(fitnessGoalsData.primaryGoal)}</p>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="pt-2">
+            <p className="text-xs text-muted-foreground">
+              Your system-generated goals below are based on these fitness goals
+            </p>
+          </CardFooter>
+        </Card>
+      )}
+
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
