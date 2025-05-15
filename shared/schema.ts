@@ -413,6 +413,8 @@ export const weights = pgTable("weights", {
   weight: real("weight").notNull(),
   unit: text("unit").default("kg"),
   date: timestamp("date").notNull().defaultNow(),
+  notes: text("notes"),
+  photoUrl: text("photo_url"),
 });
 
 // Create a base schema and then modify it to handle the date format issue
