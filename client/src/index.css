@@ -4,11 +4,7 @@
 
 /* Ensure the app is always full-height and properly sized */
 html, body, #root {
-  /* Use a more reliable height calculation that accommodates iOS safe areas */
-  height: 100%;
-  min-height: 100vh;
-  /* Fill available height in iOS */
-  min-height: -webkit-fill-available;
+  height: calc(100vh - env(safe-area-inset-bottom));
   width: 100%;
   margin: 0;
   padding: 0;
@@ -55,49 +51,30 @@ body, html {
   transform-origin: top center !important;
 }
 
-/* iOS-specific optimizations for standalone mode */
+/* Additional iOS optimizations */
 @supports (-webkit-touch-callout: none) {
-  /* Fix viewport height on iOS */
-  html {
-    height: -webkit-fill-available;
-  }
-  
-  body {
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-  }
-  
-  /* iOS standalone mode improvements */
+  /* iOS only */
   .ios-standalone-mode {
-    /* Apply safe area padding only where needed */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    /* But ensure no extra margins */
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-  
-  /* Content spacing adjustments for iOS */
-  .ios-standalone-mode main {
-    /* Remove the default padding at the top to prevent double-padding */
     padding-top: 0 !important;
-    /* But keep the padding at the bottom for the home indicator */
-    padding-bottom: env(safe-area-inset-bottom);
+    margin-top: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
   
-  /* Stepper compacted for iOS */
-  .ios-stepper {
-    transform: scale(0.85);
-    transform-origin: top center;
-    margin-top: -15px;
-    margin-bottom: -10px;
+  .ios-standalone-mode .onboarding-stepper {
+    margin-top: -20px !important;
+    margin-bottom: -20px !important;
   }
   
-  /* Card adjustments for iOS */
+  /* Fix the large gap in standalone mode */
+  .ios-standalone-mode main {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  /* Completely remove the title gap */
   .ios-card {
-    /* Minimal top padding to avoid unneeded space */
-    padding-top: 5px;
-    margin-top: 0;
+    padding-top: 2px !important;
+    margin-top: 0 !important;
   }
 }
 

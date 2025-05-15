@@ -430,7 +430,7 @@ export default function OnboardingPage() {
       <div className={cn(
         "w-full max-w-5xl px-2 sm:px-4 flex justify-center",
         isIOSStandalone 
-          ? "py-0 items-start mt-0 pt-0" 
+          ? "py-0 items-start mt-0 pt-0 min-h-[calc(100vh-env(safe-area-inset-bottom))]" 
           : "py-2 sm:py-4 items-start sm:items-center min-h-[calc(100vh-80px)]"
       )}>
         <Card className={cn(
