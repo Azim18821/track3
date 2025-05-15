@@ -14,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Trash2, Camera, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Loader2, Trash2, Camera, X, Maximize2 } from "lucide-react";
 
 // Weight entry schema
 const weightEntrySchema = z.object({
@@ -54,6 +55,8 @@ const WeightLog = () => {
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   
   // Handle dialog close to reset form
   const handleDialogOpenChange = (open: boolean) => {
@@ -584,13 +587,25 @@ const WeightLog = () => {
                           </td>
                           <td className="p-2">
                             {entry.imageUrl ? (
-                              <div className="relative w-14 h-14">
+                              <div className="relative w-14 h-14 group">
                                 <img 
                                   src={entry.imageUrl} 
                                   alt="Progress photo" 
                                   className="w-full h-full object-cover rounded-md cursor-pointer"
-                                  onClick={() => window.open(entry.imageUrl, '_blank')}
+                                  onClick={() => {
+                                    setPreviewImageUrl(entry.imageUrl || null);
+                                    setIsImagePreviewOpen(true);
+                                  }}
                                 />
+                                <div 
+                                  className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"
+                                  onClick={() => {
+                                    setPreviewImageUrl(entry.imageUrl || null);
+                                    setIsImagePreviewOpen(true);
+                                  }}
+                                >
+                                  <Maximize2 className="h-5 w-5 text-white" />
+                                </div>
                               </div>
                             ) : (
                               <span className="text-sm text-muted-foreground">None</span>
@@ -645,13 +660,28 @@ const WeightLog = () => {
                       
                       {/* Show image if available */}
                       {entry.imageUrl && (
-                        <div className="border-t">
+                        <div className="border-t relative">
                           <img 
                             src={entry.imageUrl} 
                             alt="Progress" 
                             className="w-full h-auto max-h-48 object-cover"
-                            onClick={() => window.open(entry.imageUrl, '_blank')}
+                            onClick={() => {
+                              setPreviewImageUrl(entry.imageUrl || null);
+                              setIsImagePreviewOpen(true);
+                            }}
                           />
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/70"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImageUrl(entry.imageUrl || null);
+                              setIsImagePreviewOpen(true);
+                            }}
+                          >
+                            <Maximize2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -661,6 +691,29 @@ const WeightLog = () => {
           </CardContent>
         </Card>
       )}
+      
+      {/* Image Preview Modal */}
+      <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
+        <DialogContent className="max-w-3xl p-1 bg-background">
+          {previewImageUrl && (
+            <div className="relative">
+              <img
+                src={previewImageUrl}
+                alt="Weight Progress"
+                className="w-full h-auto rounded"
+              />
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                onClick={() => setIsImagePreviewOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
