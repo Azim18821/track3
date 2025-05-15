@@ -59,7 +59,14 @@ const WeightLogPage = () => {
   // Add new weight entry mutation
   const addWeightMutation = useMutation({
     mutationFn: async (weightData: { weight: number; unit: string; notes?: string }) => {
-      return apiRequest("POST", "/api/weight", weightData);
+      // Format the weight data to match the expected schema
+      const formattedData = {
+        weight: Number(weightData.weight),
+        unit: weightData.unit || "kg",
+        date: format(new Date(), "yyyy-MM-dd") // Use current date as default
+      };
+      console.log("Submitting weight data:", formattedData);
+      return apiRequest("POST", "/api/weight", formattedData);
     },
     onSuccess: () => {
       toast({
