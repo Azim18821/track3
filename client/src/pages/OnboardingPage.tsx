@@ -430,7 +430,7 @@ export default function OnboardingPage() {
       <div className={cn(
         "w-full max-w-5xl px-2 sm:px-4 flex justify-center",
         isIOSStandalone 
-          ? "py-0 items-start mt-0 pt-0 h-auto" 
+          ? "py-0 items-start mt-0 pt-0 min-h-[env(safe-area-inset-bottom)]" 
           : "py-2 sm:py-4 items-start sm:items-center min-h-[calc(100vh-80px)]"
       )}>
         <Card className={cn(
@@ -439,21 +439,21 @@ export default function OnboardingPage() {
           "transition-all duration-500",
           "rounded-lg sm:rounded-xl",
           "w-full overflow-hidden",
-          isIOSStandalone ? "p-1 ios-card mt-0 max-h-fit" : "p-3 sm:p-4 md:p-6"
+          isIOSStandalone ? "p-2 ios-card mt-0" : "p-3 sm:p-4 md:p-6"
         )}>
           <div className={cn(
             "text-center",
-            isIOSStandalone ? "mb-0 scale-90 transform-origin-top" : "mb-3 sm:mb-4 md:mb-6"
+            isIOSStandalone ? "mb-0 scale-95 transform-origin-top" : "mb-3 sm:mb-4 md:mb-6"
           )}>
             <CardTitle className={cn(
               "font-bold text-primary",
-              isIOSStandalone ? "text-md leading-tight" : "text-xl sm:text-2xl md:text-3xl"
+              isIOSStandalone ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"
             )}>
               Shape Your Fitness Journey
             </CardTitle>
             <p className={cn(
               "text-muted-foreground max-w-2xl mx-auto px-1",
-              isIOSStandalone ? "text-xs mt-0 leading-tight" : "text-xs sm:text-sm mt-1"
+              isIOSStandalone ? "text-xs mt-0" : "text-xs sm:text-sm mt-1"
             )}>
               Complete your profile to get a personalized experience tailored to your goals
             </p>
@@ -461,7 +461,7 @@ export default function OnboardingPage() {
           
           <div className={cn(
             "overflow-visible px-0 sm:px-4", 
-            isIOSStandalone ? "m-0 p-0" : "mb-4 sm:mb-6 md:mb-8"
+            isIOSStandalone ? "mb-0 mt-1" : "mb-4 sm:mb-6 md:mb-8"
           )}>
             <div className="max-w-3xl mx-auto">
               <Stepper 
@@ -469,7 +469,7 @@ export default function OnboardingPage() {
                 alternativeLabel 
                 className={cn(
                   "min-w-[300px] w-full onboarding-stepper",
-                  isIOSStandalone && "ios-stepper scale-75 transform-origin-top -mt-3 -mb-3"
+                  isIOSStandalone && "ios-stepper scale-80 transform-origin-top -mt-2 -mb-2"
                 )}
               >
                 {steps.map((label) => (
@@ -489,7 +489,7 @@ export default function OnboardingPage() {
           </div>
           
           <div className={cn(
-            isIOSStandalone ? "-mt-2" : "mt-3 sm:mt-4 md:mt-6"
+            isIOSStandalone ? "mt-0" : "mt-3 sm:mt-4 md:mt-6"
           )}>
             {getStepContent(activeStep)}
           </div>
