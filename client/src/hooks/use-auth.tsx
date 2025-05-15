@@ -51,16 +51,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      if (!res.ok) {
-        const errorData = await res.json();
-        // Check for pending approval response (403)
-        if (res.status === 403 && errorData.message?.includes("pending approval")) {
-          throw new Error("Your account is pending admin approval. Please check back later.");
+      try {
+        // Use fetch directly for more control
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(credentials),
+          credentials: 'include'
+        });
+        
+        // Check for errors
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: "Authentication failed" }));
+          
+          // Check for pending approval response (403)
+          if (response.status === 403 && errorData.message?.includes("pending approval")) {
+            throw new Error("Your account is pending admin approval. Please check back later.");
+          }
+          throw new Error(errorData.message || "Login failed");
         }
-        throw new Error(errorData.message || "Login failed");
+        
+        // Parse and return user data
+        return await response.json();
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
       }
-      return await res.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -97,7 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     onError: (error: Error) => {
-      // Check for pending approval message
+      console.error('Login error details:', error);
+      
+      // Check for specific error types
       if (error.message.includes("pending approval")) {
         toast({
           title: "Account Pending Approval",
@@ -105,10 +125,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
           duration: 6000, // Show for longer
         });
+      } else if (error.message.includes("No user found") || error.message.includes("Invalid credentials") || error.message.includes("Incorrect password")) {
+        toast({
+          title: "Login failed",
+          description: "Invalid username or password. Please try again.",
+          variant: "destructive",
+        });
+      } else if (error.message.includes("Failed to fetch") || error.message.includes("Network")) {
+        toast({
+          title: "Connection error",
+          description: "Could not connect to the server. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Login failed",
-          description: error.message,
+          description: error.message || "An unexpected error occurred. Please try again.",
           variant: "destructive",
         });
       }
