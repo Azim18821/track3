@@ -12,6 +12,8 @@ import { z } from "zod";
 import { eq, sql, desc, and, not, inArray } from "drizzle-orm";
 import { sendPlanReadyEmail, verifyEmailConnection, hasEmailCredentials } from "./emailService";
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { 
   insertMealSchema, 
   insertWorkoutSchema, 
@@ -1309,6 +1311,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ensure the upload directory exists
+  const weightImagesDir = './uploads/weight-images';
+  if (!fs.existsSync(weightImagesDir)) {
+    fs.mkdirSync(weightImagesDir, { recursive: true });
+  }
+  
+  // Configure multer storage for weight image uploads
+  const weightImageStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, weightImagesDir);
+    },
+    filename: (req, file, cb) => {
+      // Generate unique filename with timestamp + random string + original extension
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 12);
+      const originalExtension = file.originalname.split('.').pop() || '';
+      const filename = `${timestamp}-${randomString}.${originalExtension}`;
+      cb(null, filename);
+    }
+  });
+  
+  // Initialize multer upload for weight images with 10MB size limit
+  const weightImageUpload = multer({ 
+    storage: weightImageStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+      // Only allow image files
+      if (!file.mimetype.startsWith('image/')) {
+        return cb(new Error('Only image files are allowed'));
+      }
+      cb(null, true);
+    }
+  });
+
+  // Endpoint for uploading weight images
+  app.post("/api/weight/upload-image", ensureAuthenticated, weightImageUpload.single('image'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image uploaded" });
+      }
+      
+      // Return the URL to access the uploaded image
+      const imageUrl = `/uploads/weight-images/${req.file.filename}`;
+      
+      return res.status(200).json({
+        success: true,
+        imageUrl
+      });
+    } catch (error) {
+      console.error("Error uploading weight image:", error);
+      return res.status(500).json({
+        message: "Failed to upload weight image",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.post("/api/weight", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -1323,7 +1382,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         weight: weightData.weight,
         unit: weightData.unit,
-        date: weightData.date
+        date: weightData.date,
+        notes: weightData.notes,
+        imageUrl: weightData.imageUrl
       });
       
       // Broadcast weight creation through WebSocket
