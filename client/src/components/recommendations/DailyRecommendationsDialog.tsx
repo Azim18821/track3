@@ -90,6 +90,7 @@ interface DailyRecommendationsDialogProps {
 export default function DailyRecommendationsDialog({
   open,
   onOpenChange,
+  externalRecommendations,
 }: DailyRecommendationsDialogProps) {
   const [activeTab, setActiveTab] = useState("workout");
   
@@ -118,11 +119,19 @@ export default function DailyRecommendationsDialog({
     return null;
   }
   
-  const recommendations = data?.recommendations;
-  const noRecommendationsMessage = data?.message;
+  // Use external recommendations if provided, otherwise use data recommendations
+  const recommendations = externalRecommendations || data?.recommendations;
+  const noRecommendationsMessage = !recommendations ? (data?.message || "No recommendations available") : null;
   
   // Handle dialog close when no recommendations available
   const handleDialogOpenChange = (newOpenState: boolean) => {
+    // First priority: handle external recommendations if available
+    if (externalRecommendations) {
+      // If we have external recommendations, always allow the dialog state change
+      onOpenChange(newOpenState);
+      return;
+    }
+    
     // If closing or if no data yet, just pass through the event
     if (!newOpenState || !data) {
       onOpenChange(newOpenState);

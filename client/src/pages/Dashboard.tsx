@@ -452,7 +452,8 @@ const Dashboard = () => {
       {/* Daily AI Recommendations Dialog */}
       <DailyRecommendationsDialog 
         open={showRecommendations} 
-        onOpenChange={setShowRecommendations} 
+        onOpenChange={setShowRecommendations}
+        externalRecommendations={recommendations}
       />
     </div>
   );
