@@ -327,7 +327,8 @@ export async function generateFitnessAnalysis(userId: number, data: OnboardingDa
     
     const profileUpdateResult = await storage.updateUserProfile(userId, {
       // Include all the user profile data from onboarding
-      fitnessGoal: data.fitnessGoal,
+      fitnessGoal: data.fitnessGoal, // Keep for backwards compatibility
+      fitnessGoals: data.fitnessGoals, // Include the array of multiple fitness goals
       bodyType: data.bodyType,
       height: data.height,
       weight: data.weight,

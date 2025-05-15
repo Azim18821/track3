@@ -232,7 +232,8 @@ export function setupAuth(app: Express) {
         'heightUnit', 
         'weightUnit', 
         'age', 
-        'fitnessGoal',
+        'fitnessGoal',        // Legacy single goal field
+        'fitnessGoals',       // New field for multiple fitness goals
         'bodyType',           // Body type from onboarding
         'activityLevel',      // Activity level if collected
         'dietaryRestrictions', // Dietary restrictions if any
@@ -241,7 +242,9 @@ export function setupAuth(app: Express) {
         'targetWeight',        // Target weight if provided
         'fitnessLevel',        // Beginner, intermediate, advanced
         'weeklyBudget',        // Budget for meal planning
-        'aiAnalysis'           // AI-generated fitness analysis
+        'aiAnalysis',          // AI-generated fitness analysis
+        'hasCompletedOnboarding', // Flag for completed onboarding
+        'hasAcknowledgedAnalysis' // Flag for acknowledged analysis
       ];
       
       const filteredUpdates: Record<string, any> = {};
