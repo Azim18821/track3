@@ -239,6 +239,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If we reach here, shouldShowResult is true, so generate recommendations
       const recommendations = await generateDailyRecommendations(userId);
       
+      // Update or create a record of when recommendations were shown to this user
+      const today = new Date();
+      
+      // Check if user already has a recommendation settings record
+      const existingSettings = await db.select()
+        .from(userRecommendations)
+        .where(eq(userRecommendations.userId, userId))
+        .then(results => results[0]);
+      
+      if (existingSettings) {
+        // Update existing record with today's date
+        await db.update(userRecommendations)
+          .set({
+            lastRecommendationDate: today,
+            updatedAt: today
+          })
+          .where(eq(userRecommendations.id, existingSettings.id));
+      } else {
+        // Create new record
+        await db.insert(userRecommendations)
+          .values({
+            userId,
+            lastRecommendationDate: today,
+            autoShowEnabled: true,
+            updatedAt: today
+          });
+      }
+      
       return res.status(200).json({
         show: true,
         recommendations

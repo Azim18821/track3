@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 import { db } from "../db";
-import { meals, workouts, exercises, users, nutritionGoals } from "../../shared/schema";
+import { meals, workouts, exercises, users, nutritionGoals, userRecommendations } from "../../shared/schema";
 import { eq, and, sql, gte, lte } from "drizzle-orm";
-import { format, subDays } from "date-fns";
+import { format, subDays, isToday } from "date-fns";
 
 // Initialize the OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -540,8 +540,7 @@ Based on this information, provide today's personalized workout and nutrition re
 /**
  * Check if recommendations should be shown to a user today
  */
-import { userRecommendations } from "../../../shared/schema";
-import { format, isToday } from "date-fns";
+
 
 export async function shouldShowRecommendations(userId: number): Promise<boolean | { show: boolean, message: string }> {
   try {
