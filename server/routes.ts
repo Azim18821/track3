@@ -1319,12 +1319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Parsed weight data:", weightData);
       
       // Create the weight entry
-      const newWeight = await storage.createWeight({
-        userId,
-        weight: weightData.weight,
-        unit: weightData.unit,
-        date: weightData.date
-      });
+      const newWeight = await storage.createWeight(userId, weightData);
       
       // Broadcast weight creation through WebSocket
       broadcastToUser(userId, 'weight_created', newWeight);
