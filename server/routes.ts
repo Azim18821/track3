@@ -1309,6 +1309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
+  // Create weight entry (with optional photo)
   app.post("/api/weight", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -1319,7 +1322,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Parsed weight data:", weightData);
       
       // Create the weight entry
-      const newWeight = await storage.createWeight(userId, weightData);
+      const newWeight = await storage.createWeight({
+        userId,
+        weight: weightData.weight,
+        unit: weightData.unit,
+        date: weightData.date,
+        photoUrl: weightData.photoUrl
+      });
       
       // Broadcast weight creation through WebSocket
       broadcastToUser(userId, 'weight_created', newWeight);
@@ -4816,6 +4825,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Configure multer storage for weight photo uploads
+  const weightPhotoStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, './uploads/weight_photos');
+    },
+    filename: (req, file, cb) => {
+      // Generate unique filename with timestamp + random string + original extension
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 12);
+      const originalExtension = file.originalname.split('.').pop() || '';
+      const filename = `weight-${timestamp}-${randomString}.${originalExtension}`;
+      cb(null, filename);
+    }
+  });
+  
   // Define file filter to only allow certain file types
   const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const type = req.body.type || 'file';
@@ -4839,6 +4863,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter
   });
   
+  // Define a photo filter specifically for weight tracking photos
+  const weightPhotoFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed for weight progress photos'));
+    }
+    cb(null, true);
+  };
+  
+  // Initialize multer upload for weight photos with 10MB size limit
+  const weightPhotoUpload = multer({ 
+    storage: weightPhotoStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: weightPhotoFilter
+  });
+  
+  // Upload weight progress photo
+  app.post("/api/weight/photo", ensureAuthenticated, weightPhotoUpload.single('photo'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No photo uploaded" });
+      }
+      
+      // Generate the photo URL (relative to the server)
+      const photoUrl = `/uploads/weight_photos/${req.file.filename}`;
+      
+      res.status(201).json({ 
+        success: true,
+        photoUrl
+      });
+    } catch (error) {
+      console.error("Weight photo upload error:", error);
+      res.status(500).json({ 
+        message: "Failed to upload weight progress photo",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Upload file for messaging
   app.post("/api/messages/upload", ensureAuthenticated, mediaUpload.single('file'), async (req: Request, res: Response) => {
     try {

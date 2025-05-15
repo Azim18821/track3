@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { queryClient } from "@/lib/queryClient";
@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Trash2 } from "lucide-react";
+import { Camera, Loader2, Trash2, X } from "lucide-react";
 
 // Weight entry schema
 const weightEntrySchema = z.object({
@@ -34,6 +34,7 @@ const weightEntrySchema = z.object({
     .refine(val => !isNaN(new Date(val).getTime()), {
       message: "Please enter a valid date",
     }),
+  photoUrl: z.string().url().optional(),
 });
 
 type WeightEntry = z.infer<typeof weightEntrySchema>;
@@ -43,19 +44,84 @@ interface Weight {
   weight: number;
   unit: string;
   date: string;
+  photoUrl?: string;
 }
 
 const WeightLog = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Handle dialog close to reset form
   const handleDialogOpenChange = (open: boolean) => {
     if (!open) {
       form.reset();
+      setPhotoPreview(null);
     }
     setIsDialogOpen(open);
   };
   const { toast } = useToast();
+  
+  // Handle photo upload
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "File too large",
+          description: "Please select a photo smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Handle photo removal
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+  
+  // Upload photo to server
+  const uploadPhoto = async (file: File): Promise<string | null> => {
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+      
+      const response = await fetch('/api/weight/photo', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload photo');
+      }
+      
+      const data = await response.json();
+      return data.photoUrl;
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      toast({
+        title: "Photo upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload photo",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   // Form setup
   const form = useForm<WeightEntry>({
@@ -117,47 +183,56 @@ const WeightLog = () => {
   // Add weight entry mutation
   const addWeightMutation = useMutation({
     mutationFn: async (data: WeightEntry) => {
-      // Format the weight data to match the expected schema
-      // Our server now handles the date conversion properly through the Zod schema
-      const formattedData = {
-        weight: Number(data.weight),   // Ensure it's a number
-        unit: data.unit || "kg",      // Provide default if empty
-        date: data.date               // Keep as string, server will convert this to a Date
-      };
-      
-      // Log the actual date value for debugging
-      console.log("Date value being sent:", data.date);
-      
-      console.log("Submitting weight data:", formattedData);
-      
-      const res = await fetch('/api/weight', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formattedData),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Server validation error:", errorData);
-        if (errorData.errors) {
-          // Format validation errors into a readable message
-          const errorMessages = errorData.errors
-            .map((err: any) => `${err.path.join('.')}: ${err.message}`)
-            .join(', ');
-          throw new Error(errorMessages || errorData.message);
+      try {
+        // If there's a photo to upload, upload it first
+        let photoUrl = null;
+        if (photoPreview && fileInputRef.current?.files?.[0]) {
+          photoUrl = await uploadPhoto(fileInputRef.current.files[0]);
         }
-        throw new Error(errorData.message || 'Failed to add weight entry');
+        
+        // Format the weight data to match the expected schema
+        const formattedData = {
+          weight: Number(data.weight),   // Ensure it's a number
+          unit: data.unit || "kg",      // Provide default if empty
+          date: data.date,              // Keep as string, server will convert this to a Date
+          photoUrl: photoUrl            // Add the photo URL if available
+        };
+        
+        console.log("Submitting weight data:", formattedData);
+        
+        const res = await fetch('/api/weight', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formattedData),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("Server validation error:", errorData);
+          if (errorData.errors) {
+            // Format validation errors into a readable message
+            const errorMessages = errorData.errors
+              .map((err: any) => `${err.path.join('.')}: ${err.message}`)
+              .join(', ');
+            throw new Error(errorMessages || errorData.message);
+          }
+          throw new Error(errorData.message || 'Failed to add weight entry');
+        }
+        
+        return res.json();
+      } catch (error) {
+        console.error("Weight logging error:", error);
+        throw error;
       }
-      
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/weight'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
       setIsDialogOpen(false);
       form.reset();
+      setPhotoPreview(null);
       toast({
         title: "Weight logged",
         description: "Your weight has been successfully recorded",
@@ -167,7 +242,7 @@ const WeightLog = () => {
       console.error("Weight logging error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to log weight",
+        description: error instanceof Error ? error.message : "Failed to log weight",
         variant: "destructive",
       });
     }
@@ -271,15 +346,65 @@ const WeightLog = () => {
                     )}
                   />
                   
+                  {/* Photo upload section */}
+                  <div className="space-y-2 my-4">
+                    <Label htmlFor="weight-photo" className="flex items-center gap-2">
+                      <Camera size={16} /> Progress Photo (optional)
+                    </Label>
+                    
+                    {photoPreview ? (
+                      <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
+                        <img 
+                          src={photoPreview} 
+                          alt="Weight progress preview" 
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="absolute top-2 right-2 p-1 bg-background/80 rounded-full"
+                          aria-label="Remove photo"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center w-full">
+                        <label
+                          htmlFor="weight-photo"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Camera className="w-8 h-8 mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              Click to upload a photo
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              (Max 10MB)
+                            </p>
+                          </div>
+                          <input
+                            id="weight-photo"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handlePhotoChange}
+                            ref={fileInputRef}
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     className="w-full"
-                    disabled={addWeightMutation.isPending}
+                    disabled={addWeightMutation.isPending || isUploading}
                   >
-                    {addWeightMutation.isPending ? (
+                    {(addWeightMutation.isPending || isUploading) ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        {isUploading ? "Uploading photo..." : "Saving..."}
                       </>
                     ) : "Save Weight"}
                   </Button>
@@ -310,6 +435,22 @@ const WeightLog = () => {
                 ? `Last updated on ${format(new Date(latestWeight.date), "MMM dd, yyyy")}`
                 : "Log your weight to start tracking"}
             </p>
+            
+            {/* Show latest weight photo if available */}
+            {latestWeight?.photoUrl && (
+              <div className="mt-4">
+                <div 
+                  className="relative w-full h-40 overflow-hidden rounded-md cursor-pointer"
+                  onClick={() => window.open(latestWeight.photoUrl, '_blank')}
+                >
+                  <img 
+                    src={latestWeight.photoUrl} 
+                    alt={`Latest progress photo (${format(new Date(latestWeight.date), "MMM dd, yyyy")})`} 
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              </div>
+            )}
             
             {/* Added quick-access button for mobile */}
             <div className="mt-4 md:hidden">
@@ -411,6 +552,7 @@ const WeightLog = () => {
                       <th className="text-left p-2">Date</th>
                       <th className="text-left p-2">Weight</th>
                       <th className="text-left p-2">Unit</th>
+                      <th className="text-left p-2">Photo</th>
                       <th className="text-right p-2">Actions</th>
                     </tr>
                   </thead>
@@ -422,6 +564,20 @@ const WeightLog = () => {
                           <td className="p-2">{format(new Date(entry.date), "MMMM dd, yyyy")}</td>
                           <td className="p-2">{entry.weight}</td>
                           <td className="p-2">{entry.unit}</td>
+                          <td className="p-2">
+                            {entry.photoUrl ? (
+                              <div className="relative w-12 h-12 overflow-hidden rounded-md cursor-pointer"
+                                   onClick={() => window.open(entry.photoUrl, '_blank')}>
+                                <img 
+                                  src={entry.photoUrl} 
+                                  alt={`Progress on ${format(new Date(entry.date), "MMM dd, yyyy")}`} 
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">No photo</span>
+                            )}
+                          </td>
                           <td className="p-2 text-right">
                             <Button 
                               variant="ghost" 
@@ -444,11 +600,25 @@ const WeightLog = () => {
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map((entry) => (
                     <div key={entry.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{entry.weight} {entry.unit}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(entry.date), "MMM dd, yyyy")}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        {entry.photoUrl && (
+                          <div 
+                            className="relative w-12 h-12 overflow-hidden rounded-md cursor-pointer"
+                            onClick={() => window.open(entry.photoUrl, '_blank')}
+                          >
+                            <img 
+                              src={entry.photoUrl} 
+                              alt={`Progress on ${format(new Date(entry.date), "MMM dd, yyyy")}`} 
+                              className="object-cover w-full h-full"
+                            />
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-medium">{entry.weight} {entry.unit}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(entry.date), "MMM dd, yyyy")}
+                          </span>
+                        </div>
                       </div>
                       <Button 
                         variant="ghost" 
