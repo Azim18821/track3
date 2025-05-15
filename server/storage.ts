@@ -63,6 +63,7 @@ export interface IStorage {
     heightUnit?: string;
     weightUnit?: string;
     fitnessGoal?: string | null;
+    fitnessGoals?: string[]; // Added multiple fitness goals support
     bodyType?: string | null;
     aiAnalysis?: string | null; // JSON string containing the AI analysis
     hasCompletedOnboarding?: boolean;

@@ -123,7 +123,8 @@ function getNextDayDate(day: string): Date {
 }
 
 export interface FitnessPreferences {
-  goal: string; // e.g., "weight loss", "muscle gain", "overall fitness"
+  goal: string; // Legacy field - e.g., "weight loss", "muscle gain", "overall fitness"
+  goals?: string[]; // New field for multiple goals
   currentWeight: number;
   targetWeight?: number;
   unit: string; // e.g., "lbs", "kg"

@@ -2332,7 +2332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate fitness preferences data
       const preferencesSchema = z.object({
-        goal: z.string(),
+        goal: z.string(), // Legacy field for single goal
+        goals: z.array(z.string()).optional(), // New field for multiple goals
         currentWeight: z.number(),
         targetWeight: z.number().optional(),
         unit: z.string(),

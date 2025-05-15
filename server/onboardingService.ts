@@ -11,7 +11,8 @@ export async function checkOnboardingStatus(userId: number): Promise<{
   completed: boolean;
   analysisAcknowledged: boolean;
   data?: {
-    fitnessGoal?: string;
+    fitnessGoal?: string;  // Legacy field for single goal
+    fitnessGoals?: string[]; // New field for multiple goals
     bodyType?: string;
     height?: number;
     weight?: number;
@@ -57,6 +58,7 @@ export async function checkOnboardingStatus(userId: number): Promise<{
       // Return relevant user profile data
       data = {
         fitnessGoal: userProfile.fitnessGoal || undefined,
+        fitnessGoals: userProfile.fitnessGoals || undefined,
         bodyType: userProfile.bodyType || undefined,
         height: userProfile.height || undefined,
         weight: userProfile.weight || undefined,

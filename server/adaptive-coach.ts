@@ -28,7 +28,8 @@ interface AICoachConversation {
     };
     user?: {
       bodyType: string | null;
-      fitnessGoal: string | null;
+      fitnessGoal: string | null; // Legacy field for backward compatibility
+      fitnessGoals: string[] | null; // New field for multiple goals
       height: number | null;
       weight: number | null;
       heightUnit: string | null;
@@ -671,7 +672,9 @@ export async function generateAdaptiveFitnessPlan(
       
       USER PROFILE:
       - Name: ${user.username}
-      - Goal: ${preferences.goal}
+      - Goal${preferences.goals && preferences.goals.length > 1 ? 's' : ''}: ${preferences.goals && preferences.goals.length > 0 
+        ? preferences.goals.join(', ') 
+        : preferences.goal}
       - Current weight: ${preferences.currentWeight} ${preferences.unit}
       - Target weight: ${preferences.targetWeight || "Not specified"}
       - Fitness level: ${preferences.fitnessLevel}
@@ -687,11 +690,17 @@ export async function generateAdaptiveFitnessPlan(
       1. Matches my current fitness level but allows for progression
       2. Addresses any plateaus or challenges based on my data
       3. Creates a nutrition plan that supports my goals
-      4. Provides specific, actionable recommendations
+      4. Provides specific, actionable recommendations that address ALL my fitness goals
       
       IMPORTANT FOR MEAL PLANNING:
-      - For MUSCLE GAIN goals: YOU MUST INCLUDE ALL 6 MEAL TYPES daily: breakfast, lunch, dinner, pre_workout, post_workout, and evening_meal
-      - For WEIGHT LOSS goals: Include only 3 meals per day (breakfast, lunch, dinner) with 0-1 snacks max
+      ${preferences.goals && preferences.goals.includes('muscleBuild') || preferences.goal === 'muscleBuild' ?
+        '- For MUSCLE BUILDING: YOU MUST INCLUDE ALL 6 MEAL TYPES daily: breakfast, lunch, dinner, pre_workout, post_workout, and evening_meal' : ''}
+      ${preferences.goals && preferences.goals.includes('weightLoss') || preferences.goal === 'weightLoss' ?
+        '- For WEIGHT LOSS: Include only 3 meals per day (breakfast, lunch, dinner) with 0-1 snacks max' : ''}
+      ${preferences.goals && (preferences.goals.includes('stamina') || preferences.goals.includes('strength')) || preferences.goal === 'stamina' || preferences.goal === 'strength' ?
+        '- For STAMINA/STRENGTH: Include breakfast, lunch, dinner and 1-2 snacks daily with emphasis on proper timing around workouts' : ''}
+      ${preferences.goals && preferences.goals.includes('weightGain') || preferences.goal === 'weightGain' ?
+        '- For WEIGHT GAIN: Include 5-6 calorie-dense meals daily with balanced macronutrients' : ''}
       - For GENERAL FITNESS: Include breakfast, lunch, dinner and 1-2 snacks daily
       
       The plan should adapt based on my progress data.
