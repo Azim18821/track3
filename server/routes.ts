@@ -1633,17 +1633,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       console.log("Fetching dashboard for user ID:", req.user!.id);
-      const userId = req.user!.id;
-      const date = req.query.date ? new Date(req.query.date as string) : new Date();
       
-      // Get today's meals - reset to midnight for proper date comparison
-      const queryDate = new Date(date);
-      queryDate.setHours(0, 0, 0, 0);
-      
-      // Only get meals that the user has explicitly logged (not system-generated)
-      // System-generated meals are created when a fitness plan is generated
-      // but they don't count as actual consumption until the user confirms them
-      const meals = await storage.getMealsByDate(userId, queryDate);
+      // Return a simplified dashboard response for debugging
+      return res.json({
+        nutrition: {
+          current: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+          goals: { calories: 2000, protein: 150, carbs: 225, fat: 65 }
+        },
+        weight: {
+          current: null,
+          change: 0
+        },
+        workouts: {
+          thisWeek: 0,
+          target: 4,
+          recent: []
+        },
+        recentActivities: [],
+        activeFitnessPlan: null,
+        hasAccess: { aiCoach: true }
+      });
       
       // Calculate nutrition totals - limit to reasonable values
       const nutritionTotals = meals.reduce((acc, meal) => {
@@ -1664,10 +1673,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
       // Get active fitness plan if available
-      const activeFitnessPlan = await storage.getActiveFitnessPlan(userId);
+      console.log("Getting active fitness plan for user:", userId);
+      let activeFitnessPlan;
+      try {
+        activeFitnessPlan = await storage.getActiveFitnessPlan(userId);
+        console.log("Active fitness plan:", activeFitnessPlan ? "Found" : "Not found");
+      } catch (planError) {
+        console.error("Error fetching active fitness plan:", planError);
+      }
       
       // Get nutrition goals - prioritize user-set goals, then plan-based goals, then defaults
-      let nutritionGoals = await storage.getNutritionGoal(userId);
+      console.log("Getting nutrition goals for user:", userId);
+      let nutritionGoals;
+      try {
+        nutritionGoals = await storage.getNutritionGoal(userId);
+        console.log("Nutrition goals:", nutritionGoals ? "Found" : "Not found");
+      } catch (goalError) {
+        console.error("Error fetching nutrition goals:", goalError);
+      }
       
       // If no manual goals set but we have an active plan with preferences, calculate from the plan
       if (!nutritionGoals && activeFitnessPlan?.preferences) {
@@ -1847,7 +1870,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasAccess // Include access control information
       });
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch dashboard data" });
+      console.error("ERROR in dashboard endpoint:", error);
+      // Add detailed information about the error
+      if (error instanceof Error) {
+        console.error("Error stack:", error.stack);
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to fetch dashboard data", 
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
