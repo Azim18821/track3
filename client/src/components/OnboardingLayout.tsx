@@ -28,13 +28,13 @@ export function OnboardingLayout({ children }: OnboardingLayoutProps) {
       
       {/* Main content area with safe area padding when in standalone mode */}
       <main className={`flex-grow flex items-center justify-center px-1 sm:px-4 
-        ${isIOSStandalone ? 'pt-safe' : 'py-2 sm:py-4'}`}>
+        ${isIOSStandalone ? 'pt-safe pb-safe' : 'py-2 sm:py-4'}`}>
         {children}
       </main>
       
       {/* Footer with proper bottom spacing */}
       <footer className={`text-center text-xs text-muted-foreground
-        ${isIOSStandalone ? 'pt-2' : 'py-2 sm:py-3'}`}>
+        ${isIOSStandalone ? 'pb-safe pt-2' : 'py-2 sm:py-3'}`}>
         © {new Date().getFullYear()} TrackEaze • All rights reserved
       </footer>
     </div>
