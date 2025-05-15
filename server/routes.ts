@@ -11,11 +11,7 @@ import { db } from "./db";
 import { z } from "zod";
 import { eq, sql, desc, and, not, inArray } from "drizzle-orm";
 import { sendPlanReadyEmail, verifyEmailConnection, hasEmailCredentials } from "./emailService";
-import { ensureAuthenticated, ensureAdmin, ensureTrainer } from "./auth";
 import multer from 'multer';
-import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-import path from 'path';
 import { 
   insertMealSchema, 
   insertWorkoutSchema, 
@@ -187,48 +183,6 @@ function broadcastToAll(eventType: string, data: any, excludeUserId?: number) {
     console.log(`Broadcast stats: ${deliveredCount} delivered, ${skippedCount} excluded`);
   }
 }
-
-// Make sure uploads directory exists
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
-// Create a subdirectory for weight photos
-const WEIGHT_PHOTOS_DIR = path.join(UPLOADS_DIR, 'weight-photos');
-if (!fs.existsSync(WEIGHT_PHOTOS_DIR)) {
-  fs.mkdirSync(WEIGHT_PHOTOS_DIR, { recursive: true });
-}
-
-// Configure storage for weight photos
-const weightPhotoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, WEIGHT_PHOTOS_DIR);
-  },
-  filename: (req, file, cb) => {
-    const userId = req.user?.id || 'anonymous';
-    // Generate a unique filename with uuid
-    const uniqueId = uuidv4();
-    const extension = path.extname(file.originalname).toLowerCase();
-    cb(null, `user_${userId}_${uniqueId}${extension}`);
-  }
-});
-
-// Create the multer upload middleware
-const weightPhotoUpload = multer({
-  storage: weightPhotoStorage,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB file size limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Allow only images
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed') as any);
-    }
-  }
-});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint for monitoring (used by Render)
@@ -1311,32 +1265,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Photo upload for weight tracking
-  app.post("/api/weight/upload-photo", ensureAuthenticated, weightPhotoUpload.single('photo'), async (req: Request, res: Response) => {
-    try {
-      const file = req.file;
-      if (!file) {
-        return res.status(400).json({ message: 'No file uploaded' });
-      }
-
-      // Return the file path that can be saved with weight entry
-      const relativePath = path.relative(process.cwd(), file.path).replace(/\\/g, '/');
-      const photoUrl = `/${relativePath}`;
-      
-      return res.status(200).json({
-        message: 'Photo uploaded successfully',
-        photoUrl: photoUrl,
-        filename: file.filename
-      });
-    } catch (error: any) {
-      console.error('Weight photo upload error:', error);
-      return res.status(500).json({ 
-        message: 'Photo upload failed', 
-        error: error.message 
-      });
-    }
-  });
-
   // Weight tracking API endpoints
   app.get("/api/weight", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -1390,7 +1318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const weightData = insertWeightSchema.parse(req.body);
       console.log("Parsed weight data:", weightData);
       
-      // Create the weight entry with photo URL if provided
+      // Create the weight entry
       const newWeight = await storage.createWeight(userId, weightData);
       
       // Broadcast weight creation through WebSocket
