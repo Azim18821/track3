@@ -124,10 +124,18 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
 
   // Mutation for adding a meal with multiple items
   const addMealMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
+    mutationFn: async (data: any) => {
       try {
         console.log("Sending meal data to server:", data);
+        // Using the correct path with queryClient
         const response = await apiRequest("POST", "/api/nutrition/multi-item-meal", data);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server error response:", errorText);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
         const responseData = await response.json();
         console.log("Server response:", responseData);
         return responseData;
@@ -141,12 +149,27 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
         title: "Meal added",
         description: "Your meal has been successfully saved",
       });
-      onClose();
+      
       // Invalidate all meal-related queries to ensure data is refreshed
       queryClient.invalidateQueries({ queryKey: ['/api/nutrition/meals'] });
-      // Also invalidate specific date-based queries
-      const mealDate = new Date(data.date);
-      const dateString = mealDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      // Invalidate the date-specific query for today
+      const today = format(new Date(), 'yyyy-MM-dd');
+      queryClient.invalidateQueries({ queryKey: [`/api/nutrition/meals?date=${today}`] });
+      
+      // Also invalidate specific date-based query for the meal date if available
+      if (data && data.meal && data.meal.date) {
+        try {
+          const mealDate = new Date(data.meal.date);
+          const dateString = format(mealDate, 'yyyy-MM-dd');
+          queryClient.invalidateQueries({ queryKey: [`/api/nutrition/meals?date=${dateString}`] });
+        } catch (error) {
+          console.error("Error formatting meal date for query invalidation:", error);
+        }
+      }
+      
+      // Close the dialog after successful submission
+      onClose();
       queryClient.invalidateQueries({ 
         queryKey: [`/api/nutrition/meals?date=${dateString}`] 
       });
