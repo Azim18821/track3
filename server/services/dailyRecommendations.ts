@@ -587,9 +587,14 @@ export async function shouldShowRecommendations(userId: number): Promise<boolean
     
     // If we have a record and they've already seen recommendations today, don't show again
     if (userRecSettings?.lastRecommendationDate) {
+      // Parse the date and handle potential timezone issues
       const lastDateShown = new Date(userRecSettings.lastRecommendationDate);
+      const lastDateFormatted = format(lastDateShown, 'yyyy-MM-dd');
       
-      if (isToday(lastDateShown)) {
+      console.log(`Comparing dates: today=${todayFormatted}, last shown=${lastDateFormatted}`);
+      
+      // Compare the formatted date strings to avoid time-of-day issues
+      if (todayFormatted === lastDateFormatted) {
         return {
           show: false,
           message: "You've already viewed today's recommendations. Check back tomorrow for new recommendations!"
