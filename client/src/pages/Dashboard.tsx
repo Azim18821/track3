@@ -162,7 +162,13 @@ const Dashboard = () => {
                 variant="outline" 
                 size="sm"
                 className="bg-gradient-to-r from-indigo-100 to-purple-100 hover:from-indigo-200 hover:to-purple-200 border-indigo-300"
-                onClick={openRecommendations}
+                onClick={() => {
+                  console.log('Top Recommendations button clicked');
+                  // Use a small timeout to avoid any potential race conditions
+                  setTimeout(() => {
+                    openRecommendations();
+                  }, 10);
+                }}
               >
                 <Sparkles className="h-4 w-4 mr-2 text-indigo-600" />
                 Recommendations
@@ -373,7 +379,13 @@ const Dashboard = () => {
                   <Button 
                     variant="outline"
                     className="mb-2 sm:mb-0 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 bg-indigo-100 dark:bg-indigo-900 hover:bg-indigo-200 dark:hover:bg-indigo-800 rounded-full"
-                    onClick={openRecommendations}
+                    onClick={() => {
+                      console.log('Daily Recommendations button clicked');
+                      // Use a small timeout to avoid any potential race conditions
+                      setTimeout(() => {
+                        openRecommendations();
+                      }, 10);
+                    }}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Daily Recommendations

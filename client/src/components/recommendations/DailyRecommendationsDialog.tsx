@@ -125,8 +125,11 @@ export default function DailyRecommendationsDialog({
   
   // Handle dialog close when no recommendations available
   const handleDialogOpenChange = (newOpenState: boolean) => {
+    console.log('handleDialogOpenChange called with:', newOpenState, 'and externalRecommendations:', !!externalRecommendations);
+    
     // First priority: handle external recommendations if available
     if (externalRecommendations) {
+      console.log('Using external recommendations, allowing dialog state change');
       // If we have external recommendations, always allow the dialog state change
       onOpenChange(newOpenState);
       return;
@@ -134,12 +137,14 @@ export default function DailyRecommendationsDialog({
     
     // If closing or if no data yet, just pass through the event
     if (!newOpenState || !data) {
+      console.log('Dialog closing or no data yet, passing through event');
       onOpenChange(newOpenState);
       return;
     }
     
     // If opening but no recommendations available, close automatically
     if (newOpenState && !data.show && !data.recommendations) {
+      console.log('Opening but no recommendations available, closing automatically');
       // Store the dismissal in localStorage to prevent showing again today
       localStorage.setItem('recommendations_dismissed_date', new Date().toISOString());
       
@@ -155,6 +160,7 @@ export default function DailyRecommendationsDialog({
       onOpenChange(false);
     } else {
       // Normal case - pass through the open state change
+      console.log('Normal case - passing through open state change');
       onOpenChange(newOpenState);
     }
   };
