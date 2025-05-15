@@ -51,15 +51,15 @@ const WeightLogPage = () => {
   const [notes, setNotes] = useState("");
 
   // Fetch weight log data
-  const { data, isLoading, error } = useQuery<WeightLogData>({
-    queryKey: ["/api/weight-log"],
+  const { data: weightEntries = [], isLoading, error } = useQuery<WeightLogEntry[]>({
+    queryKey: ["/api/weight"],
     refetchOnWindowFocus: true
   });
 
   // Add new weight entry mutation
   const addWeightMutation = useMutation({
     mutationFn: async (weightData: { weight: number; unit: string; notes?: string }) => {
-      return apiRequest("POST", "/api/weight-log", weightData);
+      return apiRequest("POST", "/api/weight", weightData);
     },
     onSuccess: () => {
       toast({
@@ -67,7 +67,7 @@ const WeightLogPage = () => {
         description: "Your weight entry has been saved",
       });
       setIsAddDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/weight-log"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/weight"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       
       // Reset form fields
@@ -119,7 +119,7 @@ const WeightLogPage = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/weight-log"] })}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/weight"] })}
           >
             Try Again
           </Button>
@@ -128,13 +128,29 @@ const WeightLogPage = () => {
     );
   }
 
-  const weightData = data || {
-    entries: [],
+  // Process weight entries to create stats
+  const sortedEntries = [...weightEntries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const latestWeight = sortedEntries.length > 0 ? sortedEntries[0] : null;
+  const oldestWeight = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
+  
+  // Calculate weight change if we have at least two entries
+  const weightChange = sortedEntries.length >= 2 
+    ? latestWeight && oldestWeight && latestWeight.unit === oldestWeight.unit
+      ? Number((latestWeight.weight - oldestWeight.weight).toFixed(1))
+      : 0
+    : 0;
+  
+  // Get user's goal weight from profile (if available)
+  // This would typically come from the user's profile
+  const goalWeight = 0; // Placeholder for actual goal weight
+  
+  const weightData = {
+    entries: weightEntries,
     stats: {
-      current: { weight: 0, unit: 'kg' },
-      change: 0,
-      startWeight: 0,
-      goalWeight: 0
+      current: latestWeight ? { weight: latestWeight.weight, unit: latestWeight.unit } : { weight: 0, unit: 'kg' },
+      change: weightChange,
+      startWeight: oldestWeight?.weight,
+      goalWeight: goalWeight
     }
   };
 
