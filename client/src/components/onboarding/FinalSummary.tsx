@@ -144,6 +144,7 @@ export default function FinalSummary({ data, analysis, onComplete, onGeneratePla
       // Call our backend API to generate analysis with OpenAI
       console.log('Sending analysis request with data:', {
         fitnessGoal: data.fitnessGoal,
+        fitnessGoals: data.fitnessGoals,
         bodyType: data.bodyType,
         height: data.height,
         weight: data.weight,
@@ -167,6 +168,7 @@ export default function FinalSummary({ data, analysis, onComplete, onGeneratePla
           credentials: 'include', // Include credentials for authentication
           body: JSON.stringify({
             fitnessGoal: data.fitnessGoal,
+            fitnessGoals: data.fitnessGoals,
             bodyType: data.bodyType,
             height: data.height,
             weight: data.weight,
@@ -291,11 +293,14 @@ export default function FinalSummary({ data, analysis, onComplete, onGeneratePla
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 px-3 py-2 sm:px-6 sm:py-4 text-sm">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Fitness Goal</p>
+            <p className="text-sm text-muted-foreground">Fitness Goals</p>
             <p className="font-medium capitalize">
-              {typeof data.fitnessGoal === 'string' 
-                ? data.fitnessGoal.replace(/([A-Z])/g, ' $1').trim() 
-                : 'Not specified'}
+              {data.fitnessGoals && data.fitnessGoals.length > 0
+                ? data.fitnessGoals.map(goal => 
+                    goal.replace(/([A-Z])/g, ' $1').trim()).join(', ')
+                : typeof data.fitnessGoal === 'string'
+                  ? data.fitnessGoal.replace(/([A-Z])/g, ' $1').trim()
+                  : 'Not specified'}
             </p>
           </div>
           <div className="space-y-1">
