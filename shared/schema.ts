@@ -413,7 +413,6 @@ export const weights = pgTable("weights", {
   weight: real("weight").notNull(),
   unit: text("unit").default("kg"),
   date: timestamp("date").notNull().defaultNow(),
-  photoUrl: text("photo_url"), // Optional photo URL for progress tracking
 });
 
 // Create a base schema and then modify it to handle the date format issue
@@ -427,8 +426,7 @@ export const insertWeightSchema = baseWeightSchema.extend({
   date: z.union([
     z.string().transform(dateStr => new Date(dateStr)),
     z.date()
-  ]),
-  photoUrl: z.string().url().optional(),
+  ])
 });
 
 export type InsertWeight = z.infer<typeof insertWeightSchema>;

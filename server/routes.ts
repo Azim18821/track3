@@ -1309,9 +1309,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
-  // Create weight entry (with optional photo)
   app.post("/api/weight", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
@@ -1322,13 +1319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Parsed weight data:", weightData);
       
       // Create the weight entry
-      const newWeight = await storage.createWeight({
-        userId,
-        weight: weightData.weight,
-        unit: weightData.unit,
-        date: weightData.date,
-        photoUrl: weightData.photoUrl
-      });
+      const newWeight = await storage.createWeight(userId, weightData);
       
       // Broadcast weight creation through WebSocket
       broadcastToUser(userId, 'weight_created', newWeight);
@@ -1629,62 +1620,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard summary endpoint - SIMPLIFIED VERSION FOR DEBUGGING
+  // Dashboard summary endpoint
   app.get("/api/dashboard", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       console.log("Fetching dashboard for user ID:", req.user!.id);
+      const userId = req.user!.id;
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
       
-      // Return a simplified dashboard response for debugging
-      return res.json({
-        nutrition: {
-          current: { calories: 0, protein: 0, carbs: 0, fat: 0 },
-          goals: { calories: 2000, protein: 150, carbs: 225, fat: 65 }
-        },
-        weight: {
-          current: null,
-          change: 0
-        },
-        workouts: {
-          thisWeek: 0,
-          target: 4,
-          recent: []
-        },
-        recentActivities: [],
-        activeFitnessPlan: null,
-        hasAccess: { aiCoach: true }
-      });
-    } catch (error) {
-      console.error("ERROR in simplified dashboard endpoint:", error);
-      if (error instanceof Error) {
-        console.error("Error stack:", error.stack);
-      }
+      // Get today's meals - reset to midnight for proper date comparison
+      const queryDate = new Date(date);
+      queryDate.setHours(0, 0, 0, 0);
       
-      res.status(500).json({ 
-        message: "Failed to fetch dashboard data", 
-        details: error instanceof Error ? error.message : String(error)
-      });
-    }
-  });
+      // Only get meals that the user has explicitly logged (not system-generated)
+      // System-generated meals are created when a fitness plan is generated
+      // but they don't count as actual consumption until the user confirms them
+      const meals = await storage.getMealsByDate(userId, queryDate);
+      
+      // Calculate nutrition totals - limit to reasonable values
+      const nutritionTotals = meals.reduce((acc, meal) => {
+        // Add values only if they are reasonable (less than 10,000 calories per meal)
+        if (meal.calories > 0 && meal.calories < 10000) {
+          acc.calories += meal.calories;
+        }
+        if (meal.protein > 0 && meal.protein < 1000) {
+          acc.protein += meal.protein;
+        }
+        if (meal.carbs > 0 && meal.carbs < 1000) {
+          acc.carbs += meal.carbs;
+        }
+        if (meal.fat > 0 && meal.fat < 1000) {
+          acc.fat += meal.fat;
+        }
+        return acc;
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
       // Get active fitness plan if available
-      console.log("Getting active fitness plan for user:", userId);
-      let activeFitnessPlan;
-      try {
-        activeFitnessPlan = await storage.getActiveFitnessPlan(userId);
-        console.log("Active fitness plan:", activeFitnessPlan ? "Found" : "Not found");
-      } catch (planError) {
-        console.error("Error fetching active fitness plan:", planError);
-      }
+      const activeFitnessPlan = await storage.getActiveFitnessPlan(userId);
       
       // Get nutrition goals - prioritize user-set goals, then plan-based goals, then defaults
-      console.log("Getting nutrition goals for user:", userId);
-      let nutritionGoals;
-      try {
-        nutritionGoals = await storage.getNutritionGoal(userId);
-        console.log("Nutrition goals:", nutritionGoals ? "Found" : "Not found");
-      } catch (goalError) {
-        console.error("Error fetching nutrition goals:", goalError);
-      }
+      let nutritionGoals = await storage.getNutritionGoal(userId);
       
       // If no manual goals set but we have an active plan with preferences, calculate from the plan
       if (!nutritionGoals && activeFitnessPlan?.preferences) {
@@ -1864,16 +1838,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasAccess // Include access control information
       });
     } catch (error) {
-      console.error("ERROR in dashboard endpoint:", error);
-      // Add detailed information about the error
-      if (error instanceof Error) {
-        console.error("Error stack:", error.stack);
-      }
-      
-      res.status(500).json({ 
-        message: "Failed to fetch dashboard data", 
-        details: error instanceof Error ? error.message : String(error)
-      });
+      res.status(500).json({ message: "Failed to fetch dashboard data" });
     }
   });
 
@@ -4851,21 +4816,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Configure multer storage for weight photo uploads
-  const weightPhotoStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, './uploads/weight_photos');
-    },
-    filename: (req, file, cb) => {
-      // Generate unique filename with timestamp + random string + original extension
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 12);
-      const originalExtension = file.originalname.split('.').pop() || '';
-      const filename = `weight-${timestamp}-${randomString}.${originalExtension}`;
-      cb(null, filename);
-    }
-  });
-  
   // Define file filter to only allow certain file types
   const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const type = req.body.type || 'file';
@@ -4889,44 +4839,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter
   });
   
-  // Define a photo filter specifically for weight tracking photos
-  const weightPhotoFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('Only image files are allowed for weight progress photos'));
-    }
-    cb(null, true);
-  };
-  
-  // Initialize multer upload for weight photos with 10MB size limit
-  const weightPhotoUpload = multer({ 
-    storage: weightPhotoStorage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-    fileFilter: weightPhotoFilter
-  });
-  
-  // Upload weight progress photo
-  app.post("/api/weight/photo", ensureAuthenticated, weightPhotoUpload.single('photo'), async (req: Request, res: Response) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No photo uploaded" });
-      }
-      
-      // Generate the photo URL (relative to the server)
-      const photoUrl = `/uploads/weight_photos/${req.file.filename}`;
-      
-      res.status(201).json({ 
-        success: true,
-        photoUrl
-      });
-    } catch (error) {
-      console.error("Weight photo upload error:", error);
-      res.status(500).json({ 
-        message: "Failed to upload weight progress photo",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
-  });
-
   // Upload file for messaging
   app.post("/api/messages/upload", ensureAuthenticated, mediaUpload.single('file'), async (req: Request, res: Response) => {
     try {

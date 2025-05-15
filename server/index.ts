@@ -22,9 +22,6 @@ app.use(express.urlencoded({ extended: false }));
 // Serve static files from the uploads directory
 app.use('/uploads', express.static('uploads'));
 
-// Serve weight progress photos
-app.use('/uploads/weight_photos', express.static('uploads/weight_photos'));
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
