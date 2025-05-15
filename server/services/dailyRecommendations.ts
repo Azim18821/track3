@@ -542,7 +542,7 @@ Based on this information, provide today's personalized workout and nutrition re
  */
 
 
-export async function shouldShowRecommendations(userId: number, forceShow: boolean = false): Promise<boolean | { show: boolean, message: string }> {
+export async function shouldShowRecommendations(userId: number): Promise<boolean | { show: boolean, message: string }> {
   try {
     console.log(`Checking recommendation eligibility for user ${userId}`);
     
@@ -608,18 +608,14 @@ export async function shouldShowRecommendations(userId: number, forceShow: boole
       const skipOncePerDayCheck = false; // DEV MODE: set to true to allow seeing recommendations multiple times per day
       
       // Compare the formatted date strings to avoid time-of-day issues
-      if (!skipOncePerDayCheck && todayFormatted === lastDateFormatted && !forceShow) {
+      if (!skipOncePerDayCheck && todayFormatted === lastDateFormatted) {
         console.log(`User ${userId} already viewed recommendations today, preventing repeat`);
         return {
           show: false,
           message: "You've already viewed today's recommendations. Check back tomorrow for new recommendations!"
         };
       } else {
-        if (forceShow) {
-          console.log(`User ${userId} forcing recommendations to show again`);
-        } else {
-          console.log(`User ${userId} hasn't viewed recommendations today or check is bypassed for testing`);
-        }
+        console.log(`User ${userId} hasn't viewed recommendations today or check is bypassed for testing`);
       }
     } else {
       console.log(`User ${userId} has no previous recommendation record`);

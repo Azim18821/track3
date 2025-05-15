@@ -23,9 +23,6 @@ export function useRecommendations() {
     }
   }, []);
   
-  // State to store manually fetched recommendations
-  const [forcedRecommendations, setForcedRecommendations] = useState<any>(null);
-
   // Query to check if recommendations should be shown
   const { data, isLoading } = useQuery<{
     show: boolean;
@@ -62,54 +59,19 @@ export function useRecommendations() {
   };
   
   // Function to explicitly open recommendations dialog
-  const openRecommendations = async () => {
-    // Make a special request that forces recommendations to show
-    try {
-      console.log('Requesting forced recommendations');
-      const response = await fetch('/api/recommendations/daily?force=true');
-      console.log('Recommendations response status:', response.status);
-      const data = await response.json();
-      console.log('Recommendations response data:', data);
-      
-      if (data.show && data.recommendations) {
-        console.log('Setting forced recommendations and showing dialog');
-        // Store the forced recommendations
-        setForcedRecommendations(data.recommendations);
-        // IMPORTANT: directly set the state instead of using handleDismiss
-        // which would actually close the dialog
-        setTimeout(() => {
-          setShowRecommendations(true);
-          console.log('Dialog should be open now, showRecommendations =', true);
-        }, 100);
-      } else {
-        // If we can't show recommendations, display the reason
-        console.log('Cannot show recommendations:', data.message);
-        alert(data.message || 'No recommendations available');
-      }
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      alert('Failed to load recommendations. Please try again later.');
-    }
+  const openRecommendations = () => {
+    setShowRecommendations(true);
+    // Reset recommendation check flag to ensure we fetch fresh data
+    setShouldCheckRecommendations(true);
   };
   
   // Explicitly type the return object
   return {
     showRecommendations,
-    // Provide a direct setter for the dialog component
-    setShowRecommendations: (value: boolean) => {
-      console.log('setShowRecommendations called with value:', value);
-      if (value === false) {
-        // Only run handleDismiss logic when closing the dialog
-        handleDismiss();
-      } else {
-        // Just set the state when opening the dialog
-        setShowRecommendations(value);
-      }
-    },
+    setShowRecommendations: handleDismiss,
     openRecommendations,
     isLoading,
-    hasRecommendations: data?.show === true || !!forcedRecommendations,
-    // Use forced recommendations if available, otherwise use data recommendations
-    recommendations: forcedRecommendations || data?.recommendations,
+    hasRecommendations: data?.show === true,
+    recommendations: data?.recommendations,
   };
 }

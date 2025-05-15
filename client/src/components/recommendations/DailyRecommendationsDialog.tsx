@@ -83,14 +83,11 @@ interface Recommendation {
 interface DailyRecommendationsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // Optional external recommendations that can be passed directly
-  externalRecommendations?: Recommendation;
 }
 
 export default function DailyRecommendationsDialog({
   open,
   onOpenChange,
-  externalRecommendations,
 }: DailyRecommendationsDialogProps) {
   const [activeTab, setActiveTab] = useState("workout");
   
@@ -119,32 +116,19 @@ export default function DailyRecommendationsDialog({
     return null;
   }
   
-  // Use external recommendations if provided, otherwise use data recommendations
-  const recommendations = externalRecommendations || data?.recommendations;
-  const noRecommendationsMessage = !recommendations ? (data?.message || "No recommendations available") : null;
+  const recommendations = data?.recommendations;
+  const noRecommendationsMessage = data?.message;
   
   // Handle dialog close when no recommendations available
   const handleDialogOpenChange = (newOpenState: boolean) => {
-    console.log('handleDialogOpenChange called with:', newOpenState, 'and externalRecommendations:', !!externalRecommendations);
-    
-    // First priority: handle external recommendations if available
-    if (externalRecommendations) {
-      console.log('Using external recommendations, allowing dialog state change');
-      // If we have external recommendations, always allow the dialog state change
-      onOpenChange(newOpenState);
-      return;
-    }
-    
     // If closing or if no data yet, just pass through the event
     if (!newOpenState || !data) {
-      console.log('Dialog closing or no data yet, passing through event');
       onOpenChange(newOpenState);
       return;
     }
     
     // If opening but no recommendations available, close automatically
     if (newOpenState && !data.show && !data.recommendations) {
-      console.log('Opening but no recommendations available, closing automatically');
       // Store the dismissal in localStorage to prevent showing again today
       localStorage.setItem('recommendations_dismissed_date', new Date().toISOString());
       
@@ -160,7 +144,6 @@ export default function DailyRecommendationsDialog({
       onOpenChange(false);
     } else {
       // Normal case - pass through the open state change
-      console.log('Normal case - passing through open state change');
       onOpenChange(newOpenState);
     }
   };
