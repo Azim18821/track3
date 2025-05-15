@@ -227,12 +227,18 @@ export default function MultiFoodMealDialog({
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <PlusCircle className="h-4 w-4" />
-          Log Multi-Food Meal
-        </Button>
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      ) : (
+        <DialogTrigger asChild>
+          <Button className="gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Log Multi-Food Meal
+          </Button>
+        </DialogTrigger>
+      )}
       
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>

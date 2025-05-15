@@ -185,7 +185,7 @@ export function MealEntriesDisplay({ date, onAddMeal }: MealEntriesDisplayProps)
         </div>
         <MultiFoodMealDialog 
           trigger={
-            <Button onClick={onAddMeal}>
+            <Button>
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Meal
             </Button>
