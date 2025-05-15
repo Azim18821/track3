@@ -66,6 +66,7 @@ import {
 } from "./mealRecipes";
 import stepRouter from './step-routes';
 import pushNotificationRoutes from './pushNotificationRoutes';
+import mealEntriesRoutes from './routes/mealEntriesRoutes';
 import { analyzeFoodImage, RecognizedFood } from './services/foodRecognition';
 
 // Extend the Express Request type to include the user
@@ -287,6 +288,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register trainer routes for managing client nutrition and fitness plans
   app.use('/api/trainer', trainerRoutes);
+  
+  // Register new meal entries routes for multi-food meal logging
+  app.use('/api/meal-entries', mealEntriesRoutes);
   
   // Food image recognition endpoint
   app.post('/api/food/recognize', ensureAuthenticated, async (req: Request, res: Response) => {

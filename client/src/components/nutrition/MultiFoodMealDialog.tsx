@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useCreateMealEntry, MealItem, type MealEntry as MealEntryType } from "@/hooks/use-meal-entries";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Define interfaces for our component
 interface FoodItem {
@@ -26,7 +28,7 @@ interface FoodItem {
   sourceFoodId?: number;
 }
 
-interface MealEntry {
+interface MultiFoodMealEntry {
   name: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   date: Date;
@@ -48,12 +50,12 @@ interface SavedFood {
 
 interface MultiFoodMealDialogProps {
   savedFoods: SavedFood[];
-  onSaveMeal: (meal: MealEntry) => void;
+  onSaveMeal: (meal: MultiFoodMealEntry) => void;
 }
 
 export default function MultiFoodMealDialog({ savedFoods, onSaveMeal }: MultiFoodMealDialogProps) {
   const [open, setOpen] = useState(false);
-  const [mealEntry, setMealEntry] = useState<MealEntry>({
+  const [mealEntry, setMealEntry] = useState<MultiFoodMealEntry>({
     name: "",
     mealType: "breakfast",
     date: new Date(),
@@ -74,10 +76,10 @@ export default function MultiFoodMealDialog({ savedFoods, onSaveMeal }: MultiFoo
   });
   
   // Calculate meal totals
-  const totalCalories = mealEntry.items.reduce((sum, item) => sum + item.calories, 0);
-  const totalProtein = mealEntry.items.reduce((sum, item) => sum + item.protein, 0);
-  const totalCarbs = mealEntry.items.reduce((sum, item) => sum + item.carbs, 0);
-  const totalFat = mealEntry.items.reduce((sum, item) => sum + item.fat, 0);
+  const totalCalories = mealEntry.items.reduce((sum: number, item: FoodItem) => sum + item.calories, 0);
+  const totalProtein = mealEntry.items.reduce((sum: number, item: FoodItem) => sum + item.protein, 0);
+  const totalCarbs = mealEntry.items.reduce((sum: number, item: FoodItem) => sum + item.carbs, 0);
+  const totalFat = mealEntry.items.reduce((sum: number, item: FoodItem) => sum + item.fat, 0);
   
   const handleAddSavedFood = () => {
     if (!selectedFoodId) return;
@@ -140,6 +142,8 @@ export default function MultiFoodMealDialog({ savedFoods, onSaveMeal }: MultiFoo
     });
   };
   
+  const createMealEntry = useCreateMealEntry();
+  
   const handleSaveMeal = () => {
     // Validate meal entry data
     if (!mealEntry.name) {
@@ -160,23 +164,44 @@ export default function MultiFoodMealDialog({ savedFoods, onSaveMeal }: MultiFoo
       return;
     }
     
-    // Call the save callback
-    onSaveMeal(mealEntry);
+    // Format date for API submission
+    const formattedDate = format(mealEntry.date, "yyyy-MM-dd'T'HH:mm:ss");
     
-    // Close dialog and reset form
-    setOpen(false);
-    setMealEntry({
-      name: "",
-      mealType: "breakfast",
-      date: new Date(),
-      notes: "",
-      isPlanned: false,
-      items: []
-    });
+    // Create payload for API
+    const mealEntryPayload = {
+      ...mealEntry,
+      date: formattedDate
+    };
     
-    toast({
-      title: "Meal saved",
-      description: "Your meal has been successfully logged"
+    // Submit to API
+    createMealEntry.mutate(mealEntryPayload, {
+      onSuccess: () => {
+        // Call the save callback
+        onSaveMeal(mealEntry);
+        
+        // Close dialog and reset form
+        setOpen(false);
+        setMealEntry({
+          name: "",
+          mealType: "breakfast",
+          date: new Date(),
+          notes: "",
+          isPlanned: false,
+          items: []
+        });
+        
+        toast({
+          title: "Meal saved",
+          description: "Your meal has been successfully logged"
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: "Error saving meal",
+          description: error.message || "There was an error saving your meal",
+          variant: "destructive"
+        });
+      }
     });
   };
   
@@ -266,7 +291,7 @@ export default function MultiFoodMealDialog({ savedFoods, onSaveMeal }: MultiFoo
               <p className="text-sm text-muted-foreground">No foods added yet</p>
             ) : (
               <ScrollArea className="h-[150px] rounded-md border">
-                {mealEntry.items.map((item, index) => (
+                {mealEntry.items.map((item: FoodItem, index: number) => (
                   <Card key={index} className="mb-2 mx-2 mt-2">
                     <CardContent className="p-3 flex justify-between items-center">
                       <div>
