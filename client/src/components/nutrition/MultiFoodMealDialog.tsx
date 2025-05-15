@@ -350,7 +350,11 @@ export default function MultiFoodMealDialog({
                     <SelectValue placeholder="Select a saved food" />
                   </SelectTrigger>
                   <SelectContent>
-                    {savedFoods.map(food => (
+                    {savedFoodsLoading ? (
+                      <SelectItem value="loading">Loading saved foods...</SelectItem>
+                    ) : savedFoods.length === 0 ? (
+                      <SelectItem value="none">No saved foods found</SelectItem>
+                    ) : savedFoods.map((food: SavedMeal) => (
                       <SelectItem key={food.id} value={food.id.toString()}>
                         {food.name} ({food.calories} cal)
                       </SelectItem>
