@@ -48,6 +48,7 @@ const GoalCard = ({
       "transition-all transform", 
       !disabled && "cursor-pointer hover:scale-105 hover:shadow-lg",
       "border overflow-hidden h-full",
+      isIOSStandalone() ? "min-h-0" : "",
       selected 
         ? "border-primary border-2 shadow-md bg-primary/5 dark:bg-primary/10" 
         : disabled 
@@ -56,17 +57,39 @@ const GoalCard = ({
     )}
     onClick={!disabled ? onClick : undefined}
   >
-    <CardContent className="pt-4 sm:pt-6 pb-4 sm:pb-6 h-full">
-      <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3 h-full">
+    <CardContent className={cn(
+      "h-full",
+      isIOSStandalone() ? "px-2 py-2" : "pt-4 sm:pt-6 pb-4 sm:pb-6"
+    )}>
+      <div className={cn(
+        "flex flex-col items-center text-center h-full",
+        isIOSStandalone() ? "space-y-1" : "space-y-2 sm:space-y-3"
+      )}>
         <div className={cn(
-          "p-3 rounded-full mb-1 transition-colors duration-200",
+          "rounded-full mb-1 transition-colors duration-200",
+          isIOSStandalone() ? "p-2" : "p-3",
           selected ? "bg-primary text-primary-foreground" : "bg-muted dark:bg-muted/80"
         )}>
           {icon}
         </div>
-        <h3 className="font-medium text-base sm:text-lg">{title}</h3>
-        <p className="text-muted-foreground text-xs sm:text-sm">{description}</p>
-        {selected && <Badge variant="outline" className="bg-primary/10">Selected</Badge>}
+        <h3 className={cn(
+          "font-medium",
+          isIOSStandalone() ? "text-sm" : "text-base sm:text-lg"
+        )}>
+          {title}
+        </h3>
+        <p className={cn(
+          "text-muted-foreground",
+          isIOSStandalone() ? "text-2xs leading-tight" : "text-xs sm:text-sm"
+        )}>
+          {description}
+        </p>
+        {selected && <Badge variant="outline" className={cn(
+          "bg-primary/10",
+          isIOSStandalone() ? "text-2xs py-0" : ""
+        )}>
+          Selected
+        </Badge>}
       </div>
     </CardContent>
   </Card>

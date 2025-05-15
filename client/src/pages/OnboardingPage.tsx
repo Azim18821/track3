@@ -438,8 +438,10 @@ export default function OnboardingPage() {
           "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
           "transition-all duration-500",
           "rounded-lg sm:rounded-xl",
-          "w-full overflow-hidden",
-          isIOSStandalone ? "p-2 ios-card mt-0" : "p-3 sm:p-4 md:p-6"
+          "overflow-hidden",
+          isIOSStandalone 
+            ? "p-2 ios-card mt-0 w-[90%] max-w-lg" 
+            : "p-3 sm:p-4 md:p-6 w-[95%] sm:w-[90%] max-w-2xl"
         )}>
           <div className={cn(
             "text-center",
