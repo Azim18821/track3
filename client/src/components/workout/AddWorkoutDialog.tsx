@@ -6,7 +6,6 @@ import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import ExerciseSelector from "./ExerciseSelector";
-import ExerciseAutocomplete from "./ExerciseAutocomplete";
 
 import {
   AdaptiveDialog,
@@ -278,14 +277,22 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                     render={({ field }) => (
                       <FormItem className="mb-3">
                         <FormLabel>Exercise Name</FormLabel>
-                        <FormControl>
-                          <ExerciseAutocomplete
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Start typing to search exercises..."
-                            name={field.name}
-                          />
-                        </FormControl>
+                        <div className="flex gap-2">
+                          <FormControl className="flex-1">
+                            <Input {...field} placeholder="Bench Press" />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            onClick={() => {
+                              setCurrentExerciseIndex(index);
+                              setIsExerciseSelectorOpen(true);
+                            }}
+                          >
+                            <Search className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
