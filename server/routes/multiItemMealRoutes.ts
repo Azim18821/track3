@@ -47,8 +47,26 @@ router.post('/multi-item-meal', async (req: Request, res: Response) => {
 
     const { name, mealType, date, items } = validationResult.data;
 
-    // If no date is provided, use current date
-    const mealDate = date ? new Date(date) : new Date();
+    // Handle date with proper error checking
+    let mealDate;
+    try {
+      // If date is provided, try to parse it
+      if (date) {
+        mealDate = new Date(date);
+        // Check if the date is valid
+        if (isNaN(mealDate.getTime())) {
+          console.error(`Invalid date format received: ${date}`);
+          mealDate = new Date(); // Use current date as fallback
+        }
+      } else {
+        // No date provided, use current date
+        mealDate = new Date();
+      }
+      console.log(`Using meal date: ${mealDate.toISOString()}`);
+    } catch (err) {
+      console.error(`Error parsing date: ${err}`);
+      mealDate = new Date(); // Use current date as fallback
+    }
     
     // Calculate total nutrition values from all items
     const totalNutrition = items.reduce((totals, item) => {

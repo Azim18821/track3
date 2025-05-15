@@ -73,7 +73,7 @@ export interface MealWithItems {
 export const createMealWithItemsSchema = z.object({
   name: z.string().min(1, "Meal name is required"),
   mealType: z.string().min(1, "Meal type is required"),
-  date: z.union([z.string(), z.date()]).optional(),
+  date: z.union([z.string(), z.date(), z.null()]).optional(),
   items: z.array(insertMealItemSchema).min(1, "At least one food item is required"),
 });
 

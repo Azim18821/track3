@@ -300,23 +300,16 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
     // Create a copy of the data to avoid mutating the original
     const submissionData = { ...data };
     
-    // Convert date to proper format if it's a string representation of a date
-    if (submissionData.date && typeof submissionData.date === 'string') {
-      try {
-        // Ensure date is in ISO format
-        const date = new Date(submissionData.date);
-        submissionData.date = date.toISOString();
-      } catch (e) {
-        console.error("Error formatting date:", e);
-      }
-    } else if (submissionData.date instanceof Date) {
-      // Convert Date object to ISO string
-      submissionData.date = submissionData.date.toISOString();
-    }
-    
-    // Add current date if missing
-    if (!submissionData.date) {
-      submissionData.date = new Date().toISOString();
+    // Handle date with better error checking
+    try {
+      // Always use the current date for meal logging
+      const currentDate = new Date();
+      submissionData.date = currentDate.toISOString();
+      console.log(`Using meal date: ${submissionData.date}`);
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      // Fallback to a simple date string if ISO conversion fails
+      submissionData.date = new Date().toString();
     }
     
     // Log the data being sent for debugging
