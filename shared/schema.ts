@@ -257,6 +257,7 @@ export type InsertTrainerMessage = z.infer<typeof insertTrainerMessageSchema>;
 export type TrainerMessage = typeof trainerMessages.$inferSelect;
 
 // Nutritional Entries
+// Legacy meals table - kept for backward compatibility
 export const meals = pgTable("meals", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -272,6 +273,49 @@ export const meals = pgTable("meals", {
   isPlanned: boolean("is_planned").default(false).notNull(), // True if automatically generated from plan, false if user logged it
 });
 
+// New meal entries table - represents a meal occurrence
+export const mealEntries = pgTable("meal_entries", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  mealType: text("meal_type").notNull(), // breakfast, lunch, dinner, snack
+  date: timestamp("date").notNull().defaultNow(),
+  name: text("name").notNull(), // Custom name for the meal
+  notes: text("notes"), // Optional notes about the meal
+  isPlanned: boolean("is_planned").default(false).notNull(), // True if automatically generated from plan
+});
+
+// New meal items table - represents individual food items in a meal
+export const mealItems = pgTable("meal_items", {
+  id: serial("id").primaryKey(),
+  mealEntryId: integer("meal_entry_id").notNull().references(() => mealEntries.id, { onDelete: 'cascade' }),
+  foodName: text("food_name").notNull(),
+  servingSize: real("serving_size").notNull(),
+  servingUnit: text("serving_unit").notNull(),
+  calories: integer("calories").notNull(),
+  protein: real("protein").notNull(),
+  carbs: real("carbs").notNull(),
+  fat: real("fat").notNull(),
+  sourceFoodId: integer("source_food_id"), // Optional reference to a food database item or saved meal
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Define relationships
+export const mealEntriesRelations = relations(mealEntries, ({ one, many }) => ({
+  user: one(users, {
+    fields: [mealEntries.userId],
+    references: [users.id],
+  }),
+  items: many(mealItems),
+}));
+
+export const mealItemsRelations = relations(mealItems, ({ one }) => ({
+  mealEntry: one(mealEntries, {
+    fields: [mealItems.mealEntryId],
+    references: [mealEntries.id],
+  }),
+}));
+
+// Legacy schemas
 export const insertMealSchema = createInsertSchema(meals).omit({
   id: true,
   userId: true,
@@ -279,6 +323,24 @@ export const insertMealSchema = createInsertSchema(meals).omit({
 
 export type InsertMeal = z.infer<typeof insertMealSchema>;
 export type Meal = typeof meals.$inferSelect;
+
+// New schemas
+export const insertMealEntrySchema = createInsertSchema(mealEntries).omit({
+  id: true,
+  userId: true,
+});
+
+export const insertMealItemSchema = createInsertSchema(mealItems).omit({
+  id: true,
+  mealEntryId: true,
+  createdAt: true,
+});
+
+export type InsertMealEntry = z.infer<typeof insertMealEntrySchema>;
+export type MealEntry = typeof mealEntries.$inferSelect;
+
+export type InsertMealItem = z.infer<typeof insertMealItemSchema>;
+export type MealItem = typeof mealItems.$inferSelect;
 
 // Workout Entries
 export const workouts = pgTable("workouts", {
