@@ -179,14 +179,24 @@ const femaleBodyTypes = [
 
 export function BodyTypeSelector({ selectedType, onSelect, userGender }: BodyTypeSelectorProps) {
   // Select which body type array to use based on the user's gender from the first step
-  const bodyTypes = userGender === 'male' ? maleBodyTypes : femaleBodyTypes;
+  // Show female body types for 'female', and male body types for 'male', 'other', or null
+  let bodyTypes = maleBodyTypes;
+  if (userGender === 'female') {
+    bodyTypes = femaleBodyTypes;
+  }
+  // For 'other' gender, we still need to show some body types (using male as default)
+  // In a more comprehensive app, we could have specific body types for 'other' gender
   
   return (
     <div className="space-y-6 sm:space-y-8 py-2 sm:py-4">
       <div className="text-center mb-4 sm:mb-6">
         <h3 className="text-lg sm:text-xl font-medium mb-2 sm:mb-3">What body type do you have?</h3>
         <p className="text-muted-foreground text-sm sm:text-base px-1">
-          Select the body type that most closely resembles yours
+          {userGender === 'female' 
+            ? "Select the female body type that most closely resembles yours" 
+            : userGender === 'male' 
+              ? "Select the male body type that most closely resembles yours"
+              : "Select the body type that most closely resembles yours"}
         </p>
       </div>
 

@@ -1,12 +1,12 @@
 export interface OnboardingData {
-  gender: string;
+  gender: string | null;
   fitnessGoal?: string; // Legacy field for backward compatibility
   fitnessGoals: string[]; // New field for multiple goals selection
-  bodyType: string;
-  height: number;
-  weight: number;
-  heightUnit: string;
-  weightUnit: string;
+  bodyType: string | null;
+  height: number | null;
+  weight: number | null;
+  heightUnit: string | null;
+  weightUnit: string | null;
   dateOfBirth?: string;
   age?: number;
 }
