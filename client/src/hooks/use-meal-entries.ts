@@ -190,7 +190,10 @@ export function calculateMealEntryTotals(entry: MealEntry) {
 export function useSavedMeals() {
   return useQuery<SavedMeal[]>({
     queryKey: ['/api/saved-meals'],
-    queryFn: () => apiRequest('GET', '/api/saved-meals'),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/saved-meals');
+      return response as SavedMeal[];
+    },
   });
 }
 
@@ -200,7 +203,10 @@ export function useSavedMeals() {
 export function useSavedMeal(id: number) {
   return useQuery<SavedMeal>({
     queryKey: ['/api/saved-meals', id],
-    queryFn: () => apiRequest('GET', `/api/saved-meals/${id}`),
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/saved-meals/${id}`);
+      return response as SavedMeal;
+    },
     enabled: !!id,
   });
 }

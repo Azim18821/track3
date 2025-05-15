@@ -84,6 +84,9 @@ export default function MultiFoodMealDialog({
     fat: 0
   });
   
+  // Fetch saved meals
+  const { data: savedFoods = [], isLoading: savedFoodsLoading } = useSavedMeals();
+  
   // Calculate meal totals
   const totalCalories = mealEntry.items.reduce((sum: number, item: FoodItem) => sum + item.calories, 0);
   const totalProtein = mealEntry.items.reduce((sum: number, item: FoodItem) => sum + item.protein, 0);
@@ -93,12 +96,12 @@ export default function MultiFoodMealDialog({
   const handleAddSavedFood = () => {
     if (!selectedFoodId) return;
     
-    const savedFood = savedFoods.find(food => food.id === selectedFoodId);
+    const savedFood = savedFoods.find((food: SavedMeal) => food.id === selectedFoodId);
     if (savedFood) {
       const newItem: FoodItem = {
         foodName: savedFood.name,
         servingSize: savedFood.servingSize,
-        servingUnit: savedFood.servingUnit,
+        servingUnit: "serving", // Default unit for saved meals
         calories: savedFood.calories,
         protein: savedFood.protein,
         carbs: savedFood.carbs,
