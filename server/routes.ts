@@ -11,6 +11,7 @@ import { db } from "./db";
 import { z } from "zod";
 import { eq, sql, desc, and, not, inArray } from "drizzle-orm";
 import { sendPlanReadyEmail, verifyEmailConnection, hasEmailCredentials } from "./emailService";
+import { ensureAuthenticated, ensureAdmin, ensureTrainer } from "./auth";
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';

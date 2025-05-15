@@ -58,7 +58,7 @@ const WeightLogPage = () => {
 
   // Fetch weight log data
   const { data, isLoading, error } = useQuery<WeightLogData>({
-    queryKey: ["/api/weight-log"],
+    queryKey: ["/api/weight"],
     refetchOnWindowFocus: true
   });
 
@@ -111,7 +111,7 @@ const WeightLogPage = () => {
         description: "Your weight entry has been saved",
       });
       setIsAddDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/weight-log"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/weight"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
       
       // Reset form fields
@@ -179,7 +179,7 @@ const WeightLogPage = () => {
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/weight-log"] })}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/weight"] })}
           >
             Try Again
           </Button>
