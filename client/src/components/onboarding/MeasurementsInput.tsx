@@ -29,7 +29,38 @@ interface MeasurementsInputProps {
   onBack: () => void;
 }
 
+// Helper functions for height conversions
+const inchesToFeetAndInches = (totalInches: number) => {
+  const ft = Math.floor(totalInches / 12);
+  const inch = Math.round(totalInches % 12);
+  // If inches is 12, increment feet and set inches to 0
+  if (inch === 12) {
+    return { feet: ft + 1, inches: 0 };
+  }
+  return { feet: ft, inches: inch };
+};
+
+const feetAndInchesToInches = (feet: number, inches: number) => {
+  return (feet * 12) + inches;
+};
+
+const convertHeight = (value: number, fromUnit: string, toUnit: string) => {
+  if (fromUnit === toUnit) return value;
+  
+  if (fromUnit === 'cm' && toUnit === 'inches') {
+    return Math.round(value / 2.54 * 10) / 10; // cm to inches
+  }
+  if (fromUnit === 'inches' && toUnit === 'cm') {
+    return Math.round(value * 2.54); // inches to cm
+  }
+  return value;
+};
+
 export default function MeasurementsInput({ data, onSubmit, onBack }: MeasurementsInputProps) {
+  // For feet and inches input
+  const [feet, setFeet] = useState<number>(5);
+  const [inches, setInches] = useState<number>(8);
+  
   // Create a schema for form validation
   const formSchema = z.object({
     height: z.number({
@@ -81,6 +112,61 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
       gender: data.gender || undefined,
     },
   });
+
+  // Get form field values for monitoring
+  const heightUnit = form.watch('heightUnit');
+  const weightUnit = form.watch('weightUnit');
+  const currentHeight = form.watch('height');
+
+  // Update default values when data changes
+  useEffect(() => {
+    if (data) {
+      form.reset({
+        height: data.height || 170,
+        weight: data.weight || 70,
+        heightUnit: data.heightUnit || 'cm',
+        weightUnit: data.weightUnit || 'kg',
+        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
+        gender: data.gender || undefined,
+      });
+      
+      // Initialize feet and inches from height if unit is inches
+      if (data.heightUnit === 'inches' && data.height) {
+        const { feet: ft, inches: inch } = inchesToFeetAndInches(data.height);
+        setFeet(ft);
+        setInches(inch);
+      }
+    }
+  }, [data]);
+  
+  // Update height when feet/inches change if unit is inches
+  useEffect(() => {
+    if (heightUnit === 'inches') {
+      const totalInches = feetAndInchesToInches(feet, inches);
+      // Only update if there's a meaningful difference to prevent infinite loops
+      if (Math.abs(totalInches - form.getValues('height')) > 0.1) {
+        form.setValue('height', totalInches);
+      }
+    }
+  }, [feet, inches, heightUnit, form]);
+  
+  // Update feet/inches when height or unit changes
+  useEffect(() => {
+    if (heightUnit === 'inches' && currentHeight > 0) {
+      const { feet: ft, inches: inch } = inchesToFeetAndInches(currentHeight);
+      setFeet(ft);
+      setInches(inch);
+    }
+  }, [heightUnit, currentHeight]);
+
+  // Get min/max ranges based on units
+  const getHeightRange = () => {
+    return heightUnit === 'cm' ? [120, 220] : [48, 87];
+  };
+  
+  const getWeightRange = () => {
+    return weightUnit === 'kg' ? [30, 160] : [66, 352];
+  };
 
   // Handle form submission
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
@@ -135,32 +221,6 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
     });
   };
 
-  // Update default values when data changes
-  useEffect(() => {
-    if (data) {
-      form.reset({
-        height: data.height || 170,
-        weight: data.weight || 70,
-        heightUnit: data.heightUnit || 'cm',
-        weightUnit: data.weightUnit || 'kg',
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : undefined,
-        gender: data.gender || undefined,
-      });
-    }
-  }, [data, form.reset]);
-
-  const heightUnit = form.watch('heightUnit');
-  const weightUnit = form.watch('weightUnit');
-  
-  // Get min/max ranges based on units
-  const getHeightRange = () => {
-    return heightUnit === 'cm' ? [120, 220] : [48, 87];
-  };
-  
-  const getWeightRange = () => {
-    return weightUnit === 'kg' ? [30, 160] : [66, 352];
-  };
-
   return (
     <div className="space-y-4 sm:space-y-6 pt-2 sm:pt-4">
       <div className="text-center mb-4 sm:mb-6">
@@ -187,7 +247,14 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                           Height
                         </FormLabel>
                         <div className="flex items-center gap-1">
-                          <span className="text-base sm:text-lg font-semibold">{field.value}</span>
+                          {heightUnit === 'cm' ? (
+                            <span className="text-base sm:text-lg font-semibold">{field.value}</span>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm sm:text-base font-semibold">{feet}'</span>
+                              <span className="text-sm sm:text-base font-semibold">{inches}"</span>
+                            </div>
+                          )}
                           <FormField
                             control={form.control}
                             name="heightUnit"
@@ -202,7 +269,7 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="cm">cm</SelectItem>
-                                    <SelectItem value="inches">inches</SelectItem>
+                                    <SelectItem value="inches">ft/in</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </FormItem>
@@ -210,16 +277,61 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                           />
                         </div>
                       </div>
-                      <FormControl>
-                        <Slider
-                          value={[field.value]}
-                          min={getHeightRange()[0]}
-                          max={getHeightRange()[1]}
-                          step={heightUnit === 'cm' ? 1 : 0.5}
-                          onValueChange={(vals) => field.onChange(vals[0])}
-                          className="py-2 sm:py-3"
-                        />
-                      </FormControl>
+                      
+                      {heightUnit === 'inches' ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <Label className="text-sm">Feet</Label>
+                            <div className="flex-1 max-w-[160px]">
+                              <div className="grid grid-cols-6 gap-1">
+                                {[4, 5, 6, 7, 8, 9].map((ft) => (
+                                  <Button 
+                                    key={ft} 
+                                    type="button"
+                                    size="sm"
+                                    variant={feet === ft ? "default" : "outline"}
+                                    className="h-8 text-xs px-1"
+                                    onClick={() => setFeet(ft)}
+                                  >
+                                    {ft}'
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between gap-2">
+                            <Label className="text-sm">Inches</Label>
+                            <div className="flex-1 max-w-[160px]">
+                              <div className="grid grid-cols-6 gap-1">
+                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((inch) => (
+                                  <Button 
+                                    key={inch} 
+                                    type="button"
+                                    size="sm"
+                                    variant={inches === inch ? "default" : "outline"}
+                                    className="h-8 text-xs px-1"
+                                    onClick={() => setInches(inch)}
+                                  >
+                                    {inch}"
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <FormControl>
+                          <Slider
+                            value={[field.value]}
+                            min={getHeightRange()[0]}
+                            max={getHeightRange()[1]}
+                            step={1}
+                            onValueChange={(vals) => field.onChange(vals[0])}
+                            className="py-2 sm:py-3"
+                          />
+                        </FormControl>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -321,6 +433,7 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                                 return (
                                   <Button 
                                     key={age}
+                                    type="button"
                                     variant="outline" 
                                     size="sm"
                                     onClick={() => {
@@ -369,9 +482,9 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                             </Select>
                           </div>
                           
-                          {/* Month Selector - Simple dropdown */}
+                          {/* Month selector */}
                           <div>
-                            <Label className="text-sm font-medium">Birth Month (Optional)</Label>
+                            <Label className="text-sm font-medium">Birth Month</Label>
                             <Select
                               value={field.value ? (new Date(field.value).getMonth()).toString() : undefined}
                               onValueChange={(value) => {
@@ -381,22 +494,22 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                                   newDate.setMonth(month);
                                   field.onChange(newDate);
                                 } else {
-                                  // If no date is set, use current year -30 and selected month
-                                  field.onChange(new Date(new Date().getFullYear() - 30, month, 1));
+                                  const year = new Date().getFullYear() - 30;
+                                  field.onChange(new Date(year, month, 1));
                                 }
                               }}
                             >
                               <SelectTrigger className="w-full mt-1">
-                                <SelectValue placeholder="Select Month" />
+                                <SelectValue placeholder="Select Birth Month" />
                               </SelectTrigger>
                               <SelectContent>
-                                {['January', 'February', 'March', 'April', 'May', 'June', 
-                                  'July', 'August', 'September', 'October', 'November', 'December'
-                                ].map((month, index) => (
-                                  <SelectItem key={month} value={index.toString()}>
-                                    {month}
-                                  </SelectItem>
-                                ))}
+                                <SelectGroup>
+                                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, i) => (
+                                    <SelectItem key={i} value={i.toString()}>
+                                      {month}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
                               </SelectContent>
                             </Select>
                           </div>
@@ -409,7 +522,7 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
               />
             </div>
 
-            {/* Gender Input */}
+            {/* Gender Display (Read-only) */}
             <div className="w-full sm:w-1/2">
               <FormField
                 control={form.control}
@@ -421,30 +534,29 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
                       Gender
                     </FormLabel>
                     <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="flex flex-row flex-wrap gap-2 sm:gap-3"
-                      >
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="male" id="male" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <FormLabel htmlFor="male" className="font-normal cursor-pointer text-xs sm:text-sm">
+                      <div className="border rounded-md px-3 py-2 h-9 text-sm flex items-center">
+                        {field.value === 'male' && (
+                          <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-blue-500"></span>
                             Male
-                          </FormLabel>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="female" id="female" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <FormLabel htmlFor="female" className="font-normal cursor-pointer text-xs sm:text-sm">
+                          </span>
+                        )}
+                        {field.value === 'female' && (
+                          <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-pink-500"></span>
                             Female
-                          </FormLabel>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value="other" id="other" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <FormLabel htmlFor="other" className="font-normal cursor-pointer text-xs sm:text-sm">
+                          </span>
+                        )}
+                        {field.value === 'other' && (
+                          <span className="flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-purple-500"></span>
                             Other
-                          </FormLabel>
-                        </div>
-                      </RadioGroup>
+                          </span>
+                        )}
+                        {!field.value && (
+                          <span className="text-muted-foreground italic">Please select gender at step 1</span>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -454,18 +566,10 @@ export default function MeasurementsInput({ data, onSubmit, onBack }: Measuremen
           </div>
 
           <div className="flex justify-between pt-2 sm:pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onBack} 
-              className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-3"
-            >
-              <ArrowLeft className="mr-1 h-3 w-3" /> Back
+            <Button type="button" variant="outline" onClick={onBack} className="w-1/3 sm:w-1/4">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
-            <Button 
-              type="submit" 
-              className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
-            >
+            <Button type="submit" className="w-1/2 sm:w-1/3">
               Continue
             </Button>
           </div>
