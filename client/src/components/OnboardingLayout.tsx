@@ -19,16 +19,16 @@ export function OnboardingLayout({ children }: OnboardingLayoutProps) {
 
   return (
     <div className={`ios-screen-container w-full bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-background flex flex-col overflow-x-hidden
-      ${isIOSStandalone ? 'ios-standalone-mode' : 'min-h-screen'}`}>
+      ${isIOSStandalone ? 'ios-standalone-mode no-top-space' : 'min-h-screen'}`}>
       
       {/* Theme toggle - adjusted position for iOS notch */}
-      <div className={`absolute ${isIOSStandalone ? 'top-safe right-4' : 'top-4 right-4'} z-10`}>
+      <div className={`absolute ${isIOSStandalone ? 'top-0 right-4' : 'top-4 right-4'} z-10`}>
         <ThemeToggle />
       </div>
       
-      {/* Main content area with safe area padding when in standalone mode */}
-      <main className={`flex-grow flex items-start sm:items-center justify-center px-1 sm:px-4 
-        ${isIOSStandalone ? 'pt-0 pb-safe' : 'py-2 sm:py-4'}`}>
+      {/* Main content area with no top padding in standalone mode */}
+      <main className={`flex-grow flex justify-center px-1 sm:px-4 
+        ${isIOSStandalone ? 'items-start pt-0 mt-0 top-0' : 'items-start sm:items-center py-2 sm:py-4'}`}>
         {children}
       </main>
       
