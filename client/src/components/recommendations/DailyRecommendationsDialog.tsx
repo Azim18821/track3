@@ -121,14 +121,20 @@ export default function DailyRecommendationsDialog({
   
   // Handle dialog close when no recommendations available
   const handleDialogOpenChange = (newOpenState: boolean) => {
-    // If closing or if no data yet, just pass through the event
-    if (!newOpenState || !data) {
-      onOpenChange(newOpenState);
+    // If we're closing the dialog, just pass it through
+    if (!newOpenState) {
+      onOpenChange(false);
       return;
     }
     
-    // If opening but no recommendations available, close automatically
-    if (newOpenState && !data.show && !data.recommendations) {
+    // If we don't have data yet, wait for it
+    if (!data) {
+      // Keep the current state - don't change anything
+      return;
+    }
+    
+    // If opening but no recommendations available, show message and close automatically
+    if (newOpenState && (!data.show || !data.recommendations)) {
       // Store the dismissal in localStorage to prevent showing again today
       localStorage.setItem('recommendations_dismissed_date', new Date().toISOString());
       
@@ -142,10 +148,11 @@ export default function DailyRecommendationsDialog({
       
       // Keep dialog closed
       onOpenChange(false);
-    } else {
-      // Normal case - pass through the open state change
-      onOpenChange(newOpenState);
+      return;
     }
+    
+    // Normal case with recommendations available - allow dialog to open
+    onOpenChange(newOpenState);
   };
   
   return (

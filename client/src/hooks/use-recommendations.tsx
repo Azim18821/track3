@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 export function useRecommendations() {
   const [shouldCheckRecommendations, setShouldCheckRecommendations] = useState(true);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [autoShowChecked, setAutoShowChecked] = useState(false);
   
   // Check if user has dismissed recommendations today
   useEffect(() => {
@@ -24,7 +25,7 @@ export function useRecommendations() {
   }, []);
   
   // Query to check if recommendations should be shown
-  const { data, isLoading } = useQuery<{
+  const { data, isLoading, refetch } = useQuery<{
     show: boolean;
     recommendations?: any;
     message?: string;
@@ -36,9 +37,12 @@ export function useRecommendations() {
     refetchOnMount: false,
   });
   
-  // Open recommendations dialog if data.show is true
+  // Open recommendations dialog if data.show is true - but only do this ONCE automatically
   useEffect(() => {
-    if (data?.show && data?.recommendations) {
+    // Only auto-show recommendations once per page load
+    if (data?.show && data?.recommendations && !autoShowChecked && shouldCheckRecommendations) {
+      setAutoShowChecked(true); // Mark that we've checked for auto-showing
+      
       // Show the recommendations dialog after a short delay
       // to let the user see the page first
       const timer = setTimeout(() => {
@@ -47,7 +51,7 @@ export function useRecommendations() {
       
       return () => clearTimeout(timer);
     }
-  }, [data]);
+  }, [data, autoShowChecked, shouldCheckRecommendations]);
   
   // Handle dialog close
   const handleDismiss = () => {
@@ -58,11 +62,16 @@ export function useRecommendations() {
     setShouldCheckRecommendations(false);
   };
   
-  // Function to explicitly open recommendations dialog
-  const openRecommendations = () => {
+  // Function to explicitly open recommendations dialog (when user clicks the button)
+  const openRecommendations = async () => {
+    // Manually trigger a refetch if we're opening the dialog via button click
+    if (!shouldCheckRecommendations) {
+      setShouldCheckRecommendations(true);
+      await refetch();
+    }
+    
+    // Open the dialog - data will be handled by the DailyRecommendationsDialog component
     setShowRecommendations(true);
-    // Reset recommendation check flag to ensure we fetch fresh data
-    setShouldCheckRecommendations(true);
   };
   
   // Explicitly type the return object
