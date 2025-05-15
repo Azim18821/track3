@@ -47,24 +47,46 @@ router.post('/multi-item-meal', async (req: Request, res: Response) => {
 
     const { name, mealType, date, items } = validationResult.data;
 
-    // Handle date with proper error checking
+    // Enhanced date handling with better validation and error handling
     let mealDate;
     try {
-      // If date is provided, try to parse it
+      // If date is provided, try to parse it with multiple methods
       if (date) {
+        console.log(`Received date value: ${date}, type: ${typeof date}`);
+        
+        // First try direct Date object creation
         mealDate = new Date(date);
-        // Check if the date is valid
+        
+        // If that fails, try ISO format conversion
         if (isNaN(mealDate.getTime())) {
-          console.error(`Invalid date format received: ${date}`);
-          mealDate = new Date(); // Use current date as fallback
+          console.warn(`Initial date parsing failed, trying alternative methods`);
+          
+          // Try parsing as ISO string if it's a string with T separator
+          if (typeof date === 'string' && date.includes('T')) {
+            const [datePart] = date.split('T');
+            mealDate = new Date(datePart);
+          }
+          
+          // If still invalid, use current date
+          if (isNaN(mealDate.getTime())) {
+            console.error(`Could not parse date "${date}" using any method`);
+            mealDate = new Date();
+          }
         }
       } else {
         // No date provided, use current date
         mealDate = new Date();
       }
-      console.log(`Using meal date: ${mealDate.toISOString()}`);
+      
+      // Final validity check and logging
+      if (isNaN(mealDate.getTime())) {
+        console.error(`Final date validation failed, using current date`);
+        mealDate = new Date();
+      }
+      
+      console.log(`Final meal date used: ${mealDate.toISOString()}`);
     } catch (err) {
-      console.error(`Error parsing date: ${err}`);
+      console.error(`Unexpected error in date processing:`, err);
       mealDate = new Date(); // Use current date as fallback
     }
     

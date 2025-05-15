@@ -110,6 +110,16 @@ const WeeklyNutritionView: React.FC<WeeklyNutritionViewProps> = ({
       });
     }
     
+    // Format the nutrition totals before setting state
+    Object.keys(totals).forEach(date => {
+      totals[date] = {
+        calories: Math.round(totals[date].calories),
+        protein: parseFloat(totals[date].protein.toFixed(1)),
+        carbs: parseFloat(totals[date].carbs.toFixed(1)),
+        fat: parseFloat(totals[date].fat.toFixed(1))
+      };
+    });
+    
     setWeeklyMeals(sortedMeals);
     setDailyTotals(totals);
   }, [meals, currentDate]);

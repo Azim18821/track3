@@ -54,14 +54,22 @@ const NutritionTracker = () => {
     queryKey: ['/api/nutrition/goals'],
   });
 
-  // Calculate daily nutrition totals from meals
-  const dailyTotals = meals.reduce((acc: { calories: number; protein: number; carbs: number; fat: number }, meal: Meal) => {
+  // Calculate daily nutrition totals from meals with proper decimal formatting
+  const rawTotals = meals.reduce((acc: { calories: number; protein: number; carbs: number; fat: number }, meal: Meal) => {
     acc.calories += meal.calories;
     acc.protein += meal.protein;
     acc.carbs += meal.carbs;
     acc.fat += meal.fat;
     return acc;
   }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  
+  // Format the totals with appropriate decimal places
+  const dailyTotals = {
+    calories: Math.round(rawTotals.calories),
+    protein: parseFloat(rawTotals.protein.toFixed(1)),
+    carbs: parseFloat(rawTotals.carbs.toFixed(1)),
+    fat: parseFloat(rawTotals.fat.toFixed(1))
+  };
 
   // Delete meal mutation
   const deleteMealMutation = useMutation({
