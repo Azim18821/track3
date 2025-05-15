@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { mealEntries, mealItems } from '../../shared/schema';
-import { InsertMealEntry, InsertMealItem } from '../../shared/schema';
+import { InsertMealEntry, InsertMealItem, MealEntry, MealItem } from '../../shared/schema';
 
 const router = Router();
 
@@ -63,9 +63,9 @@ router.get('/', ensureAuthenticated, async (req: Request, res: Response) => {
 
     // For each meal entry, get the meal items
     const entriesWithItems = await Promise.all(
-      mealEntries.map(async (entry) => {
-        const items = await db.query.mealItemsTbl.findMany({
-          where: eq(mealItemsTbl.mealEntryId, entry.id!)
+      mealEntriesResult.map(async (entry: MealEntry) => {
+        const items = await db.query.mealItems.findMany({
+          where: eq(mealItems.mealEntryId, entry.id!)
         });
         
         return {
@@ -92,24 +92,24 @@ router.get('/history', ensureAuthenticated, async (req: Request, res: Response) 
 
     // Count total entries
     const countResult = await db.select({ count: sql`count(*)` })
-      .from(mealEntriesTbl)
-      .where(eq(mealEntriesTbl.userId, userId));
+      .from(mealEntries)
+      .where(eq(mealEntries.userId, userId));
       
     const total = Number(countResult[0].count);
 
     // Get paginated entries
-    const mealEntries = await db.query.mealEntriesTbl.findMany({
-      where: eq(mealEntriesTbl.userId, userId),
-      orderBy: [sql`${mealEntriesTbl.date} DESC`],
+    const mealEntriesResult = await db.query.mealEntries.findMany({
+      where: eq(mealEntries.userId, userId),
+      orderBy: [sql`${mealEntries.date} DESC`],
       limit,
       offset
     });
 
     // For each meal entry, get the meal items
     const entriesWithItems = await Promise.all(
-      mealEntries.map(async (entry) => {
-        const items = await db.query.mealItemsTbl.findMany({
-          where: eq(mealItemsTbl.mealEntryId, entry.id!)
+      mealEntriesResult.map(async (entry: MealEntry) => {
+        const items = await db.query.mealItems.findMany({
+          where: eq(mealItems.mealEntryId, entry.id!)
         });
         
         return {
@@ -152,7 +152,7 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
     // Begin a transaction to ensure all operations succeed or fail together
     const result = await db.transaction(async (tx) => {
       // Insert the meal entry
-      const [mealEntry] = await tx.insert(mealEntriesTbl).values({
+      const [mealEntry] = await tx.insert(mealEntries).values({
         userId,
         name,
         mealType,
@@ -171,11 +171,11 @@ router.post('/', ensureAuthenticated, async (req: Request, res: Response) => {
         ...item
       }));
       
-      const mealItems = await tx.insert(mealItemsTbl).values(mealItemsWithEntryId).returning();
+      const insertedItems = await tx.insert(mealItems).values(mealItemsWithEntryId).returning();
       
       return {
         ...mealEntry,
-        items: mealItems
+        items: insertedItems
       };
     });
     
@@ -197,10 +197,10 @@ router.put('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
     }
     
     // Check if the meal exists and belongs to this user
-    const existingMeal = await db.query.mealEntriesTbl.findFirst({
+    const existingMeal = await db.query.mealEntries.findFirst({
       where: and(
-        eq(mealEntriesTbl.id, mealId),
-        eq(mealEntriesTbl.userId, userId)
+        eq(mealEntries.id, mealId),
+        eq(mealEntries.userId, userId)
       )
     });
     
@@ -222,7 +222,7 @@ router.put('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
     // Begin a transaction to ensure all operations succeed or fail together
     const result = await db.transaction(async (tx) => {
       // Update the meal entry
-      const [updatedMeal] = await tx.update(mealEntriesTbl)
+      const [updatedMeal] = await tx.update(mealEntries)
         .set({
           name,
           mealType,
@@ -231,8 +231,8 @@ router.put('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
           isPlanned
         })
         .where(and(
-          eq(mealEntriesTbl.id, mealId),
-          eq(mealEntriesTbl.userId, userId)
+          eq(mealEntries.id, mealId),
+          eq(mealEntries.userId, userId)
         ))
         .returning();
       
@@ -241,8 +241,8 @@ router.put('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
       }
       
       // Delete existing meal items for this entry
-      await tx.delete(mealItemsTbl)
-        .where(eq(mealItemsTbl.mealEntryId, mealId));
+      await tx.delete(mealItems)
+        .where(eq(mealItems.mealEntryId, mealId));
       
       // Insert all new meal items
       const mealItemsWithEntryId = items.map(item => ({
@@ -250,13 +250,13 @@ router.put('/:id', ensureAuthenticated, async (req: Request, res: Response) => {
         ...item
       }));
       
-      const mealItems = await tx.insert(mealItemsTbl)
+      const updatedItems = await tx.insert(mealItems)
         .values(mealItemsWithEntryId)
         .returning();
       
       return {
         ...updatedMeal,
-        items: mealItems
+        items: updatedItems
       };
     });
     
@@ -278,10 +278,10 @@ router.delete('/:id', ensureAuthenticated, async (req: Request, res: Response) =
     }
     
     // Check if the meal exists and belongs to this user
-    const existingMeal = await db.query.mealEntriesTbl.findFirst({
+    const existingMeal = await db.query.mealEntries.findFirst({
       where: and(
-        eq(mealEntriesTbl.id, mealId),
-        eq(mealEntriesTbl.userId, userId)
+        eq(mealEntries.id, mealId),
+        eq(mealEntries.userId, userId)
       )
     });
     
@@ -292,14 +292,14 @@ router.delete('/:id', ensureAuthenticated, async (req: Request, res: Response) =
     // Begin a transaction to ensure all operations succeed or fail together
     await db.transaction(async (tx) => {
       // Delete all meal items for this entry
-      await tx.delete(mealItemsTbl)
-        .where(eq(mealItemsTbl.mealEntryId, mealId));
+      await tx.delete(mealItems)
+        .where(eq(mealItems.mealEntryId, mealId));
       
       // Delete the meal entry
-      await tx.delete(mealEntriesTbl)
+      await tx.delete(mealEntries)
         .where(and(
-          eq(mealEntriesTbl.id, mealId),
-          eq(mealEntriesTbl.userId, userId)
+          eq(mealEntries.id, mealId),
+          eq(mealEntries.userId, userId)
         ));
     });
     
