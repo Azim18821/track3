@@ -1,3 +1,9 @@
+/**
+ * DEPRECATED: This component is no longer used and has been replaced by the new onboarding flow.
+ * It's kept for backward compatibility but will not display any UI.
+ * The new flow is handled directly in the OnboardingPage component.
+ */
+
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
@@ -32,17 +38,10 @@ export default function ProfilePrompt() {
   const hasShownPrompt = localStorage.getItem('profilePromptShown');
 
   useEffect(() => {
-    // Only show the prompt if:
-    // 1. User is logged in
-    // 2. Profile is incomplete
-    // 3. Prompt hasn't been shown in this session
-    // 4. User hasn't completed onboarding
-    if (user && isProfileIncomplete && !hasShownPrompt && !completedOnboarding) {
-      setOpen(true);
-      // Set flag in localStorage to avoid showing the prompt again in this session
-      localStorage.setItem('profilePromptShown', 'true');
-    }
-  }, [user, isProfileIncomplete, hasShownPrompt, completedOnboarding]);
+    // This profile prompt is disabled - we now use the new onboarding flow
+    // The component is kept for backward compatibility, but will never show
+    setOpen(false);
+  }, []);
 
   const handleCompleteProfile = () => {
     setOpen(false);

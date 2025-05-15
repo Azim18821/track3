@@ -61,6 +61,7 @@ import { useServiceWorker } from "@/hooks/use-service-worker";
 import { syncPendingItems } from "@/lib/offlineDB";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
+// DEPRECATED: ProfilePrompt is no longer used with the new onboarding flow
 import ProfilePrompt from "@/components/ProfilePrompt";
 import { PlanGenerationProvider } from "./contexts/PlanGenerationContext";
 
@@ -371,6 +372,7 @@ function App() {
                   </div>
                 <OfflineIndicator />
                 <InstallPrompt />
+                {/* ProfilePrompt is deprecated but kept for backward compatibility */}
                 <ProfilePrompt />
                 <Toaster />
                 </SafeAreaProvider>
