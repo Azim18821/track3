@@ -83,6 +83,8 @@ interface Recommendation {
 interface DailyRecommendationsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Optional external recommendations that can be passed directly
+  externalRecommendations?: Recommendation;
 }
 
 export default function DailyRecommendationsDialog({

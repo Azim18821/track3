@@ -23,6 +23,9 @@ export function useRecommendations() {
     }
   }, []);
   
+  // State to store manually fetched recommendations
+  const [forcedRecommendations, setForcedRecommendations] = useState<any>(null);
+
   // Query to check if recommendations should be shown
   const { data, isLoading } = useQuery<{
     show: boolean;
@@ -59,10 +62,24 @@ export function useRecommendations() {
   };
   
   // Function to explicitly open recommendations dialog
-  const openRecommendations = () => {
-    setShowRecommendations(true);
-    // Reset recommendation check flag to ensure we fetch fresh data
-    setShouldCheckRecommendations(true);
+  const openRecommendations = async () => {
+    // Make a special request that forces recommendations to show
+    try {
+      const response = await fetch('/api/recommendations/daily?force=true');
+      const data = await response.json();
+      
+      if (data.show && data.recommendations) {
+        // Store the forced recommendations
+        setForcedRecommendations(data.recommendations);
+        setShowRecommendations(true);
+      } else {
+        // If we can't show recommendations, display the reason
+        alert(data.message || 'No recommendations available');
+      }
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      alert('Failed to load recommendations. Please try again later.');
+    }
   };
   
   // Explicitly type the return object
@@ -71,7 +88,8 @@ export function useRecommendations() {
     setShowRecommendations: handleDismiss,
     openRecommendations,
     isLoading,
-    hasRecommendations: data?.show === true,
-    recommendations: data?.recommendations,
+    hasRecommendations: data?.show === true || !!forcedRecommendations,
+    // Use forced recommendations if available, otherwise use data recommendations
+    recommendations: forcedRecommendations || data?.recommendations,
   };
 }

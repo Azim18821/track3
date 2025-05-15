@@ -219,8 +219,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       
+      // Check if the force parameter is present
+      const forceShow = req.query.force === 'true';
+      console.log(`Recommendation request for user ${userId}, force=${forceShow}`);
+      
       // Check if recommendations should be shown today
-      const shouldShowResult = await shouldShowRecommendations(userId);
+      const shouldShowResult = await shouldShowRecommendations(userId, forceShow);
       
       // Handle the different return types from shouldShowRecommendations
       if (typeof shouldShowResult === 'object' && !shouldShowResult.show) {
