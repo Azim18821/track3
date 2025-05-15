@@ -2,6 +2,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
 
+// Type for saved meal (for reuse in meal entries)
+export interface SavedMeal {
+  id: number;
+  name: string;
+  description: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  servingSize: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  ingredients: string[];
+}
+
 // Types for meal entries
 export interface MealItem {
   id?: number;
@@ -168,4 +182,25 @@ export function calculateMealEntryTotals(entry: MealEntry) {
     carbs: entry.items.reduce((sum, item) => sum + item.carbs, 0),
     fat: entry.items.reduce((sum, item) => sum + item.fat, 0),
   };
+}
+
+/**
+ * Get all saved meals
+ */
+export function useSavedMeals() {
+  return useQuery<SavedMeal[]>({
+    queryKey: ['/api/saved-meals'],
+    queryFn: () => apiRequest('GET', '/api/saved-meals'),
+  });
+}
+
+/**
+ * Get a specific saved meal by ID
+ */
+export function useSavedMeal(id: number) {
+  return useQuery<SavedMeal>({
+    queryKey: ['/api/saved-meals', id],
+    queryFn: () => apiRequest('GET', `/api/saved-meals/${id}`),
+    enabled: !!id,
+  });
 }

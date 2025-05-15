@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { useCreateMealEntry, MealItem, type MealEntry as MealEntryType } from "@/hooks/use-meal-entries";
+import { useCreateMealEntry, MealItem, type MealEntry as MealEntryType, useSavedMeals, SavedMeal } from "@/hooks/use-meal-entries";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Define interfaces for our component
@@ -28,14 +28,7 @@ interface FoodItem {
   sourceFoodId?: number;
 }
 
-interface MultiFoodMealEntry {
-  name: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  date: Date;
-  notes?: string;
-  isPlanned: boolean;
-  items: FoodItem[];
-}
+// We now use MealEntryType from the hook instead of this interface
 
 interface SavedFood {
   id: number;
@@ -49,19 +42,35 @@ interface SavedFood {
 }
 
 interface MultiFoodMealDialogProps {
-  savedFoods: SavedFood[];
-  onSaveMeal: (meal: MultiFoodMealEntry) => void;
+  trigger?: React.ReactNode;
+  defaultDate?: Date;
+  defaultMeal?: MealEntryType;
+  isOpen?: boolean;
+  setOpen?: (open: boolean) => void;
+  onSaveMeal: (meal: MealEntryType) => void;
 }
 
-export default function MultiFoodMealDialog({ savedFoods, onSaveMeal }: MultiFoodMealDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [mealEntry, setMealEntry] = useState<MultiFoodMealEntry>({
-    name: "",
-    mealType: "breakfast",
-    date: new Date(),
-    notes: "",
-    isPlanned: false,
-    items: []
+export default function MultiFoodMealDialog({ 
+  trigger, 
+  defaultDate, 
+  defaultMeal, 
+  isOpen, 
+  setOpen: setOpenProp, 
+  onSaveMeal 
+}: MultiFoodMealDialogProps) {
+  // Use provided open state or local state
+  const [openState, setOpenState] = useState(false);
+  const open = isOpen !== undefined ? isOpen : openState;
+  const setOpen = setOpenProp || setOpenState;
+  
+  // Initialize meal entry with default values or provided meal
+  const [mealEntry, setMealEntry] = useState<MealEntryType>({
+    name: defaultMeal?.name || "",
+    mealType: defaultMeal?.mealType || "breakfast",
+    date: defaultMeal?.date || defaultDate || new Date(),
+    notes: defaultMeal?.notes || "",
+    isPlanned: defaultMeal?.isPlanned || false,
+    items: defaultMeal?.items || []
   });
   
   const [selectedFoodId, setSelectedFoodId] = useState<number | null>(null);

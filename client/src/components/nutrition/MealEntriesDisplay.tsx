@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useDeleteMealEntry } from "@/hooks/use-meal-entries";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatMacros } from "@/lib/format-macros";
+import { formatMacros } from "../../lib/format-macros";
 
 interface MealEntriesDisplayProps {
   date: Date;
@@ -40,7 +40,7 @@ export function MealEntriesDisplay({ date, onAddMeal }: MealEntriesDisplayProps)
 
   const handleDeleteMeal = async (mealId: number) => {
     try {
-      await deleteMealEntry.mutateAsync(mealId);
+      await deleteMealEntry.mutateAsync({ id: mealId });
       toast({
         title: "Meal deleted",
         description: "Your meal has been successfully deleted"
