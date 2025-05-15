@@ -174,25 +174,43 @@ export default function GoalSelection({
     }
   };
 
+  // Check if we're running in iOS standalone mode
+  const iosMode = isIOSStandalone();
+  
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className={cn(
+      "space-y-4 sm:space-y-5",
+      iosMode && "ios-goal-selection"
+    )}>
       {activeStep === 'goal' ? (
-        <div className="space-y-5 sm:space-y-6 py-2">
-          <div className="text-center mb-3 sm:mb-4">
+        <div className={cn(
+          "space-y-4 sm:space-y-5",
+          iosMode ? "py-1" : "py-2"
+        )}>
+          <div className={cn(
+            "text-center", 
+            iosMode ? "mb-2" : "mb-3 sm:mb-4"
+          )}>
             <h2 className="text-xl sm:text-2xl font-medium mb-2">What are your fitness goals?</h2>
             <p className="text-muted-foreground text-sm max-w-2xl mx-auto px-1">
               Select up to {MAX_GOALS} goals that best represent what you want to achieve.
             </p>
           </div>
 
-          <div className="bg-muted/50 border border-muted-foreground/20 rounded-md p-3 flex items-start mb-4">
+          <div className={cn(
+            "bg-muted/50 border border-muted-foreground/20 rounded-md flex items-start",
+            iosMode ? "p-2 mb-2" : "p-3 mb-4"
+          )}>
             <AlertCircle className="h-4 w-4 mr-2 mt-0.5" />
             <p className="text-xs sm:text-sm">
               For best results, we recommend focusing on no more than {MAX_GOALS} fitness goals at once.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 max-w-4xl mx-auto">
+          <div className={cn(
+            "grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto",
+            iosMode ? "gap-2" : "sm:gap-4"
+          )}>
             {goals.map((goal) => (
               <GoalCard
                 key={goal.value}
@@ -207,47 +225,72 @@ export default function GoalSelection({
             ))}
           </div>
 
-          <div className="flex justify-between mt-5 sm:mt-6 max-w-4xl mx-auto px-1">
+          <div className={cn(
+            "flex justify-between max-w-4xl mx-auto px-1",
+            iosMode ? "mt-3" : "mt-5 sm:mt-6"
+          )}>
             <Button
               variant="outline"
               onClick={handleGoBack}
-              className="flex items-center gap-1 px-3 sm:px-4"
+              className={cn(
+                "flex items-center gap-1",
+                iosMode ? "px-2 py-1 text-xs" : "px-3 sm:px-4"
+              )}
             >
-              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" /> Back
+              <ArrowLeft className={cn(
+                iosMode ? "h-3 w-3" : "h-3 w-3 sm:h-4 sm:w-4"
+              )} /> Back
             </Button>
             
             <Button
-              size="lg"
+              size={iosMode ? "default" : "lg"}
               disabled={selectedGoals.length === 0}
               onClick={handleGoalContinue}
-              className="px-4 sm:px-6 py-2 sm:py-4 h-auto text-sm font-medium"
+              className={cn(
+                "h-auto text-sm font-medium",
+                iosMode ? "px-3 py-1" : "px-4 sm:px-6 py-2 sm:py-4"
+              )}
             >
               Continue <ChevronsRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
       ) : (
-        <div className="space-y-5 sm:space-y-6 py-2">
+        <div className={cn(
+          "space-y-4 sm:space-y-5",
+          iosMode ? "py-1" : "py-2"
+        )}>
           <BodyTypeSelector 
             selectedType={selectedBodyType} 
             onSelect={setSelectedBodyType}
             userGender={userGender}
           />
           
-          <div className="flex justify-between mt-5 sm:mt-6 max-w-4xl mx-auto px-1">
+          <div className={cn(
+            "flex justify-between max-w-4xl mx-auto px-1",
+            iosMode ? "mt-3" : "mt-5 sm:mt-6"
+          )}>
             <Button
               variant="outline"
               onClick={handleGoBack}
-              className="flex items-center gap-1 px-3 sm:px-4"
+              className={cn(
+                "flex items-center gap-1",
+                iosMode ? "px-2 py-1 text-xs" : "px-3 sm:px-4"
+              )}
             >
-              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" /> Back
+              <ArrowLeft className={cn(
+                iosMode ? "h-3 w-3" : "h-3 w-3 sm:h-4 sm:w-4"
+              )} /> Back
             </Button>
             
             <Button
-              size="lg"
+              size={iosMode ? "default" : "lg"}
               disabled={!selectedBodyType}
               onClick={handleBodyTypeContinue}
-              className="px-4 sm:px-6 py-2 sm:py-4 h-auto text-sm font-medium"
+              className={cn(
+                "h-auto text-sm font-medium",
+                iosMode ? "px-3 py-1" : "px-4 sm:px-6 py-2 sm:py-4"
+              )}
             >
               Continue <ChevronsRight className="ml-1 h-4 w-4" />
             </Button>
