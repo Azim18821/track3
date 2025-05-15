@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Scale, Plus, ChevronLeft, Calendar, LineChart, Camera, ImageIcon, X } from "lucide-react";
+import { Loader2, Scale, Plus, ChevronLeft, Calendar, LineChart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,6 @@ interface WeightLogEntry {
   unit: string;
   date: string;
   notes?: string;
-  imageUrl?: string;
 }
 
 interface WeightLogData {
@@ -50,9 +49,6 @@ const WeightLogPage = () => {
   const [newWeight, setNewWeight] = useState("");
   const [unit, setUnit] = useState("kg");
   const [notes, setNotes] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch weight log data
   const { data: weightEntries = [], isLoading, error } = useQuery<WeightLogEntry[]>({
@@ -60,81 +56,14 @@ const WeightLogPage = () => {
     refetchOnWindowFocus: true
   });
 
-  // Image upload mutation
-  const uploadImageMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('image', file);
-      return apiRequest("POST", "/api/weight/upload-image", formData);
-    },
-    onSuccess: (data) => {
-      setImageUrl(data.imageUrl);
-      setIsUploading(false);
-      toast({
-        title: "Image uploaded",
-        description: "Your progress photo was uploaded successfully",
-      });
-    },
-    onError: (error: Error) => {
-      setIsUploading(false);
-      toast({
-        title: "Failed to upload image",
-        description: error.message || "An error occurred while uploading the image",
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select an image file (JPEG, PNG, etc.)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 5MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    uploadImageMutation.mutate(file);
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const removeImage = () => {
-    setImageUrl(undefined);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   // Add new weight entry mutation
   const addWeightMutation = useMutation({
-    mutationFn: async (weightData: { weight: number; unit: string; notes?: string; imageUrl?: string }) => {
+    mutationFn: async (weightData: { weight: number; unit: string; notes?: string }) => {
       // Format the weight data to match the expected schema
       const formattedData = {
         weight: Number(weightData.weight),
         unit: weightData.unit || "kg",
-        date: format(new Date(), "yyyy-MM-dd"), // Use current date as default
-        notes: weightData.notes,
-        imageUrl: weightData.imageUrl
+        date: format(new Date(), "yyyy-MM-dd") // Use current date as default
       };
       console.log("Submitting weight data:", formattedData);
       return apiRequest("POST", "/api/weight", formattedData);
@@ -151,12 +80,6 @@ const WeightLogPage = () => {
       // Reset form fields
       setNewWeight("");
       setNotes("");
-      setImageUrl(undefined);
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     },
     onError: (error: Error) => {
       toast({
@@ -181,8 +104,7 @@ const WeightLogPage = () => {
     const weightData = {
       weight: parseFloat(newWeight),
       unit,
-      notes: notes || undefined,
-      imageUrl: imageUrl
+      notes: notes || undefined
     };
     
     addWeightMutation.mutate(weightData);
@@ -309,63 +231,7 @@ const WeightLogPage = () => {
                   className="mt-1"
                 />
               </div>
-              
-              {/* Image Upload Section */}
-              <div className="mt-2">
-                <Label className="mb-2 block">Progress Photo (optional)</Label>
-                
-                {/* Hidden file input */}
-                <input 
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  capture="environment"
-                />
-                
-                {/* Image preview or upload button */}
-                {imageUrl ? (
-                  <div className="relative mt-2 rounded-md overflow-hidden border border-input">
-                    <img 
-                      src={imageUrl} 
-                      alt="Progress" 
-                      className="w-full h-auto max-h-56 object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-                      onClick={removeImage}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-16 border-dashed gap-2"
-                    onClick={triggerFileInput}
-                    disabled={isUploading}
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Camera className="h-4 w-4" />
-                        Add Photo
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
-              
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-2">
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -471,35 +337,23 @@ const WeightLogPage = () => {
               >
                 <Card className="rounded-xl shadow-sm overflow-hidden border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
                   <CardContent className="p-4">
-                    <div className={`flex ${entry.imageUrl ? 'flex-col' : 'items-center'} justify-between`}>
-                      <div className="flex items-center justify-between w-full">
-                        <div>
-                          <div className="font-semibold text-gray-900 dark:text-gray-100">
-                            {entry.weight} {entry.unit}
-                          </div>
-                          {entry.notes && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {entry.notes}
-                            </p>
-                          )}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
+                          {entry.weight} {entry.unit}
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-muted-foreground flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {format(new Date(entry.date), 'MMM d, yyyy')}
-                          </div>
+                        {entry.notes && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {entry.notes}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {format(new Date(entry.date), 'MMM d, yyyy')}
                         </div>
                       </div>
-                      
-                      {entry.imageUrl && (
-                        <div className="mt-3 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-                          <img 
-                            src={entry.imageUrl} 
-                            alt={`Weight progress on ${format(new Date(entry.date), 'MMM d, yyyy')}`}
-                            className="w-full h-auto max-h-48 object-cover"
-                          />
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>

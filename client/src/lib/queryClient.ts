@@ -30,29 +30,8 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-  options?: {
-    headers?: Record<string, string | undefined>
-  }
-): Promise<any> {
+): Promise<Response> {
   try {
-    // Special case for FormData (file uploads) - don't use offline API
-    if (data instanceof FormData) {
-      if (navigator.onLine) {
-        // For FormData, we don't set the Content-Type header
-        // because the browser will set it with the correct boundary
-        const res = await fetch(url, {
-          method,
-          body: data,
-          credentials: "include",
-        });
-
-        await throwIfResNotOk(res);
-        return await res.json();
-      } else {
-        throw new Error("File uploads are not available offline");
-      }
-    }
-
     // Use offline-aware API request
     const result = await offlineApiRequest(
       method as any, 
@@ -74,7 +53,7 @@ export async function apiRequest(
       });
     }
 
-    return result;
+    return mockResponse;
   } catch (error) {
     // Only log errors in development
     if (import.meta.env.DEV) {
@@ -86,32 +65,15 @@ export async function apiRequest(
 
     // If offline handling failed, attempt regular online request as fallback
     if (navigator.onLine) {
-      // Initialize headers
-      const fetchHeaders: HeadersInit = {};
-      
-      // Only set content-type for JSON data
-      if (data && !(data instanceof FormData)) {
-        fetchHeaders['Content-Type'] = 'application/json';
-      }
-      
-      // Apply any custom headers from options
-      if (options?.headers) {
-        Object.entries(options.headers).forEach(([key, value]) => {
-          if (value !== undefined) {
-            fetchHeaders[key] = value;
-          }
-        });
-      }
-      
       const res = await fetch(url, {
         method,
-        headers: fetchHeaders,
-        body: data instanceof FormData ? data : data ? JSON.stringify(data) : undefined,
+        headers: data ? { "Content-Type": "application/json" } : {},
+        body: data ? JSON.stringify(data) : undefined,
         credentials: "include",
       });
 
       await throwIfResNotOk(res);
-      return await res.json();
+      return res;
     }
 
     // Create a failed response for completely offline scenario
