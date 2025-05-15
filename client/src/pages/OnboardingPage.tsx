@@ -254,10 +254,8 @@ export default function OnboardingPage() {
           // Clear temporary storage after successful save
           localStorage.removeItem('temp_analysis');
           
-          // Set flags in localStorage to indicate onboarding is complete
-          // These prevent the (now deprecated) ProfilePrompt from showing
+          // Set flag in localStorage to indicate onboarding is complete
           localStorage.setItem('onboardingCompleted', 'true');
-          localStorage.setItem('profilePromptShown', 'true');
           
           console.log("Onboarding completed, redirecting to home page...");
           
