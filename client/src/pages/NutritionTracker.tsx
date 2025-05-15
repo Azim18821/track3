@@ -10,7 +10,7 @@ import AddMultiItemMealDialog from "@/components/nutrition/AddMultiItemMealDialo
 import NutritionGoalsForm from "@/components/nutrition/NutritionGoalsForm";
 import WeeklyNutritionView from "@/components/nutrition/WeeklyNutritionView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Calendar, ListChecks, BarChart3, UtensilsCrossed } from "lucide-react";
+import { PlusCircle, Calendar, ListChecks, BarChart3, UtensilsCrossed, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu,
@@ -144,13 +144,26 @@ const NutritionTracker = () => {
           </h2>
         </div>
         <div className="mt-4 flex sm:mt-0 sm:ml-4">
-          <Button
-            onClick={() => setIsAddMealOpen(true)}
-            className="flex items-center gap-1"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Add Meal
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="flex items-center gap-1"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add Meal
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsAddMealOpen(true)} className="cursor-pointer">
+                <Utensils className="mr-2 h-4 w-4" />
+                <span>Single Food Item</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsAddMultiItemMealOpen(true)} className="cursor-pointer">
+                <UtensilsCrossed className="mr-2 h-4 w-4" />
+                <span>Complete Meal (Multiple Items)</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -217,7 +230,7 @@ const NutritionTracker = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add Meal Dialog */}
+      {/* Add Single Food Item Dialog */}
       <AddMealDialog 
         isOpen={isAddMealOpen} 
         onClose={() => {
@@ -225,6 +238,16 @@ const NutritionTracker = () => {
           // After adding a meal, switch to weekly view
           setActiveTab("weekly");
         }} 
+      />
+
+      {/* Add Multi-Item Meal Dialog */}
+      <AddMultiItemMealDialog
+        isOpen={isAddMultiItemMealOpen}
+        onClose={() => {
+          setIsAddMultiItemMealOpen(false);
+          // After adding a meal, switch to weekly view
+          setActiveTab("weekly");
+        }}
       />
     </div>
   );
