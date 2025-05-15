@@ -438,32 +438,32 @@ export default function OnboardingPage() {
           "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
           "transition-all duration-500",
           "rounded-lg sm:rounded-xl",
-          "overflow-hidden",
+          "overflow-hidden w-full",
           isIOSStandalone 
-            ? "p-2 ios-card mt-0 w-[90%] max-w-lg" 
-            : "p-3 sm:p-4 md:p-6 w-[95%] sm:w-[90%] max-w-2xl"
+            ? "p-2 ios-card mt-0 max-h-[560px]" 
+            : "p-3 sm:p-4 md:p-6"
         )}>
           <div className={cn(
             "text-center",
-            isIOSStandalone ? "mb-0 scale-95 transform-origin-top" : "mb-3 sm:mb-4 md:mb-6"
+            isIOSStandalone ? "mb-0 scale-90 transform-origin-top" : "mb-3 sm:mb-4 md:mb-6"
           )}>
             <CardTitle className={cn(
               "font-bold text-primary",
-              isIOSStandalone ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"
+              isIOSStandalone ? "text-base" : "text-xl sm:text-2xl md:text-3xl"
             )}>
               Shape Your Fitness Journey
             </CardTitle>
             <p className={cn(
               "text-muted-foreground max-w-2xl mx-auto px-1",
-              isIOSStandalone ? "text-xs mt-0" : "text-xs sm:text-sm mt-1"
+              isIOSStandalone ? "text-2xs mt-0 leading-tight" : "text-xs sm:text-sm mt-1"
             )}>
-              Complete your profile to get a personalized experience tailored to your goals
+              Complete your profile to get a personalized experience
             </p>
           </div>
           
           <div className={cn(
             "overflow-visible px-0 sm:px-4", 
-            isIOSStandalone ? "mb-0 mt-1" : "mb-4 sm:mb-6 md:mb-8"
+            isIOSStandalone ? "mb-0 mt-0" : "mb-4 sm:mb-6 md:mb-8"
           )}>
             <div className="max-w-3xl mx-auto">
               <Stepper 
@@ -471,7 +471,7 @@ export default function OnboardingPage() {
                 alternativeLabel 
                 className={cn(
                   "min-w-[300px] w-full onboarding-stepper",
-                  isIOSStandalone && "ios-stepper scale-80 transform-origin-top -mt-2 -mb-2"
+                  isIOSStandalone && "ios-stepper scale-70 transform-origin-top -mt-3 -mb-4"
                 )}
               >
                 {steps.map((label) => (

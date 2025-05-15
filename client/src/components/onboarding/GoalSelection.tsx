@@ -231,8 +231,8 @@ export default function GoalSelection({
           </div>
 
           <div className={cn(
-            "grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto",
-            iosMode ? "gap-2" : "sm:gap-4"
+            "grid grid-cols-2 md:grid-cols-3 max-w-4xl mx-auto",
+            iosMode ? "gap-1" : "gap-3 sm:gap-4"
           )}>
             {goals.map((goal) => (
               <GoalCard

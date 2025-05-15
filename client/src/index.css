@@ -31,13 +31,16 @@ body, html {
   margin-bottom: 0 !important;
   padding-top: 4px !important;
   padding-bottom: 4px !important;
+  max-height: 520px !important;
+  overflow-y: auto !important;
 }
 
 .ios-stepper {
-  transform: scale(0.75) !important;
+  transform: scale(0.65) !important;
   transform-origin: top center !important;
-  margin-top: -10px !important;
-  margin-bottom: -10px !important;
+  margin-top: -15px !important;
+  margin-bottom: -15px !important;
+  height: auto !important;
 }
 
 /* Extra small text for iOS */
