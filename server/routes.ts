@@ -1629,7 +1629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard summary endpoint
+  // Dashboard summary endpoint - SIMPLIFIED VERSION FOR DEBUGGING
   app.get("/api/dashboard", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
       console.log("Fetching dashboard for user ID:", req.user!.id);
@@ -1653,24 +1653,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeFitnessPlan: null,
         hasAccess: { aiCoach: true }
       });
+    } catch (error) {
+      console.error("ERROR in simplified dashboard endpoint:", error);
+      if (error instanceof Error) {
+        console.error("Error stack:", error.stack);
+      }
       
-      // Calculate nutrition totals - limit to reasonable values
-      const nutritionTotals = meals.reduce((acc, meal) => {
-        // Add values only if they are reasonable (less than 10,000 calories per meal)
-        if (meal.calories > 0 && meal.calories < 10000) {
-          acc.calories += meal.calories;
-        }
-        if (meal.protein > 0 && meal.protein < 1000) {
-          acc.protein += meal.protein;
-        }
-        if (meal.carbs > 0 && meal.carbs < 1000) {
-          acc.carbs += meal.carbs;
-        }
-        if (meal.fat > 0 && meal.fat < 1000) {
-          acc.fat += meal.fat;
-        }
-        return acc;
-      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      res.status(500).json({ 
+        message: "Failed to fetch dashboard data", 
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
       // Get active fitness plan if available
       console.log("Getting active fitness plan for user:", userId);
