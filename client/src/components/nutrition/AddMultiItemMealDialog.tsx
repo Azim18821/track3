@@ -125,8 +125,16 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
   // Mutation for adding a meal with multiple items
   const addMealMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const response = await apiRequest("POST", "/api/nutrition/multi-item-meal", data);
-      return await response.json();
+      try {
+        console.log("Sending meal data to server:", data);
+        const response = await apiRequest("POST", "/api/nutrition/multi-item-meal", data);
+        const responseData = await response.json();
+        console.log("Server response:", responseData);
+        return responseData;
+      } catch (error) {
+        console.error("Error in meal mutation:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       toast({
@@ -312,10 +320,27 @@ const AddMultiItemMealDialog: React.FC<AddMultiItemMealDialogProps> = ({
       submissionData.date = new Date().toString();
     }
     
-    // Log the data being sent for debugging
-    console.log("Submitting meal data:", submissionData);
+    // Use the same structure as the form schema expects
+    // This keeps the field names consistent for the API call
+    const apiData = {
+      mealName: submissionData.mealName,
+      mealType: submissionData.mealType,
+      date: submissionData.date,
+      foodItems: submissionData.foodItems.map(item => ({
+        name: item.name,
+        servingSize: item.servingSize,
+        servingUnit: item.servingUnit,
+        calories: Math.round(item.calories), // Round to nearest integer
+        protein: parseFloat(item.protein.toFixed(1)), // Limit to 1 decimal place
+        carbs: parseFloat(item.carbs.toFixed(1)), // Limit to 1 decimal place
+        fat: parseFloat(item.fat.toFixed(1)) // Limit to 1 decimal place
+      }))
+    };
     
-    addMealMutation.mutate(submissionData);
+    // Log the data being sent to the API
+    console.log("Submitting meal data to API:", apiData);
+    
+    addMealMutation.mutate(apiData);
   };
 
   // State to track the selected tab

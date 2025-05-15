@@ -98,16 +98,16 @@ const MealList: React.FC<MealListProps> = ({
                         <div className="text-sm text-gray-500 dark:text-gray-400">{meal.name}</div>
                         <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
-                            {meal.calories} cal
+                            {Math.round(meal.calories)} cal
                           </span>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 dark:bg-secondary-900/60 text-secondary-800 dark:text-secondary-300">
-                            {meal.protein}g protein
+                            {parseFloat(meal.protein).toFixed(1)}g protein
                           </span>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300">
-                            {meal.carbs}g carbs
+                            {parseFloat(meal.carbs).toFixed(1)}g carbs
                           </span>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300">
-                            {meal.fat}g fat
+                            {parseFloat(meal.fat).toFixed(1)}g fat
                           </span>
                         </div>
                       </div>
