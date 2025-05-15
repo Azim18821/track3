@@ -464,12 +464,16 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="breakfast">Breakfast</SelectItem>
+                      <SelectItem value="morning_snack">Morning Snack</SelectItem>
                       <SelectItem value="lunch">Lunch</SelectItem>
+                      <SelectItem value="afternoon_snack">Afternoon Snack</SelectItem>
                       <SelectItem value="dinner">Dinner</SelectItem>
-                      <SelectItem value="snack">Snack</SelectItem>
+                      <SelectItem value="evening_snack">Evening Snack</SelectItem>
+                      <SelectItem value="dessert">Dessert</SelectItem>
+                      <SelectItem value="drink">Drink/Beverage</SelectItem>
+                      <SelectItem value="snack">General Snack</SelectItem>
                       <SelectItem value="pre-workout">Pre-Workout</SelectItem>
                       <SelectItem value="post-workout">Post-Workout</SelectItem>
-                      <SelectItem value="evening meal">Evening Meal</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -480,11 +484,16 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
         </Form>
         
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="manual" className="flex items-center gap-2">
               <Edit className="h-4 w-4" />
               <span className="hidden sm:inline">Manual Entry</span>
               <span className="inline sm:hidden text-xs">Manual</span>
+            </TabsTrigger>
+            <TabsTrigger value="quick" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Quick-Add</span>
+              <span className="inline sm:hidden text-xs">Quick</span>
             </TabsTrigger>
             <TabsTrigger value="photo" className="flex items-center gap-2">
               <Camera className="h-4 w-4" />
@@ -573,8 +582,18 @@ const AddMealDialog: React.FC<AddMealDialogProps> = ({
                             <SelectItem value="serving">serving</SelectItem>
                             <SelectItem value="g">g</SelectItem>
                             <SelectItem value="oz">oz</SelectItem>
+                            <SelectItem value="ml">ml</SelectItem>
                             <SelectItem value="cup">cup</SelectItem>
                             <SelectItem value="tbsp">tbsp</SelectItem>
+                            <SelectItem value="tsp">tsp</SelectItem>
+                            <SelectItem value="piece">piece</SelectItem>
+                            <SelectItem value="slice">slice</SelectItem>
+                            <SelectItem value="unit">unit</SelectItem>
+                            <SelectItem value="scoop">scoop</SelectItem>
+                            <SelectItem value="bottle">bottle</SelectItem>
+                            <SelectItem value="can">can</SelectItem>
+                            <SelectItem value="plate">plate</SelectItem>
+                            <SelectItem value="bowl">bowl</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
