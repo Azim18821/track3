@@ -6,14 +6,22 @@ import { useToast } from "@/hooks/use-toast";
 import NutritionSummary from "@/components/nutrition/NutritionSummary";
 import MealList from "@/components/nutrition/MealList";
 import AddMealDialog from "@/components/nutrition/AddMealDialog";
+import AddMultiItemMealDialog from "@/components/nutrition/AddMultiItemMealDialog";
 import NutritionGoalsForm from "@/components/nutrition/NutritionGoalsForm";
 import WeeklyNutritionView from "@/components/nutrition/WeeklyNutritionView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Calendar, ListChecks, BarChart3 } from "lucide-react";
+import { PlusCircle, Calendar, ListChecks, BarChart3, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 const NutritionTracker = () => {
   const [isAddMealOpen, setIsAddMealOpen] = useState(false);
+  const [isAddMultiItemMealOpen, setIsAddMultiItemMealOpen] = useState(false);
   const [selectedDate] = useState(new Date());
   const { toast } = useToast();
 

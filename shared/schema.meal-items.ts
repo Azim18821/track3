@@ -2,7 +2,23 @@ import { pgTable, text, serial, integer, boolean, timestamp, real } from "drizzl
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { meals, users } from "./schema";
+import { users } from "./schema";
+
+// Define meals table here since we're creating a circular reference otherwise
+export const meals = pgTable("meals", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  mealType: text("meal_type").notNull(), // breakfast, lunch, dinner, snack
+  servingSize: real("serving_size").notNull(),
+  servingUnit: text("serving_unit").notNull(),
+  calories: integer("calories").notNull(),
+  protein: real("protein").notNull(),
+  carbs: real("carbs").notNull(),
+  fat: real("fat").notNull(),
+  date: timestamp("date").notNull().defaultNow(),
+  isPlanned: boolean("is_planned").default(false).notNull(), // True if automatically generated from plan, false if user logged it
+});
 
 // New table for meal items - multiple items can be associated with a single meal
 export const mealItems = pgTable("meal_items", {
