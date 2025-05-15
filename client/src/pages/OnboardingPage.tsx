@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import GoalSelection from '@/components/onboarding/GoalSelection';
 import GenderSelection from '@/components/onboarding/GenderSelection';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 export default function OnboardingPage() {
   const [activeStep, setActiveStep] = useState(0);
+  const [isIOSStandalone, setIsIOSStandalone] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     fitnessGoal: null,
     fitnessGoals: [],
@@ -25,6 +26,23 @@ export default function OnboardingPage() {
     dateOfBirth: null,
     gender: null
   });
+  
+  // Detect if running as standalone PWA on iOS
+  useEffect(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone;
+    
+    setIsIOSStandalone(isIOS && isStandalone);
+    
+    // If running as PWA on iOS, we need to adjust the viewport for notches and home indicator
+    if (isIOS && isStandalone) {
+      // Add a small delay to ensure rendering is complete
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    }
+  }, []);
   
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const { toast } = useToast();
@@ -409,28 +427,58 @@ export default function OnboardingPage() {
 
   return (
     <OnboardingLayout>
-      <div className="w-full max-w-5xl px-2 sm:px-4 py-2 sm:py-4 flex items-start sm:items-center justify-center min-h-[calc(100vh-80px)]">
-        <Card className="mx-auto p-3 sm:p-4 md:p-6 border-0 shadow-lg sm:shadow-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm transition-all duration-500 rounded-lg sm:rounded-xl w-full overflow-hidden">
-          <div className="text-center mb-3 sm:mb-4 md:mb-6">
-            <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">
+      <div className={cn(
+        "w-full max-w-5xl px-2 sm:px-4 flex justify-center",
+        isIOSStandalone 
+          ? "py-0 items-start mt-0 pt-0 min-h-[calc(100vh-env(safe-area-inset-bottom))]" 
+          : "py-2 sm:py-4 items-start sm:items-center min-h-[calc(100vh-80px)]"
+      )}>
+        <Card className={cn(
+          "mx-auto border-0 shadow-lg sm:shadow-xl",
+          "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
+          "transition-all duration-500",
+          "rounded-lg sm:rounded-xl",
+          "w-full overflow-hidden",
+          isIOSStandalone ? "p-2 ios-card mt-0" : "p-3 sm:p-4 md:p-6"
+        )}>
+          <div className={cn(
+            "text-center",
+            isIOSStandalone ? "mb-0 scale-95 transform-origin-top" : "mb-3 sm:mb-4 md:mb-6"
+          )}>
+            <CardTitle className={cn(
+              "font-bold text-primary",
+              isIOSStandalone ? "text-lg" : "text-xl sm:text-2xl md:text-3xl"
+            )}>
               Shape Your Fitness Journey
             </CardTitle>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-1 max-w-2xl mx-auto px-1">
+            <p className={cn(
+              "text-muted-foreground max-w-2xl mx-auto px-1",
+              isIOSStandalone ? "text-xs mt-0" : "text-xs sm:text-sm mt-1"
+            )}>
               Complete your profile to get a personalized experience tailored to your goals
             </p>
           </div>
           
-          <div className="overflow-visible px-0 sm:px-4 mb-4 sm:mb-6 md:mb-8">
+          <div className={cn(
+            "overflow-visible px-0 sm:px-4", 
+            isIOSStandalone ? "mb-0 mt-1" : "mb-4 sm:mb-6 md:mb-8"
+          )}>
             <div className="max-w-3xl mx-auto">
               <Stepper 
                 activeStep={activeStep} 
                 alternativeLabel 
-                className="min-w-[300px] w-full onboarding-stepper"
+                className={cn(
+                  "min-w-[300px] w-full onboarding-stepper",
+                  isIOSStandalone && "ios-stepper scale-80 transform-origin-top -mt-2 -mb-2"
+                )}
               >
                 {steps.map((label) => (
                   <Step key={label}>
                     <StepLabel>
-                      <span className="label-text">
+                      <span className={cn(
+                        "label-text",
+                        isIOSStandalone && "text-xs"
+                      )}>
                         {label}
                       </span>
                     </StepLabel>
@@ -440,7 +488,9 @@ export default function OnboardingPage() {
             </div>
           </div>
           
-          <div className="mt-3 sm:mt-4 md:mt-6">
+          <div className={cn(
+            isIOSStandalone ? "mt-0" : "mt-3 sm:mt-4 md:mt-6"
+          )}>
             {getStepContent(activeStep)}
           </div>
         </Card>
