@@ -428,32 +428,41 @@ export default function OnboardingPage() {
   return (
     <OnboardingLayout>
       <div className={cn(
-        "w-full max-w-5xl px-2 sm:px-4 py-2 sm:py-4 flex items-center justify-center",
+        "w-full max-w-5xl px-2 sm:px-4 flex items-start justify-center",
         isIOSStandalone 
-          ? "min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))]" 
-          : "min-h-[calc(100vh-80px)]"
+          ? "py-0 min-h-[calc(100vh-env(safe-area-inset-top)-env(safe-area-inset-bottom))]" 
+          : "py-2 sm:py-4 min-h-[calc(100vh-80px)]"
       )}>
         <Card className={cn(
-          "mx-auto p-3 sm:p-4 md:p-6 border-0 shadow-lg sm:shadow-xl",
+          "mx-auto border-0 shadow-lg sm:shadow-xl",
           "bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm",
           "transition-all duration-500",
           "rounded-lg sm:rounded-xl",
           "w-full overflow-hidden",
-          isIOSStandalone && "ios-card"
+          isIOSStandalone ? "p-2 ios-card mt-1" : "p-3 sm:p-4 md:p-6"
         )}>
-          <div className="text-center mb-3 sm:mb-4 md:mb-6">
+          <div className={cn(
+            "text-center",
+            isIOSStandalone ? "mb-1" : "mb-3 sm:mb-4 md:mb-6"
+          )}>
             <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">Shape Your Fitness Journey</CardTitle>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-1 sm:mt-2 max-w-2xl mx-auto px-1">
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1 max-w-2xl mx-auto px-1">
               Complete your profile to get a personalized experience tailored to your goals
             </p>
           </div>
           
-          <div className={`mb-4 sm:mb-6 md:mb-8 overflow-visible px-0 sm:px-4 ${isIOSStandalone ? 'pt-safe' : ''}`}>
+          <div className={cn(
+            "overflow-visible px-0 sm:px-4", 
+            isIOSStandalone ? "mb-2" : "mb-4 sm:mb-6 md:mb-8"
+          )}>
             <div className="max-w-3xl mx-auto">
               <Stepper 
                 activeStep={activeStep} 
                 alternativeLabel 
-                className={`min-w-[300px] w-full onboarding-stepper ${isIOSStandalone ? 'ios-stepper' : ''}`}
+                className={cn(
+                  "min-w-[300px] w-full onboarding-stepper",
+                  isIOSStandalone && "ios-stepper scale-90 transform-origin-top"
+                )}
               >
                 {steps.map((label) => (
                   <Step key={label}>
@@ -464,7 +473,9 @@ export default function OnboardingPage() {
             </div>
           </div>
           
-          <div className="mt-3 sm:mt-4 md:mt-6">
+          <div className={cn(
+            isIOSStandalone ? "mt-0" : "mt-3 sm:mt-4 md:mt-6"
+          )}>
             {getStepContent(activeStep)}
           </div>
         </Card>

@@ -25,6 +25,28 @@ body, html {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* iOS-specific optimizations for standalone mode */
+.ios-card {
+  margin-top: 0 !important;
+  padding-top: 8px !important;
+}
+
+.ios-stepper {
+  transform: scale(0.9);
+  transform-origin: top center;
+  margin-top: -5px;
+  margin-bottom: -5px;
+}
+
+.ios-goal-selection {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.transform-origin-top {
+  transform-origin: top center;
+}
+
 /* Smooth scrolling for better native feel */
 .smooth-scroll {
   scroll-behavior: smooth;
