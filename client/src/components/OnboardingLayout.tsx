@@ -21,20 +21,20 @@ export function OnboardingLayout({ children }: OnboardingLayoutProps) {
     <div className={`ios-screen-container w-full bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-background flex flex-col overflow-x-hidden
       ${isIOSStandalone ? 'ios-standalone-mode' : 'min-h-screen'}`}>
       
-      {/* Theme toggle */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Theme toggle - position depends on platform */}
+      <div className={`absolute z-10 ${isIOSStandalone ? 'top-[calc(env(safe-area-inset-top)+0.5rem)] right-4' : 'top-4 right-4'}`}>
         <ThemeToggle />
       </div>
       
-      {/* Main content area with proper padding */}
-      <main className={`flex-grow flex items-start sm:items-center justify-center px-1 sm:px-4 
-        ${isIOSStandalone ? 'pt-0 pb-0' : 'py-2 sm:py-4'}`}>
+      {/* Main content area with adaptive padding */}
+      <main className={`flex-grow flex justify-center px-1 sm:px-4 
+        ${isIOSStandalone ? 'items-start pt-[calc(env(safe-area-inset-top)+0.5rem)]' : 'items-start sm:items-center py-2 sm:py-4'}`}>
         {children}
       </main>
       
-      {/* Footer with proper spacing */}
+      {/* Footer with proper bottom spacing */}
       <footer className={`text-center text-xs text-muted-foreground
-        ${isIOSStandalone ? 'pt-0 pb-0' : 'py-2 sm:py-3'}`}>
+        ${isIOSStandalone ? 'pt-2' : 'py-2 sm:py-3'}`}>
         © {new Date().getFullYear()} TrackEaze • All rights reserved
       </footer>
     </div>
