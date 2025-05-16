@@ -814,14 +814,39 @@ const TrainerPage: React.FC = () => {
             Back to Home
           </Link>
           
-          <Button 
-            size="sm" 
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => setShowClientSelectModal(true)}
-          >
-            <PlusCircle size={14} className="mr-1.5" />
-            New Plan
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button 
+              size="sm" 
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => setShowClientSelectModal(true)}
+            >
+              <PlusCircle size={14} className="mr-1.5" />
+              New Plan
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setLocation('/create-client')}
+            >
+              <UserPlus size={14} className="mr-1.5" />
+              Add Client
+            </Button>
+            
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setLocation('/plan-templates')}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 2v4" />
+                <path d="M8 2v4" />
+                <path d="M3 10h18" />
+              </svg>
+              Templates
+            </Button>
+          </div>
         </div>
         
         {/* Tabs */}

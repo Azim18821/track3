@@ -55,6 +55,11 @@ import EnhancedTrainerPlanCreation from "@/pages/EnhancedTrainerPlanCreation";
 import EnhancedTrainerNutritionGoals from "@/pages/EnhancedTrainerNutritionGoals";
 import EnhancedTrainerClientWorkouts from "@/pages/EnhancedTrainerClientWorkouts";
 import TrainerAssignedPlanView from "@/pages/TrainerAssignedPlanView";
+// New Features
+import PlanTemplates from "@/pages/PlanTemplates";
+import CreatePlanTemplate from "@/pages/CreatePlanTemplate";
+import CreateClient from "@/pages/CreateClient";
+import ClientMealTracking from "@/pages/ClientMealTracking";
 // Marketing components removed
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useServiceWorker } from "@/hooks/use-service-worker";
@@ -359,6 +364,39 @@ function App() {
                             </div>
                           </div>
                         </div>
+                      </ProtectedLayout>
+                    </Route>
+
+                    {/* New Plan Templates Feature */}
+                    <Route path="/plan-templates">
+                      <ProtectedLayout>
+                        <PlanTemplates />
+                      </ProtectedLayout>
+                    </Route>
+
+                    <Route path="/create-plan-template">
+                      <ProtectedLayout>
+                        <CreatePlanTemplate />
+                      </ProtectedLayout>
+                    </Route>
+
+                    <Route path="/edit-plan-template/:id">
+                      <ProtectedLayout>
+                        <CreatePlanTemplate />
+                      </ProtectedLayout>
+                    </Route>
+
+                    {/* Direct Client Creation Feature */}
+                    <Route path="/create-client">
+                      <ProtectedLayout>
+                        <CreateClient />
+                      </ProtectedLayout>
+                    </Route>
+
+                    {/* Enhanced Meal Tracking Feature */}
+                    <Route path="/trainer/clients/:clientId/meals">
+                      <ProtectedLayout>
+                        <ClientMealTracking />
                       </ProtectedLayout>
                     </Route>
 

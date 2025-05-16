@@ -11,17 +11,18 @@ import {
   goals, type Goal, type InsertGoal,
   exerciseLibrary, type ExerciseLibrary, type InsertExerciseLibrary,
   savedMeals, type SavedMeal, type InsertSavedMeal,
-  trainerClients, type TrainerClient, type InsertTrainerClient,
-  trainerClientRequests, type TrainerClientRequest, type InsertTrainerClientRequest,
-  trainerMessages, type TrainerMessage, type InsertTrainerMessage,
-  trainerNutritionPlans, type TrainerNutritionPlan, type InsertTrainerNutritionPlan,
-  trainerFitnessPlans, type TrainerFitnessPlan, type InsertTrainerFitnessPlan,
-  planTemplates, type PlanTemplate, type InsertPlanTemplate,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   planGenerationStatus, type PlanGenerationStatus, type InsertPlanGenerationStatus,
   type SetData,
   type AIAnalysis
 } from "@shared/schema";
+
+// Import trainer-specific schema and types
+import {
+  trainerClients, type TrainerClient, type InsertTrainerClient,
+  planTemplates, type PlanTemplate, type InsertPlanTemplate,
+  clientPlans, type ClientPlan, type InsertClientPlan
+} from "@shared/trainer-schema";
 
 // Partial user type for public exposure (excludes sensitive data)
 type PartialUser = {
