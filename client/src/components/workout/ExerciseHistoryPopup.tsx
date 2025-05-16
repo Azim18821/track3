@@ -206,14 +206,14 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
               </Tabs>
             )}
           </DialogTitle>
-          <DialogDescription className="flex items-center gap-1">
+          <DialogDescription>
             {selectedExercise && (
-              <>
+              <div className="flex items-center gap-1">
                 <span>Your performance data for</span> 
                 <Badge variant="secondary" className="font-medium">
                   {selectedExercise.name}
                 </Badge>
-              </>
+              </div>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -228,28 +228,28 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
             <div className="space-y-4">
               {/* Recommended values card */}
               {recommendedValues && (
-                <Card className="border-blue-100 bg-blue-50">
+                <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
                   <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="hidden sm:flex bg-blue-100 p-2 rounded-full">
-                      <Award className="h-6 w-6 text-blue-700" />
+                    <div className="hidden sm:flex bg-primary/20 p-2 rounded-full">
+                      <Award className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-sm font-medium text-blue-800 flex items-center">
-                        <Award className="h-4 w-4 mr-1.5 sm:hidden text-blue-700" />
+                      <h3 className="text-sm font-medium flex items-center">
+                        <Award className="h-4 w-4 mr-1.5 sm:hidden text-primary" />
                         Today's Recommended Values
                       </h3>
-                      <p className="text-xs text-blue-700 mt-0.5 mb-2">
+                      <p className="text-xs text-muted-foreground mt-0.5 mb-2">
                         Based on your last workout on {recommendedValues.date}
                       </p>
                       
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-white/60 rounded p-2">
-                          <p className="text-xs text-blue-600">Weight</p>
-                          <p className="font-semibold text-blue-900">{recommendedValues.weight} kg</p>
+                        <div className="bg-background/90 rounded p-2 border border-border/60">
+                          <p className="text-xs text-muted-foreground">Weight</p>
+                          <p className="font-semibold">{recommendedValues.weight} kg</p>
                         </div>
-                        <div className="bg-white/60 rounded p-2">
-                          <p className="text-xs text-blue-600">Reps</p>
-                          <p className="font-semibold text-blue-900">{recommendedValues.reps}</p>
+                        <div className="bg-background/90 rounded p-2 border border-border/60">
+                          <p className="text-xs text-muted-foreground">Reps</p>
+                          <p className="font-semibold">{recommendedValues.reps}</p>
                         </div>
                       </div>
                     </div>
@@ -259,29 +259,29 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
 
               {/* Personal records card */}
               {personalRecords && (
-                <Card className="border-amber-100 bg-amber-50">
+                <Card className="border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10">
                   <CardContent className="p-4">
-                    <h3 className="text-sm font-medium text-amber-800 flex items-center mb-3">
-                      <TrendingUp className="h-4 w-4 mr-1.5 text-amber-600" />
+                    <h3 className="text-sm font-medium flex items-center mb-3">
+                      <TrendingUp className="h-4 w-4 mr-1.5 text-amber-500" />
                       Personal Records
                     </h3>
                     
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white/60 rounded p-2">
-                        <p className="text-xs text-amber-600">Max Weight</p>
-                        <p className="font-medium text-amber-900">{personalRecords.maxWeight} kg</p>
+                      <div className="bg-background/90 rounded p-2 border border-border/60">
+                        <p className="text-xs text-muted-foreground">Max Weight</p>
+                        <p className="font-medium">{personalRecords.maxWeight} kg</p>
                       </div>
-                      <div className="bg-white/60 rounded p-2">
-                        <p className="text-xs text-amber-600">Max Reps</p>
-                        <p className="font-medium text-amber-900">{personalRecords.maxReps}</p>
+                      <div className="bg-background/90 rounded p-2 border border-border/60">
+                        <p className="text-xs text-muted-foreground">Max Reps</p>
+                        <p className="font-medium">{personalRecords.maxReps}</p>
                       </div>
-                      <div className="bg-white/60 rounded p-2">
-                        <p className="text-xs text-amber-600">Best Set Volume</p>
-                        <p className="font-medium text-amber-900">{personalRecords.maxVolumeSet}</p>
+                      <div className="bg-background/90 rounded p-2 border border-border/60">
+                        <p className="text-xs text-muted-foreground">Best Set Volume</p>
+                        <p className="font-medium">{personalRecords.maxVolumeSet}</p>
                       </div>
-                      <div className="bg-white/60 rounded p-2">
-                        <p className="text-xs text-amber-600">Best Workout Volume</p>
-                        <p className="font-medium text-amber-900">{personalRecords.maxVolumeWorkout}</p>
+                      <div className="bg-background/90 rounded p-2 border border-border/60">
+                        <p className="text-xs text-muted-foreground">Best Workout Volume</p>
+                        <p className="font-medium">{personalRecords.maxVolumeWorkout}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -292,7 +292,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
               <Card>
                 <CardContent className="p-4">
                   <h3 className="text-sm font-medium flex items-center mb-3">
-                    <Calendar className="h-4 w-4 mr-1.5 text-slate-600" />
+                    <Calendar className="h-4 w-4 mr-1.5 text-primary" />
                     Recent History
                   </h3>
                   
@@ -302,9 +302,9 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                       <p className="text-xs mt-1">This might be your first time doing it!</p>
                     </div>
                   ) : (
-                    <div className="overflow-hidden border rounded-md">
+                    <div className="overflow-hidden border rounded-md border-border">
                       <Table>
-                        <TableHeader className="bg-slate-50">
+                        <TableHeader className="bg-muted/40">
                           <TableRow>
                             <TableHead className="w-24 py-2">Date</TableHead>
                             <TableHead className="py-2">Performance</TableHead>
@@ -312,12 +312,12 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                         </TableHeader>
                         <TableBody>
                           {history.slice(0, 5).map((item) => (
-                            <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-slate-50">
+                            <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-muted/20">
                               <TableCell className="py-2 text-xs">
                                 <div className="font-medium">
                                   {format(new Date(item.date), 'MMM d')}
                                 </div>
-                                <div className="text-slate-500">
+                                <div className="text-muted-foreground">
                                   {format(new Date(item.date), 'yyyy')}
                                 </div>
                               </TableCell>
@@ -326,7 +326,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                                   {item.sets && item.sets.length > 0 ? (
                                     item.sets.map((set, index) => (
                                       <div key={index} className="flex items-center text-sm">
-                                        <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal">
+                                        <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal bg-background">
                                           {index + 1}
                                         </Badge>
                                         <span className="font-medium">

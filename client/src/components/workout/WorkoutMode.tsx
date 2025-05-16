@@ -552,24 +552,24 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       </div>
 
       {/* Timer display */}
-      <div className={`py-2 text-white text-center sticky top-0 z-10 transition-colors duration-300 ${
+      <div className={`py-2 text-white dark:text-background text-center sticky top-0 z-10 transition-colors duration-300 ${
         isRestMode && timerSeconds > 0
-          ? "bg-gradient-to-r from-amber-700 to-amber-600" 
+          ? "bg-gradient-to-r from-amber-600 to-amber-500 dark:from-amber-600/90 dark:to-amber-500/90" 
           : isTimerRunning 
-            ? "bg-gradient-to-r from-indigo-900 to-indigo-800"
-            : "bg-gradient-to-r from-slate-800 to-slate-700"
+            ? "bg-gradient-to-r from-primary/90 to-primary/80 dark:from-primary/90 dark:to-primary/80"
+            : "bg-gradient-to-r from-slate-800 to-slate-700 dark:from-slate-800/90 dark:to-slate-700/90"
       }`}>
         <div className="flex justify-center items-center gap-2">
-          <TimerIcon className="h-5 w-5 text-white/90" />
+          <TimerIcon className="h-5 w-5 text-white/90 dark:text-background/90" />
           <span className="text-xl font-mono font-semibold">{formatTime(timerSeconds)}</span>
           
           {/* Mode indicator */}
           {timerSeconds > 0 && isRestMode ? (
-            <span className="text-xs font-medium px-2 py-0.5 bg-white/20 rounded-full">
+            <span className="text-xs font-medium px-2 py-0.5 bg-white/20 dark:bg-background/20 rounded-full">
               Rest Timer
             </span>
           ) : timerSeconds > 0 ? (
-            <span className="text-xs font-medium px-2 py-0.5 bg-white/20 rounded-full">
+            <span className="text-xs font-medium px-2 py-0.5 bg-white/20 dark:bg-background/20 rounded-full">
               Workout Time
             </span>
           ) : null}
@@ -597,7 +597,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               variant="outline" 
               size="sm"
               onClick={resetTimer}
-              className="h-7 w-7 p-0 bg-white/10"
+              className="h-7 w-7 p-0 bg-white/10 dark:bg-background/10"
               aria-label="Reset timer"
             >
               <RotateCcw className="h-3 w-3" />
@@ -639,7 +639,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
         </div>
 
         {/* Active exercise */}
-        <Card className="mb-4 shadow-sm border-slate-200">
+        <Card className="mb-4 shadow-sm border-border">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start mb-1">
               <CardTitle className="text-xl font-bold">{activeExercise.name}</CardTitle>
@@ -647,7 +647,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 px-2 text-xs flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800"
+                className="h-8 px-2 text-xs flex items-center gap-1 bg-muted hover:bg-muted/80"
                 onClick={() => setIsHistoryPopupOpen(true)}
               >
                 <HistoryIcon className="h-3 w-3" /> 
@@ -658,19 +658,19 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             
             <CardDescription className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
               <div className="flex items-center gap-1 text-sm">
-                <Dumbbell className="h-4 w-4 text-slate-600" />
+                <Dumbbell className="h-4 w-4" />
                 <span>{activeExercise.sets} sets × {activeExercise.reps || '?'} reps</span>
               </div>
               
               {typeof activeExercise.weight === 'number' && (
-                <Badge variant="outline" className="font-normal px-2 py-1 h-6 bg-slate-100 text-slate-700">
+                <Badge variant="outline" className="font-normal px-2 py-1 h-6">
                   {activeExercise.weight} {activeExercise.unit || 'kg'}
                 </Badge>
               )}
               
               <div className="hidden sm:flex items-center gap-1 text-xs">
                 <Award className="h-3.5 w-3.5 text-amber-500" />
-                <span className="text-slate-600">Best: {activeExercise.weight} {activeExercise.unit || 'kg'} × {activeExercise.reps}</span>
+                <span>Best: {activeExercise.weight} {activeExercise.unit || 'kg'} × {activeExercise.reps}</span>
               </div>
             </CardDescription>
           </CardHeader>
@@ -680,7 +680,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             <div className="grid grid-cols-3 gap-2 mb-4">
               <Button 
                 variant="outline"
-                className="h-10 sm:h-12 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800"
+                className="h-10 sm:h-12 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
                 onClick={() => startRestTimer(60)}
               >
                 <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -689,7 +689,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               </Button>
               <Button 
                 variant="outline"
-                className="h-10 sm:h-12 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800" 
+                className="h-10 sm:h-12 bg-amber-500/5 text-amber-500 border-amber-500/20 hover:bg-amber-500/10"
                 onClick={() => startRestTimer(90)}
               >
                 <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -698,7 +698,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               </Button>
               <Button 
                 variant="outline"
-                className="h-10 sm:h-12 bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800" 
+                className="h-10 sm:h-12 bg-purple-500/5 text-purple-500 border-purple-500/20 hover:bg-purple-500/10"
                 onClick={() => startRestTimer(120)}
               >
                 <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
@@ -709,8 +709,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
             {/* Info message for plan mode */}
             {isPlanModeWorkout && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700 flex items-start">
-                <InfoIcon className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
+              <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-md text-sm flex items-start">
+                <InfoIcon className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0 text-primary" />
                 <span>Enter your actual weight and reps for each set. Mark sets as completed as you perform them.</span>
               </div>
             )}
@@ -720,18 +720,18 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               {activeExercise.setsData?.map((setData, setIndex) => (
                 <div key={setIndex} className={`border rounded-md overflow-hidden transition-colors ${
                   setData.completed 
-                    ? "border-green-200 bg-green-50"
-                    : "border-slate-200 hover:border-slate-300 bg-white"
+                    ? "border-green-500/30 bg-green-500/5 dark:bg-green-500/10"
+                    : "border-border hover:border-border/80 bg-background"
                 }`}>
-                  <div className="flex justify-between items-center px-3 py-2 bg-slate-50 border-b border-slate-200">
+                  <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border">
                     <h3 className="font-medium text-sm">Set {setIndex + 1}</h3>
                     <Button
                       variant={setData.completed ? "default" : "outline"}
                       size="sm"
                       className={`h-7 text-xs ${
                         setData.completed 
-                          ? "bg-green-600 hover:bg-green-700" 
-                          : "border-slate-300"
+                          ? "bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 dark:text-white" 
+                          : "border-border"
                       }`}
                       onClick={() => toggleSetCompletion(activeExerciseIndex, setIndex)}
                     >
@@ -745,7 +745,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   
                   <div className="p-3 grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium mb-1 block text-slate-600">Weight ({activeExercise.unit || 'kg'})</label>
+                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Weight ({activeExercise.unit || 'kg'})</label>
                       <Input
                         type="number"
                         value={setData.weight === null || setData.weight === undefined ? '' : setData.weight}
@@ -754,12 +754,12 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                           const newWeight = e.target.value === '' ? null : parseFloat(e.target.value);
                           updateSetWeight(activeExerciseIndex, setIndex, newWeight);
                         }}
-                        className={`h-10 ${setData.completed ? "bg-white/80" : ""}`}
+                        className={`h-10 ${setData.completed ? "bg-background/90" : ""}`}
                         placeholder={typeof activeExercise.weight === 'number' ? activeExercise.weight.toString() : "Weight"}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium mb-1 block text-slate-600">Reps</label>
+                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Reps</label>
                       <Input
                         type="number"
                         value={setData.reps === null || setData.reps === undefined ? '' : setData.reps}
@@ -768,7 +768,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                           const newReps = e.target.value === '' ? null : parseInt(e.target.value);
                           updateSetReps(activeExerciseIndex, setIndex, newReps);
                         }}
-                        className={`h-10 ${setData.completed ? "bg-white/80" : ""}`}
+                        className={`h-10 ${setData.completed ? "bg-background/90" : ""}`}
                         placeholder={typeof activeExercise.reps === 'number' ? activeExercise.reps.toString() : "Reps"}
                       />
                     </div>
@@ -779,7 +779,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               {/* Add Extra Set Button */}
               <Button 
                 variant="outline" 
-                className="w-full flex items-center justify-center gap-2 py-3 h-auto border-dashed border-2 mt-4 text-slate-600 hover:text-slate-800 hover:bg-slate-50"
+                className="w-full flex items-center justify-center gap-2 py-3 h-auto border-dashed border-2 mt-4 text-muted-foreground hover:text-foreground hover:bg-muted/10"
                 onClick={() => addExtraSet(activeExerciseIndex)}
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -842,18 +842,18 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
         {/* Complete workout button or completed status */}
         {workoutState.completed ? (
-          <Card className="border-green-200 bg-green-50 mb-20">
+          <Card className="border-green-500/20 bg-green-500/5 dark:bg-green-500/10 mb-20">
             <CardContent className="pt-6 pb-6 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div className="mx-auto w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-500" />
               </div>
-              <h3 className="text-xl font-semibold text-green-800 mb-2">Workout Completed</h3>
-              <p className="text-green-700">Great job! This workout has been saved to your history.</p>
+              <h3 className="text-xl font-semibold text-green-700 dark:text-green-500 mb-2">Workout Completed</h3>
+              <p className="text-green-600 dark:text-green-400">Great job! This workout has been saved to your history.</p>
               
               <div className="mt-6 flex justify-center">
                 <Button
                   variant="outline"
-                  className="border-green-300 text-green-700 hover:bg-green-100 hover:text-green-800"
+                  className="border-green-500/30 text-green-600 dark:text-green-500 hover:bg-green-500/10"
                   onClick={onExit}
                 >
                   Return to Workouts
@@ -863,14 +863,14 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           </Card>
         ) : (
           <div className="pb-20">
-            <Card className="border-dashed border-2 border-slate-200 bg-slate-50 shadow-none mb-4">
+            <Card className="border-dashed border-2 border-border bg-muted/20 shadow-none mb-4">
               <CardContent className="p-4 flex items-center">
                 <div className="mr-4 p-2 rounded-full bg-primary/10">
                   <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="font-medium text-sm">Progress Summary</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {completedSets} of {totalSets} sets completed ({progressPercentage}%)
                   </p>
                 </div>
@@ -896,7 +896,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             </Button>
             
             {!allExercisesCompleted && (
-              <p className="text-center text-xs text-slate-500 mt-2">
+              <p className="text-center text-xs text-muted-foreground mt-2">
                 Complete all sets to finish the workout
               </p>
             )}
