@@ -392,15 +392,6 @@ export default function EnhancedTrainerClientDetail() {
                   variant="ghost" 
                   size="sm" 
                   className="justify-start px-3 sm:px-4 py-2 h-auto text-sm"
-                  onClick={() => navigate(`/trainer/clients/${clientId}/meals`)}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  View Meal Logs
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="justify-start px-3 sm:px-4 py-2 h-auto text-sm"
                   onClick={() => navigate(`/enhanced-trainer-plan-creation?clientId=${clientId}`)}
                 >
                   <ClipboardList className="mr-2 h-4 w-4" />

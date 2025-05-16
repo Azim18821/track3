@@ -180,43 +180,6 @@ export const trainerFitnessPlansRelations = relations(trainerFitnessPlans, ({ on
   client: one(users, { fields: [trainerFitnessPlans.clientId], references: [users.id] }),
 }));
 
-// Plan templates created by trainers for reuse with multiple clients
-export const planTemplates = pgTable("plan_templates", {
-  id: serial("id").primaryKey(),
-  trainerId: integer("trainer_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  name: text("name").notNull(),
-  description: text("description"),
-  type: text("type").notNull(), // "fitness", "nutrition", or "combined"
-  // Templates are stored as JSON to support multiple plan types
-  workoutPlan: jsonb("workout_plan"), // Required for fitness and combined plans
-  mealPlan: jsonb("meal_plan"),       // Required for nutrition and combined plans
-  nutritionTargets: jsonb("nutrition_targets"), // For nutrition plans with macro targets
-  isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  tags: text("tags").array(), // For categorizing and filtering templates
-});
-
-// Create insert schema for plan templates
-export const insertPlanTemplateSchema = createInsertSchema(planTemplates).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  // Add validation for required fields based on plan type
-  type: z.enum(["fitness", "nutrition", "combined"]),
-  workoutPlan: z.any().optional(),
-  mealPlan: z.any().optional(),
-});
-
-export type InsertPlanTemplate = z.infer<typeof insertPlanTemplateSchema>;
-export type PlanTemplate = typeof planTemplates.$inferSelect;
-
-// Relations for plan templates
-export const planTemplatesRelations = relations(planTemplates, ({ one }) => ({
-  trainer: one(users, { fields: [planTemplates.trainerId], references: [users.id] }),
-}));
-
 // Base user schema with only essential fields for registration
 export const baseUserSchema = createInsertSchema(users).pick({
   username: true,

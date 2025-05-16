@@ -11,18 +11,16 @@ import {
   goals, type Goal, type InsertGoal,
   exerciseLibrary, type ExerciseLibrary, type InsertExerciseLibrary,
   savedMeals, type SavedMeal, type InsertSavedMeal,
+  trainerClients, type TrainerClient, type InsertTrainerClient,
+  trainerClientRequests, type TrainerClientRequest, type InsertTrainerClientRequest,
+  trainerMessages, type TrainerMessage, type InsertTrainerMessage,
+  trainerNutritionPlans, type TrainerNutritionPlan, type InsertTrainerNutritionPlan,
+  trainerFitnessPlans, type TrainerFitnessPlan, type InsertTrainerFitnessPlan,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   planGenerationStatus, type PlanGenerationStatus, type InsertPlanGenerationStatus,
   type SetData,
   type AIAnalysis
 } from "@shared/schema";
-
-// Import trainer-specific schema and types
-import {
-  trainerClients, type TrainerClient, type InsertTrainerClient,
-  planTemplates, type PlanTemplate, type InsertPlanTemplate,
-  clientPlans, type ClientPlan, type InsertClientPlan
-} from "@shared/trainer-schema";
 
 // Partial user type for public exposure (excludes sensitive data)
 type PartialUser = {
@@ -44,14 +42,6 @@ import { GenerationStatus as StepwisePlanStatus } from "./stepwise-coach";
 import { CoachInput } from "./coach";
 
 export interface IStorage {
-  // Plan templates
-  getPlanTemplates(trainerId: number): Promise<PlanTemplate[]>;
-  getPlanTemplatesByType(trainerId: number, type: string): Promise<PlanTemplate[]>;
-  getPlanTemplate(id: number): Promise<PlanTemplate | undefined>;
-  createPlanTemplate(template: InsertPlanTemplate): Promise<PlanTemplate>;
-  updatePlanTemplate(id: number, templateUpdate: Partial<InsertPlanTemplate>): Promise<PlanTemplate | undefined>;
-  deletePlanTemplate(id: number): Promise<boolean>;
-  applyTemplateToClient(templateId: number, clientId: number): Promise<boolean>;
   // User management
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -2006,127 +1996,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trainerFitnessPlans.id, id))
       .returning({ id: trainerFitnessPlans.id });
     return result.length > 0;
-  }
-  
-  // Plan Template methods
-  async getPlanTemplates(trainerId: number): Promise<PlanTemplate[]> {
-    return await db
-      .select()
-      .from(planTemplates)
-      .where(eq(planTemplates.trainerId, trainerId))
-      .orderBy(desc(planTemplates.createdAt));
-  }
-  
-  async getPlanTemplatesByType(trainerId: number, type: string): Promise<PlanTemplate[]> {
-    return await db
-      .select()
-      .from(planTemplates)
-      .where(
-        and(
-          eq(planTemplates.trainerId, trainerId),
-          eq(planTemplates.type, type)
-        )
-      )
-      .orderBy(desc(planTemplates.createdAt));
-  }
-  
-  async getPlanTemplate(id: number): Promise<PlanTemplate | undefined> {
-    const [template] = await db
-      .select()
-      .from(planTemplates)
-      .where(eq(planTemplates.id, id));
-    return template;
-  }
-  
-  async createPlanTemplate(template: InsertPlanTemplate): Promise<PlanTemplate> {
-    const [newTemplate] = await db
-      .insert(planTemplates)
-      .values({
-        ...template,
-        updatedAt: new Date()
-      })
-      .returning();
-    return newTemplate;
-  }
-  
-  async updatePlanTemplate(id: number, templateUpdate: Partial<InsertPlanTemplate>): Promise<PlanTemplate | undefined> {
-    const [updatedTemplate] = await db
-      .update(planTemplates)
-      .set({
-        ...templateUpdate,
-        updatedAt: new Date()
-      })
-      .where(eq(planTemplates.id, id))
-      .returning();
-    return updatedTemplate;
-  }
-  
-  async deletePlanTemplate(id: number): Promise<boolean> {
-    const result = await db
-      .delete(planTemplates)
-      .where(eq(planTemplates.id, id))
-      .returning({ id: planTemplates.id });
-    return result.length > 0;
-  }
-  
-  async applyTemplateToClient(templateId: number, clientId: number): Promise<boolean> {
-    try {
-      // Get the template
-      const template = await this.getPlanTemplate(templateId);
-      if (!template) {
-        return false;
-      }
-      
-      const trainerId = template.trainerId;
-      
-      // Check if this client is assigned to this trainer
-      const clients = await this.getTrainerClients(trainerId);
-      const isClientOfTrainer = clients.some(c => c.client.id === clientId);
-      
-      if (!isClientOfTrainer) {
-        return false;
-      }
-      
-      // Apply template based on type
-      if (template.type === "fitness" || template.type === "combined") {
-        // Create a new fitness plan from the template
-        await this.createTrainerFitnessPlan({
-          trainerId,
-          clientId,
-          name: `${template.name} (from template)`,
-          description: template.description || '',
-          workoutPlan: template.workoutPlan,
-          mealPlan: template.type === "combined" ? template.mealPlan : {}, // Empty object if not a combined plan
-          isActive: true,
-          notes: `Applied from template "${template.name}" on ${new Date().toLocaleDateString()}`
-        });
-      }
-      
-      if (template.type === "nutrition" || template.type === "combined") {
-        // Check if template has nutrition targets defined
-        if (template.nutritionTargets) {
-          const nutritionTargets = template.nutritionTargets as any;
-          
-          // Create nutrition plan for the client
-          await this.createTrainerNutritionPlan({
-            trainerId,
-            clientId,
-            name: `${template.name} (from template)`,
-            description: template.description || '',
-            caloriesTarget: nutritionTargets.calories || 2000,
-            proteinTarget: nutritionTargets.protein || 150,
-            carbsTarget: nutritionTargets.carbs || 200,
-            fatTarget: nutritionTargets.fat || 70,
-            active: true
-          });
-        }
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Error applying template to client:", error);
-      return false;
-    }
   }
   // Password Reset Token Management
   async createPasswordResetToken(userId: number, token: string, expiryHours: number = 1): Promise<PasswordResetToken> {
