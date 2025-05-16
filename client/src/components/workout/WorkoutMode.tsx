@@ -489,15 +489,25 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       {/* Header - fixed at top */}
       <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 pb-safe shadow-sm">
         <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setIsExitAlertOpen(true)}
-            className="mr-1 sm:mr-2"
-            aria-label="Exit workout"
-          >
-            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
+          <div className="flex">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onExit}
+              className="mr-1"
+              aria-label="Back to workouts"
+            >
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsExitAlertOpen(true)}
+              className="mr-1 sm:mr-2 text-xs sm:text-sm h-8 sm:h-9 border-border"
+            >
+              Exit
+            </Button>
+          </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-base sm:text-xl font-bold">{workout.name}</h1>
