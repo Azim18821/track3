@@ -131,7 +131,12 @@ const WorkoutList: React.FC<WorkoutListProps> = ({
                         onClick={() => onStartWorkout(workout)}
                       >
                         <Play className="mr-1 h-4 w-4" />
-                        <span className="hidden xs:inline">Start</span> Workout
+                        {/* Check if workout has any progress (any exercises with completed sets) */}
+                        {workout.exercises?.some(ex => ex.setsData?.some((set: any) => set.completed)) ? (
+                          <span><span className="hidden xs:inline">Continue</span> Workout</span>
+                        ) : (
+                          <span><span className="hidden xs:inline">Start</span> Workout</span>
+                        )}
                       </Button>
                     )}
                     <Button 
