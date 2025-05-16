@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { WebSocket } from 'ws';
 import { 
   insertTrainerNutritionPlanSchema, 
-  insertTrainerFitnessPlanSchema 
+  insertTrainerFitnessPlanSchema,
+  insertPlanTemplateSchema
 } from '@shared/schema';
 import { ensureAuthenticated, ensureTrainer } from './auth';
 
