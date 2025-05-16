@@ -12,12 +12,21 @@ import {
   Save,
   RefreshCw,
   Info as InfoIcon,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Play,
+  Pause,
+  HistoryIcon,
+  Award,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +37,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 // Use dynamic import for ExerciseHistoryPopup to avoid type conflicts
 const ExerciseHistoryPopup = React.lazy(() => import("./ExerciseHistoryPopup"));
 
@@ -477,25 +487,27 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   return (
     <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container">
       {/* Header - fixed at top */}
-      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 pb-safe">
+      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 pb-safe shadow-sm">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => setIsExitAlertOpen(true)}
             className="mr-1 sm:mr-2"
+            aria-label="Exit workout"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-bold">{workout.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-xl font-bold">{workout.name}</h1>
               {isPlanModeWorkout && (
-                <Badge className="bg-blue-500 hover:bg-blue-600">Plan Mode</Badge>
+                <Badge className="bg-blue-600 hover:bg-blue-700 text-white">Plan Mode</Badge>
               )}
             </div>
-            <div className="text-xs sm:text-sm text-muted-foreground">
-              Progress: {completedSets}/{totalSets} sets ({progressPercentage}%)
+            <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+              <span>{completedSets}/{totalSets} sets completed</span>
+              <span className="hidden sm:inline">({progressPercentage}%)</span>
             </div>
           </div>
         </div>
@@ -505,41 +517,53 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             size="sm" 
             onClick={() => {
               if (isTimerRunning) {
-                // If running, just pause
                 setIsTimerRunning(false);
               } else {
-                // If paused, resume in same mode (don't change mode)
                 setIsTimerRunning(true);
               }
             }}
             className="flex items-center gap-1 text-xs sm:text-sm h-8 sm:h-9"
           >
             <Timer className="h-3 w-3 sm:h-4 sm:w-4" />
-            {formatTime(timerSeconds)}
+            <span className="font-mono">{formatTime(timerSeconds)}</span>
           </Button>
           <Button 
             variant="outline" 
             size="icon"
             onClick={resetTimer}
             className="h-8 w-8 sm:h-9 sm:w-9"
+            aria-label="Reset timer"
           >
             <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Timer display for better visibility */}
-      <div className={`py-2 text-white text-center sticky top-0 z-10 ${
-        // If we're in rest mode, show amber/orange background, otherwise blue background
+      {/* Progress bar */}
+      <div className="h-1.5 bg-muted w-full">
+        <div 
+          className="h-full bg-primary" 
+          style={{ width: `${progressPercentage}%` }}
+          role="progressbar"
+          aria-valuenow={progressPercentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        ></div>
+      </div>
+
+      {/* Timer display */}
+      <div className={`py-2 text-white text-center sticky top-0 z-10 transition-colors duration-300 ${
         isRestMode && timerSeconds > 0
           ? "bg-gradient-to-r from-amber-700 to-amber-600" 
-          : "bg-gradient-to-r from-blue-900 to-blue-800"
+          : isTimerRunning 
+            ? "bg-gradient-to-r from-indigo-900 to-indigo-800"
+            : "bg-gradient-to-r from-slate-800 to-slate-700"
       }`}>
         <div className="flex justify-center items-center gap-2">
-          <TimerIcon className="h-5 w-5 text-blue-100" />
+          <TimerIcon className="h-5 w-5 text-white/90" />
           <span className="text-xl font-mono font-semibold">{formatTime(timerSeconds)}</span>
           
-          {/* Show mode indicator */}
+          {/* Mode indicator */}
           {timerSeconds > 0 && isRestMode ? (
             <span className="text-xs font-medium px-2 py-0.5 bg-white/20 rounded-full">
               Rest Timer
@@ -556,22 +580,25 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               size="sm" 
               onClick={() => {
                 if (isTimerRunning) {
-                  // If running, just pause
                   setIsTimerRunning(false);
                 } else {
-                  // If paused, resume in same mode (don't change mode)
                   setIsTimerRunning(true);
                 }
               }}
-              className="h-7 px-2 text-xs"
+              className="h-7 px-2 text-xs flex gap-1 items-center"
             >
-              {isTimerRunning ? "Pause" : "Start"}
+              {isTimerRunning ? (
+                <><Pause className="h-3 w-3" /> Pause</>
+              ) : (
+                <><Play className="h-3 w-3" /> Start</>
+              )}
             </Button>
             <Button 
               variant="outline" 
               size="sm"
               onClick={resetTimer}
               className="h-7 w-7 p-0 bg-white/10"
+              aria-label="Reset timer"
             >
               <RotateCcw className="h-3 w-3" />
             </Button>
@@ -580,9 +607,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       </div>
         
       {/* Main content - scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 pb-16 workout-modal-content">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-16 workout-modal-content">
         {/* Exercise navigation buttons */}
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 no-scrollbar">
           {workoutState.exercises.map((exercise, index) => {
             const exerciseCompleted = exercise.setsData?.every(set => set.completed);
             const exerciseInProgress = exercise.setsData?.some(set => set.completed) && !exerciseCompleted;
@@ -592,114 +619,157 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                 key={index}
                 variant={activeExerciseIndex === index ? "default" : "outline"}
                 size="sm"
-                className={`flex-shrink-0 ${exerciseCompleted ? "opacity-70" : ""}`}
+                className={`flex-shrink-0 rounded-full px-3 ${
+                  exerciseCompleted 
+                    ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200 hover:text-green-800" 
+                    : exerciseInProgress 
+                      ? "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200 hover:text-amber-800"
+                      : activeExerciseIndex === index
+                        ? "" // Use default primary styling
+                        : "hover:bg-slate-100"
+                }`}
                 onClick={() => setActiveExerciseIndex(index)}
               >
-                {exerciseCompleted && <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-green-500" />}
-                {exerciseInProgress && <RefreshCw className="h-3.5 w-3.5 mr-1 text-amber-500" />}
-                {exercise.name}
+                {exerciseCompleted && <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-green-600" />}
+                {exerciseInProgress && <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-amber-600" />}
+                <span className="truncate max-w-[120px]">{exercise.name}</span>
               </Button>
             );
           })}
         </div>
 
         {/* Active exercise */}
-        <Card className="mb-4">
-          <CardContent className="pt-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold mb-1">{activeExercise.name}</h2>
-              <div className="flex items-center gap-4 text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Dumbbell className="h-4 w-4" />
-                  <span>{activeExercise.sets} sets &times; {activeExercise.reps} reps</span>
-                </div>
-                <Badge variant="outline" className="bg-muted/50">
-                  {typeof activeExercise.weight === 'number' 
-                    ? `Previous: ${activeExercise.weight} kg` 
-                    : 'No previous weight'}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 mb-6">
+        <Card className="mb-4 shadow-sm border-slate-200">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-start mb-1">
+              <CardTitle className="text-xl font-bold">{activeExercise.name}</CardTitle>
+              
               <Button 
-                className="h-12 w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+                variant="ghost" 
+                size="sm" 
+                className="h-8 px-2 text-xs flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800"
+                onClick={() => setIsHistoryPopupOpen(true)}
+              >
+                <HistoryIcon className="h-3 w-3" /> 
+                <span className="hidden sm:inline">View History</span>
+                <span className="sm:hidden">History</span>
+              </Button>
+            </div>
+            
+            <CardDescription className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1">
+              <div className="flex items-center gap-1 text-sm">
+                <Dumbbell className="h-4 w-4 text-slate-600" />
+                <span>{activeExercise.sets} sets × {activeExercise.reps || '?'} reps</span>
+              </div>
+              
+              {typeof activeExercise.weight === 'number' && (
+                <Badge variant="outline" className="font-normal px-2 py-1 h-6 bg-slate-100 text-slate-700">
+                  {activeExercise.weight} {activeExercise.unit || 'kg'}
+                </Badge>
+              )}
+              
+              <div className="hidden sm:flex items-center gap-1 text-xs">
+                <Award className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-slate-600">Best: {activeExercise.weight} {activeExercise.unit || 'kg'} × {activeExercise.reps}</span>
+              </div>
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="pt-2">
+            {/* Rest timer buttons */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <Button 
+                variant="outline"
+                className="h-10 sm:h-12 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800"
                 onClick={() => startRestTimer(60)}
               >
-                <TimerIcon className="h-4 w-4 mr-2" />
-                Start 60s Rest Timer
+                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">60s Rest</span>
+                <span className="sm:hidden">60s</span>
               </Button>
               <Button 
-                className="h-12 hidden md:flex bg-amber-600 hover:bg-amber-700" 
+                variant="outline"
+                className="h-10 sm:h-12 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800" 
                 onClick={() => startRestTimer(90)}
               >
-                <TimerIcon className="h-4 w-4 mr-2" />
-                90s Rest
+                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">90s Rest</span>
+                <span className="sm:hidden">90s</span>
               </Button>
               <Button 
-                className="h-12 hidden md:flex bg-purple-600 hover:bg-purple-700" 
+                variant="outline"
+                className="h-10 sm:h-12 bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800" 
                 onClick={() => startRestTimer(120)}
               >
-                <TimerIcon className="h-4 w-4 mr-2" />
-                120s Rest
+                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">120s Rest</span>
+                <span className="sm:hidden">120s</span>
               </Button>
             </div>
 
-            <Separator className="my-4" />
-            
-            {/* Info text about workout tracking */}
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700">
-              <InfoIcon className="inline-block mr-2 h-4 w-4" />
-              You can only mark sets as completed during an active workout. Weight and reps cannot be modified to ensure accurate tracking.
-            </div>
+            {/* Info message for plan mode */}
+            {isPlanModeWorkout && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-700 flex items-start">
+                <InfoIcon className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0" />
+                <span>Enter your actual weight and reps for each set. Mark sets as completed as you perform them.</span>
+              </div>
+            )}
 
             {/* Sets tracking with per-set weight and reps */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {activeExercise.setsData?.map((setData, setIndex) => (
-                <div key={setIndex} className="border rounded-lg p-3">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="font-medium">Set {setIndex + 1}</h3>
+                <div key={setIndex} className={`border rounded-md overflow-hidden transition-colors ${
+                  setData.completed 
+                    ? "border-green-200 bg-green-50"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}>
+                  <div className="flex justify-between items-center px-3 py-2 bg-slate-50 border-b border-slate-200">
+                    <h3 className="font-medium text-sm">Set {setIndex + 1}</h3>
                     <Button
                       variant={setData.completed ? "default" : "outline"}
                       size="sm"
-                      className={`h-8 ${setData.completed ? "bg-green-600 hover:bg-green-700" : ""}`}
+                      className={`h-7 text-xs ${
+                        setData.completed 
+                          ? "bg-green-600 hover:bg-green-700" 
+                          : "border-slate-300"
+                      }`}
                       onClick={() => toggleSetCompletion(activeExerciseIndex, setIndex)}
                     >
                       {setData.completed ? (
-                        <><CheckCircle2 className="h-4 w-4 mr-1" /> Completed</>
-                      ) : "Mark Complete"}
+                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Completed</>
+                      ) : (
+                        "Mark Complete"
+                      )}
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium mb-1 block">Weight (kg)</label>
+                      <label className="text-xs font-medium mb-1 block text-slate-600">Weight ({activeExercise.unit || 'kg'})</label>
                       <Input
                         type="number"
                         value={setData.weight === null || setData.weight === undefined ? '' : setData.weight}
                         min={0}
                         onChange={(e) => {
-                          // If input is empty, keep it as null to show placeholder
                           const newWeight = e.target.value === '' ? null : parseFloat(e.target.value);
                           updateSetWeight(activeExerciseIndex, setIndex, newWeight);
                         }}
-                        className="h-10"
-                        placeholder="Enter weight"
+                        className={`h-10 ${setData.completed ? "bg-white/80" : ""}`}
+                        placeholder={typeof activeExercise.weight === 'number' ? activeExercise.weight.toString() : "Weight"}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium mb-1 block">Reps</label>
+                      <label className="text-xs font-medium mb-1 block text-slate-600">Reps</label>
                       <Input
                         type="number"
                         value={setData.reps === null || setData.reps === undefined ? '' : setData.reps}
                         min={1}
                         onChange={(e) => {
-                          // If input is empty, keep it as null to show placeholder
                           const newReps = e.target.value === '' ? null : parseInt(e.target.value);
                           updateSetReps(activeExerciseIndex, setIndex, newReps);
                         }}
-                        className="h-10"
-                        placeholder="Enter reps"
+                        className={`h-10 ${setData.completed ? "bg-white/80" : ""}`}
+                        placeholder={typeof activeExercise.reps === 'number' ? activeExercise.reps.toString() : "Reps"}
                       />
                     </div>
                   </div>
@@ -709,35 +779,41 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               {/* Add Extra Set Button */}
               <Button 
                 variant="outline" 
-                className="w-full flex items-center justify-center gap-2 h-12 border-dashed border-2"
+                className="w-full flex items-center justify-center gap-2 py-3 h-auto border-dashed border-2 mt-4 text-slate-600 hover:text-slate-800 hover:bg-slate-50"
                 onClick={() => addExtraSet(activeExerciseIndex)}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                  <path d="M12 5v14"></path>
-                  <path d="M5 12h14"></path>
-                </svg>
+                <Plus className="h-4 w-4 mr-1" />
                 Add Extra Set
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Navigation buttons - with responsive text */}
-        <div className="flex gap-2 mb-4">
+        {/* Navigation buttons with improved styling */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <Button 
             variant="outline" 
-            className="flex-1"
+            className="flex items-center justify-center gap-1 h-14 text-base transition-all"
             onClick={() => {
               // Navigate to previous exercise
               setActiveExerciseIndex(prev => Math.max(0, prev - 1));
             }}
             disabled={activeExerciseIndex === 0}
           >
-            <span className="hidden sm:inline">Previous Exercise</span>
-            <span className="inline sm:hidden">Previous</span>
+            <ChevronLeft className="h-5 w-5" />
+            <div className="flex flex-col items-start">
+              <span className="text-xs text-muted-foreground">Previous</span>
+              <span className="font-medium truncate max-w-[100px]">
+                {activeExerciseIndex > 0 
+                  ? workoutState.exercises[activeExerciseIndex - 1].name
+                  : "None"}
+              </span>
+            </div>
           </Button>
+          
           <Button 
-            className="flex-1"
+            variant="default"
+            className="flex items-center justify-center gap-1 h-14 text-base transition-all"
             onClick={() => {
               // Navigate to next exercise
               setActiveExerciseIndex(prev => {
@@ -752,28 +828,78 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             }}
             disabled={activeExerciseIndex === workoutState.exercises.length - 1}
           >
-            <span className="hidden sm:inline">Next Exercise</span>
-            <span className="inline sm:hidden">Next</span>
+            <div className="flex flex-col items-end">
+              <span className="text-xs text-white/80">Next</span>
+              <span className="font-medium truncate max-w-[100px]">
+                {activeExerciseIndex < workoutState.exercises.length - 1 
+                  ? workoutState.exercises[activeExerciseIndex + 1].name
+                  : "None"}
+              </span>
+            </div>
+            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Complete workout button or completed status */}
         {workoutState.completed ? (
-          <div className="w-full p-4 bg-green-50 text-green-800 rounded-md text-center mb-20">
-            <CheckCircle2 className="h-6 w-6 mx-auto mb-2" />
-            <p className="text-lg font-medium">Workout Completed</p>
-            <p className="text-sm mt-1">Great job! This workout has been marked as complete.</p>
-          </div>
+          <Card className="border-green-200 bg-green-50 mb-20">
+            <CardContent className="pt-6 pb-6 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-green-800 mb-2">Workout Completed</h3>
+              <p className="text-green-700">Great job! This workout has been saved to your history.</p>
+              
+              <div className="mt-6 flex justify-center">
+                <Button
+                  variant="outline"
+                  className="border-green-300 text-green-700 hover:bg-green-100 hover:text-green-800"
+                  onClick={onExit}
+                >
+                  Return to Workouts
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="pb-20">
+            <Card className="border-dashed border-2 border-slate-200 bg-slate-50 shadow-none mb-4">
+              <CardContent className="p-4 flex items-center">
+                <div className="mr-4 p-2 rounded-full bg-primary/10">
+                  <BarChart3 className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm">Progress Summary</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {completedSets} of {totalSets} sets completed ({progressPercentage}%)
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            
             <Button 
-              className="w-full h-12 text-lg"
+              className="w-full h-14 text-lg font-medium shadow-md transition-all"
               disabled={!allExercisesCompleted || updateWorkoutMutation.isPending}
               onClick={saveAndCompleteWorkout}
             >
-              <Save className="h-5 w-5 mr-2" />
-              Complete Workout
+              {updateWorkoutMutation.isPending ? (
+                <>
+                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5 mr-2" />
+                  Complete Workout
+                </>
+              )}
             </Button>
+            
+            {!allExercisesCompleted && (
+              <p className="text-center text-xs text-slate-500 mt-2">
+                Complete all sets to finish the workout
+              </p>
+            )}
           </div>
         )}
       </div>

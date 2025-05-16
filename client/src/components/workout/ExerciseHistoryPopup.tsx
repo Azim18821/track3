@@ -18,7 +18,19 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, ChevronRight, Award } from 'lucide-react';
+import { 
+  Loader2, 
+  ChevronRight, 
+  Award, 
+  Dumbbell, 
+  BarChart3, 
+  Calendar, 
+  TrendingUp,
+  SkipForward,
+  Clock
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
 interface SetData {
@@ -178,22 +190,30 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            <span>Exercise History</span>
+          <DialogTitle className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-primary" />
+              <span>Exercise History</span>
+            </div>
             {nextExercise && (
-              <Tabs value={activeTab} onValueChange={handleTabChange} className="mr-2">
-                <TabsList>
-                  <TabsTrigger value="current">Current</TabsTrigger>
-                  <TabsTrigger value="next">Next</TabsTrigger>
+              <Tabs value={activeTab} onValueChange={handleTabChange} className="mr-0">
+                <TabsList className="grid grid-cols-2 h-8">
+                  <TabsTrigger value="current" className="text-xs px-3">Current</TabsTrigger>
+                  <TabsTrigger value="next" className="text-xs px-3">Next</TabsTrigger>
                 </TabsList>
               </Tabs>
             )}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="flex items-center gap-1">
             {selectedExercise && (
-              <>Your history for <span className="font-semibold">{selectedExercise.name}</span></>
+              <>
+                <span>Your performance data for</span> 
+                <Badge variant="secondary" className="font-medium">
+                  {selectedExercise.name}
+                </Badge>
+              </>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -205,114 +225,164 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
               <span>Loading history...</span>
             </div>
           ) : (
-            <>
+            <div className="space-y-4">
+              {/* Recommended values card */}
               {recommendedValues && (
-                <div className="bg-primary/10 p-4 rounded-lg mb-4">
-                  <h3 className="font-medium mb-2 flex items-center">
-                    <Award className="h-4 w-4 mr-2 text-primary" />
-                    Recommended for Today
-                  </h3>
-                  <div className="text-sm">
-                    <p>Based on your last workout on {recommendedValues.date}</p>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <p className="text-muted-foreground">Weight</p>
-                        <p className="font-semibold">{recommendedValues.weight} kg</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Reps</p>
-                        <p className="font-semibold">{recommendedValues.reps}</p>
+                <Card className="border-blue-100 bg-blue-50">
+                  <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="hidden sm:flex bg-blue-100 p-2 rounded-full">
+                      <Award className="h-6 w-6 text-blue-700" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-blue-800 flex items-center">
+                        <Award className="h-4 w-4 mr-1.5 sm:hidden text-blue-700" />
+                        Today's Recommended Values
+                      </h3>
+                      <p className="text-xs text-blue-700 mt-0.5 mb-2">
+                        Based on your last workout on {recommendedValues.date}
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-white/60 rounded p-2">
+                          <p className="text-xs text-blue-600">Weight</p>
+                          <p className="font-semibold text-blue-900">{recommendedValues.weight} kg</p>
+                        </div>
+                        <div className="bg-white/60 rounded p-2">
+                          <p className="text-xs text-blue-600">Reps</p>
+                          <p className="font-semibold text-blue-900">{recommendedValues.reps}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
+              {/* Personal records card */}
               {personalRecords && (
-                <div className="bg-muted/50 p-4 rounded-lg mb-4">
-                  <h3 className="font-medium mb-2">Personal Records</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Max Weight</p>
-                      <p className="font-medium">{personalRecords.maxWeight} kg</p>
+                <Card className="border-amber-100 bg-amber-50">
+                  <CardContent className="p-4">
+                    <h3 className="text-sm font-medium text-amber-800 flex items-center mb-3">
+                      <TrendingUp className="h-4 w-4 mr-1.5 text-amber-600" />
+                      Personal Records
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white/60 rounded p-2">
+                        <p className="text-xs text-amber-600">Max Weight</p>
+                        <p className="font-medium text-amber-900">{personalRecords.maxWeight} kg</p>
+                      </div>
+                      <div className="bg-white/60 rounded p-2">
+                        <p className="text-xs text-amber-600">Max Reps</p>
+                        <p className="font-medium text-amber-900">{personalRecords.maxReps}</p>
+                      </div>
+                      <div className="bg-white/60 rounded p-2">
+                        <p className="text-xs text-amber-600">Best Set Volume</p>
+                        <p className="font-medium text-amber-900">{personalRecords.maxVolumeSet}</p>
+                      </div>
+                      <div className="bg-white/60 rounded p-2">
+                        <p className="text-xs text-amber-600">Best Workout Volume</p>
+                        <p className="font-medium text-amber-900">{personalRecords.maxVolumeWorkout}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Max Reps (Single Set)</p>
-                      <p className="font-medium">{personalRecords.maxReps}</p>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
-              {history.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No history found for this exercise.</p>
-                  <p className="text-sm mt-1">This might be your first time doing it!</p>
-                </div>
-              ) : (
-                <div className="overflow-y-auto max-h-[300px] border rounded">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-32">Date</TableHead>
-                        <TableHead>Sets / Reps / Weight</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {history.slice(0, 5).map((item) => (
-                        <TableRow key={`${item.workoutId}-${item.date}`}>
-                          <TableCell className="whitespace-nowrap">
-                            {format(new Date(item.date), 'MMM d, yyyy')}
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {item.sets && item.sets.length > 0 ? (
-                                item.sets.map((set, index) => (
-                                  <div key={index} className="flex items-center text-sm">
-                                    <span className="w-12 text-muted-foreground">Set {index + 1}:</span>
-                                    <span className="font-medium">
-                                      {set.reps} reps × {set.weight} kg
-                                    </span>
-                                  </div>
-                                ))
-                              ) : (
-                                <span className="text-muted-foreground text-sm">No set data</span>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </>
+              {/* History table */}
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="text-sm font-medium flex items-center mb-3">
+                    <Calendar className="h-4 w-4 mr-1.5 text-slate-600" />
+                    Recent History
+                  </h3>
+                  
+                  {history.length === 0 ? (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <p>No history found for this exercise.</p>
+                      <p className="text-xs mt-1">This might be your first time doing it!</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-hidden border rounded-md">
+                      <Table>
+                        <TableHeader className="bg-slate-50">
+                          <TableRow>
+                            <TableHead className="w-24 py-2">Date</TableHead>
+                            <TableHead className="py-2">Performance</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {history.slice(0, 5).map((item) => (
+                            <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-slate-50">
+                              <TableCell className="py-2 text-xs">
+                                <div className="font-medium">
+                                  {format(new Date(item.date), 'MMM d')}
+                                </div>
+                                <div className="text-slate-500">
+                                  {format(new Date(item.date), 'yyyy')}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <div className="space-y-1.5">
+                                  {item.sets && item.sets.length > 0 ? (
+                                    item.sets.map((set, index) => (
+                                      <div key={index} className="flex items-center text-sm">
+                                        <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal">
+                                          {index + 1}
+                                        </Badge>
+                                        <span className="font-medium">
+                                          {set.reps} × {set.weight} kg
+                                        </span>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-muted-foreground text-sm">No set data</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
 
-        <DialogFooter className="flex justify-between items-center sm:justify-between">
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4">
           {nextExercise && activeTab === 'current' ? (
             <Button 
               onClick={() => {
                 setActiveTab('next');
                 setSelectedExercise(nextExercise);
               }}
-              variant="secondary"
-              className="flex items-center"
+              variant="outline"
+              className="w-full sm:w-auto justify-start sm:justify-center"
             >
-              View Next <ChevronRight className="ml-1 h-4 w-4" />
+              <SkipForward className="h-4 w-4 mr-1.5" />
+              View Next Exercise 
             </Button>
           ) : (
-            <span /> // Empty span for alignment
+            <div className="hidden sm:block" /> // Empty div for alignment on larger screens
           )}
           
-          <div>
+          <div className="w-full sm:w-auto flex">
             {activeTab === 'next' ? (
-              <Button onClick={onStartNextExercise} className="ml-2">
+              <Button 
+                onClick={onStartNextExercise} 
+                className="w-full sm:w-auto flex items-center justify-center"
+              >
+                <Dumbbell className="h-4 w-4 mr-1.5" />
                 Start Next Exercise
               </Button>
             ) : (
-              <Button onClick={onClose} className="ml-2">
+              <Button 
+                onClick={onClose} 
+                className="w-full sm:w-auto flex items-center justify-center"
+              >
+                <Clock className="h-4 w-4 mr-1.5" />
                 Continue Workout
               </Button>
             )}
