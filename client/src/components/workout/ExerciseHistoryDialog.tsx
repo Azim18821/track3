@@ -155,127 +155,126 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg h-[85vh] flex flex-col">
-        <DialogHeader className="pb-0">
-          <DialogTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            {exerciseName} History
-          </DialogTitle>
-          <DialogDescription>
-            Your workout history for {exerciseName}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg flex flex-col p-0 h-[85vh] max-h-screen overflow-hidden">
+        <div className="p-6 pb-2">
+          <DialogHeader className="pb-0">
+            <DialogTitle className="text-lg flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              {exerciseName} History
+            </DialogTitle>
+            <DialogDescription>
+              Your workout history for {exerciseName}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-12 flex-1">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Loading exercise history...</span>
           </div>
         ) : isError ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground flex-1">
             <Info className="h-10 w-10 text-destructive mx-auto mb-2" />
             <p>Could not load exercise history data.</p>
             <p className="text-sm mt-1">Please try again later.</p>
           </div>
         ) : sortedHistory.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground flex-1">
             <p>No history found for this exercise.</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col mt-4 overflow-hidden">
-            {/* Content wrapper with scrollable area */}
-            <div className="overflow-y-auto pr-1 pb-2">
-              {/* Personal records section */}
-              {personalRecords && (
-                <Card className="mb-4">
+          <div className="flex-1 px-6 overflow-y-auto">
+            {/* Personal records section */}
+            {personalRecords && (
+              <Card className="mb-4 shadow-sm">
+                <CardContent className="pt-4">
+                  <h3 className="font-medium mb-2 flex items-center gap-1.5">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    Personal Records
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Max Weight</p>
+                      <p className="font-medium">{personalRecords.maxWeight} kg</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(personalRecords.weightWorkoutDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Max Reps</p>
+                      <p className="font-medium">{personalRecords.maxReps}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(personalRecords.repsWorkoutDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Max Volume (Set)</p>
+                      <p className="font-medium">{personalRecords.maxVolumePerSet} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Max Volume (Workout)</p>
+                      <p className="font-medium">{personalRecords.maxVolume} kg</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(personalRecords.volumeWorkoutDate), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Exercise history in card-based vertical layout - more mobile friendly */}
+            <div className="space-y-3 pb-2">
+              {sortedHistory.map((item) => (
+                <Card key={`${item.id}-${item.date}`} className="shadow-sm">
                   <CardContent className="pt-4">
-                    <h3 className="font-medium mb-2 flex items-center gap-1.5">
-                      <Trophy className="h-4 w-4 text-amber-500" />
-                      Personal Records
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground text-xs">Max Weight</p>
-                        <p className="font-medium">{personalRecords.maxWeight} kg</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(personalRecords.weightWorkoutDate), 'MMM d, yyyy')}
-                        </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                      <div className="flex items-center text-sm font-medium">
+                        <CalendarDays className="h-4 w-4 mr-1.5 text-muted-foreground" />
+                        {format(new Date(item.date), 'MMM d, yyyy')}
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">Max Reps</p>
-                        <p className="font-medium">{personalRecords.maxReps}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(personalRecords.repsWorkoutDate), 'MMM d, yyyy')}
-                        </p>
+                      <div className="text-sm text-muted-foreground">
+                        {item.workoutName}
+                        {item.completed && (
+                          <span className="ml-2 inline-flex items-center text-xs text-green-600 dark:text-green-400">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Completed
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">Max Volume (Set)</p>
-                        <p className="font-medium">{personalRecords.maxVolumePerSet} kg</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs">Max Volume (Workout)</p>
-                        <p className="font-medium">{personalRecords.maxVolume} kg</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(personalRecords.volumeWorkoutDate), 'MMM d, yyyy')}
-                        </p>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <h4 className="text-xs uppercase text-muted-foreground mb-2">Sets</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {item.sets && item.sets.length > 0 ? (
+                          item.sets.map((set, index) => (
+                            <div key={index} className="text-sm bg-muted/30 p-2 rounded">
+                              <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
+                                <span>Set {index + 1}</span>
+                                {set.completed && <span>✓</span>}
+                              </div>
+                              <div className="font-medium">
+                                {set.reps} reps × {set.weight} kg
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No set data</span>
+                        )}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              )}
-
-              {/* Exercise history in card-based vertical layout - more mobile friendly */}
-              <div className="space-y-3">
-                {sortedHistory.map((item) => (
-                  <Card key={`${item.id}-${item.date}`}>
-                    <CardContent className="pt-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-                        <div className="flex items-center text-sm font-medium">
-                          <CalendarDays className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                          {format(new Date(item.date), 'MMM d, yyyy')}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {item.workoutName}
-                          {item.completed && (
-                            <span className="ml-2 inline-flex items-center text-xs text-green-600 dark:text-green-400">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Completed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <h4 className="text-xs uppercase text-muted-foreground mb-2">Sets</h4>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {item.sets && item.sets.length > 0 ? (
-                            item.sets.map((set, index) => (
-                              <div key={index} className="text-sm bg-muted/30 p-2 rounded">
-                                <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
-                                  <span>Set {index + 1}</span>
-                                  {set.completed && <span>✓</span>}
-                                </div>
-                                <div className="font-medium">
-                                  {set.reps} reps × {set.weight} kg
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <span className="text-muted-foreground text-sm">No set data</span>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         )}
 
-        <DialogFooter className="mt-3 pt-2 border-t shrink-0">
-          <Button onClick={onClose}>Close</Button>
-        </DialogFooter>
+        <div className="p-4 mt-2 border-t shrink-0">
+          <Button onClick={onClose} className="ml-auto block">Close</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
