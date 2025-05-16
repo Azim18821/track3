@@ -924,7 +924,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               onClick={() => setIsExitAlertOpen(true)}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Exit & Save Progress
+              Exit Workout
             </Button>
             
             {!allExercisesCompleted && (
@@ -942,8 +942,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Exit Workout Mode?</AlertDialogTitle>
             <AlertDialogDescription>
-              Do you want to mark this workout as complete before exiting? 
-              All incomplete sets will be saved.
+              Choose how you want to save your progress:
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
@@ -957,7 +956,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   setIsExitAlertOpen(false);
                 }}
               >
-                Save & Exit
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Save Progress
               </Button>
               <Button
                 onClick={() => {
@@ -984,7 +984,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                 }}
                 className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
               >
-                Complete & Exit
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Complete Workout
               </Button>
             </div>
           </AlertDialogFooter>
