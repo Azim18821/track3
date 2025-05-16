@@ -61,6 +61,15 @@ interface ExerciseHistoryItem {
   completed: boolean;
 }
 
+interface ChartDataItem {
+  date: string;
+  fullDate: string;
+  maxWeight: number;
+  avgWeight: number;
+  volume: number;
+  sets: number;
+}
+
 const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
   exerciseName,
   isOpen,
@@ -93,7 +102,18 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
   }, [isError, error, toast]);
 
   // Calculate personal records and prepare chart data
-  const { personalRecords, chartData } = React.useMemo(() => {
+  const { personalRecords, chartData } = React.useMemo<{
+    personalRecords: {
+      maxWeight: number;
+      maxReps: number;
+      maxVolumePerSet: number;
+      maxVolume: number;
+      volumeWorkoutDate: string;
+      weightWorkoutDate: string;
+      repsWorkoutDate: string;
+    } | null;
+    chartData: ChartDataItem[];
+  }>(() => {
     if (!exerciseHistory.length) return { personalRecords: null, chartData: [] };
 
     let maxWeight = 0;
@@ -294,7 +314,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
                         }}
                         labelFormatter={(date) => {
                           const item = chartData.find(d => d.date === date);
-                          return item ? format(new Date(item.fullDate), 'MMM d, yyyy') : date;
+                          return item && item.fullDate ? format(new Date(item.fullDate), 'MMM d, yyyy') : String(date);
                         }}
                       />
                       <Legend />

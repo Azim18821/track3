@@ -190,7 +190,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2">
@@ -218,14 +218,14 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div>
+        <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin mr-2 text-primary" />
               <span>Loading history...</span>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 px-1">
               {/* Recommended values card */}
               {recommendedValues && (
                 <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
