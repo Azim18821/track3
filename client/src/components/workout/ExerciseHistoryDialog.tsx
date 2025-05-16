@@ -86,7 +86,9 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
     if (!exerciseHistory.length) return null;
 
     let maxWeight = 0;
+    let maxWeightReps = 0;
     let maxReps = 0;
+    let maxRepsWeight = 0;
     let maxVolumePerSet = 0;
     let maxVolume = 0;
     let volumeWorkoutDate = '';
@@ -97,38 +99,39 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
     exerciseHistory.forEach(workout => {
       if (!workout.sets || !workout.sets.length) return;
       
-      // Calculate metrics for this workout
-      const weights = workout.sets.map(set => set.weight || 0);
-      const reps = workout.sets.map(set => set.reps || 0);
-      
-      const workoutMaxWeight = Math.max(...weights);
-      const workoutMaxReps = Math.max(...reps);
-      
-      // Calculate total volume (weight × reps × sets)
-      let workoutVolume = 0;
-      let maxSetVolume = 0;
-      
+      // Process each set to find personal records
       workout.sets.forEach(set => {
-        const setVolume = (set.weight || 0) * (set.reps || 0);
-        workoutVolume += setVolume;
-        maxSetVolume = Math.max(maxSetVolume, setVolume);
+        const weight = set.weight || 0;
+        const reps = set.reps || 0;
+        const setVolume = weight * reps;
+        
+        // Track max weight record with associated reps
+        if (weight > maxWeight) {
+          maxWeight = weight;
+          maxWeightReps = reps;
+          weightWorkoutDate = workout.date;
+        }
+        
+        // Track max reps record with associated weight
+        if (reps > maxReps) {
+          maxReps = reps;
+          maxRepsWeight = weight;
+          repsWorkoutDate = workout.date;
+        }
+        
+        // Track max volume per set
+        if (setVolume > maxVolumePerSet) {
+          maxVolumePerSet = setVolume;
+        }
       });
-
-      // Track personal records
-      if (workoutMaxWeight > maxWeight) {
-        maxWeight = workoutMaxWeight;
-        weightWorkoutDate = workout.date;
-      }
       
-      if (workoutMaxReps > maxReps) {
-        maxReps = workoutMaxReps;
-        repsWorkoutDate = workout.date;
-      }
-
-      if (maxSetVolume > maxVolumePerSet) {
-        maxVolumePerSet = maxSetVolume;
-      }
-
+      // Calculate total workout volume
+      let workoutVolume = 0;
+      workout.sets.forEach(set => {
+        workoutVolume += (set.weight || 0) * (set.reps || 0);
+      });
+      
+      // Track max volume per workout
       if (workoutVolume > maxVolume) {
         maxVolume = workoutVolume;
         volumeWorkoutDate = workout.date;
@@ -137,7 +140,9 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
 
     return {
       maxWeight,
+      maxWeightReps,
       maxReps,
+      maxRepsWeight,
       maxVolumePerSet,
       maxVolume,
       volumeWorkoutDate,
@@ -196,14 +201,14 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground text-xs">Max Weight</p>
-                      <p className="font-medium">{personalRecords.maxWeight} kg</p>
+                      <p className="font-medium">{personalRecords.maxWeight} kg × {personalRecords.maxWeightReps} reps</p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(personalRecords.weightWorkoutDate), 'MMM d, yyyy')}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground text-xs">Max Reps</p>
-                      <p className="font-medium">{personalRecords.maxReps}</p>
+                      <p className="font-medium">{personalRecords.maxReps} reps × {personalRecords.maxRepsWeight} kg</p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(personalRecords.repsWorkoutDate), 'MMM d, yyyy')}
                       </p>
@@ -211,6 +216,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
                     <div>
                       <p className="text-muted-foreground text-xs">Max Volume (Set)</p>
                       <p className="font-medium">{personalRecords.maxVolumePerSet} kg</p>
+                      <p className="text-xs text-muted-foreground">weight × reps in single set</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground text-xs">Max Volume (Workout)</p>
