@@ -14,7 +14,6 @@ import Dashboard from "@/pages/Dashboard";
 import NutritionTracker from "@/pages/NutritionTracker";
 import WorkoutTracker from "@/pages/WorkoutTracker";
 import WorkoutModePage from "@/pages/WorkoutModePage";
-import EnhancedWorkoutModePage from "@/pages/EnhancedWorkoutModePage";
 import FitnessCoach from "@/pages/FitnessCoach";
 import AICoachPage from "@/pages/AICoachPage";
 import AICoachHome from "@/pages/AICoachHome";
@@ -186,11 +185,6 @@ function App() {
                         <Route path="/workout-mode/:id">
                           <ProtectedLayout>
                             <WorkoutModePage />
-                          </ProtectedLayout>
-                        </Route>
-                        <Route path="/enhanced-workout-mode/:id">
-                          <ProtectedLayout>
-                            <EnhancedWorkoutModePage />
                           </ProtectedLayout>
                         </Route>
                     <Route path="/coach">

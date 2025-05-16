@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
@@ -12,10 +12,8 @@ import WeeklyWorkoutView from "@/components/workout/WeeklyWorkoutView";
 import ExerciseHistoryCard from "@/components/workout/ExerciseHistoryCard";
 import ExerciseHistoryDialog from "@/components/workout/ExerciseHistoryDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, Calendar, ListChecks, Sparkles } from "lucide-react";
+import { PlusCircle, Calendar, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Import the type definitions from the centralized types file
 import { Exercise, Workout } from "@/types/workout";
@@ -97,23 +95,9 @@ const WorkoutTracker = () => {
     setIsAddWorkoutOpen(true);
   };
 
-  // State for enhanced mode preference
-  const [useEnhancedMode, setUseEnhancedMode] = useState<boolean>(
-    localStorage.getItem("preferEnhancedWorkoutMode") === "true"
-  );
-  
-  // Save preference to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("preferEnhancedWorkoutMode", useEnhancedMode.toString());
-  }, [useEnhancedMode]);
-
   const handleStartWorkout = (workout: Workout) => {
-    // Navigate to the appropriate workout mode page based on user preference
-    if (useEnhancedMode) {
-      navigate(`/enhanced-workout-mode/${workout.id}`);
-    } else {
-      navigate(`/workout-mode/${workout.id}`);
-    }
+    // Instead of showing the workout mode as a modal, navigate to the dedicated workout mode page
+    navigate(`/workout-mode/${workout.id}`);
   };
 
   return (
@@ -124,26 +108,7 @@ const WorkoutTracker = () => {
             Workout Tracker
           </h2>
         </div>
-        <div className="mt-4 flex items-center gap-4 sm:mt-0 sm:ml-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-md">
-                  <Sparkles className={`h-4 w-4 ${useEnhancedMode ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-sm mr-1">Enhanced Mode</span>
-                  <Switch
-                    checked={useEnhancedMode}
-                    onCheckedChange={setUseEnhancedMode}
-                    aria-label="Toggle enhanced workout mode"
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Try our enhanced workout interface with improved tracking features</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
+        <div className="mt-4 flex sm:mt-0 sm:ml-4">
           <Button
             onClick={() => {
               setSelectedDate(format(new Date(), "yyyy-MM-dd"));
