@@ -55,7 +55,7 @@ export default function EnhancedWorkoutModePage() {
 
   // Handle navigation back to workout list
   const handleExit = () => {
-    navigate("/workout-tracker");
+    navigate("/workouts");
   };
 
   if (isLoading) {
