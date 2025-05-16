@@ -485,16 +485,35 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container pt-12">
-      {/* Main timer display */}
-      <div className="py-3 px-2 flex flex-col items-center bg-background z-10 shadow-sm">
-        <div className="mb-2 text-center">
-          <div className="text-3xl font-mono font-bold">{formatTime(timerSeconds)}</div>
-        </div>
-        
-        <div className="flex justify-center gap-2 mb-2">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container">
+      {/* Header - fixed at top */}
+      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 pb-safe shadow-sm">
+        <div className="flex items-center">
           <Button 
-            variant={isTimerRunning ? "destructive" : "default"} 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setIsExitAlertOpen(true)}
+            className="mr-1 sm:mr-2"
+            aria-label="Exit workout"
+          >
+            <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-base sm:text-xl font-bold">{workout.name}</h1>
+              {isPlanModeWorkout && (
+                <Badge className="bg-blue-600 hover:bg-blue-700 text-white">Plan Mode</Badge>
+              )}
+            </div>
+            <div className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1">
+              <span>{completedSets}/{totalSets} sets completed</span>
+              <span className="hidden sm:inline">({progressPercentage}%)</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <Button 
+            variant={isTimerRunning ? "destructive" : "outline"} 
             size="sm" 
             onClick={() => {
               if (isTimerRunning) {
@@ -503,26 +522,20 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                 setIsTimerRunning(true);
               }
             }}
-            className="px-4 h-8"
+            className="flex items-center gap-1 text-xs sm:text-sm h-8 sm:h-9"
           >
-            {isTimerRunning ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-            {isTimerRunning ? "Pause" : "Start"}
+            <Timer className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="font-mono">{formatTime(timerSeconds)}</span>
           </Button>
           <Button 
             variant="outline" 
-            size="sm"
+            size="icon"
             onClick={resetTimer}
-            className="px-3 h-8"
+            className="h-8 w-8 sm:h-9 sm:w-9"
+            aria-label="Reset timer"
           >
-            <RotateCcw className="h-4 w-4 mr-1" />
-            Reset
+            <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
-        </div>
-        
-        {/* Progress indicator */}
-        <div className="w-full flex items-center justify-between text-xs text-muted-foreground px-1">
-          <span>{completedSets}/{totalSets} sets</span>
-          <span>{progressPercentage}% complete</span>
         </div>
       </div>
 
