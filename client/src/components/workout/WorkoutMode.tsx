@@ -424,7 +424,11 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     
     // Use a direct API request instead of the mutation to avoid the mutation setting completed: true
     apiRequest("PUT", `/api/workouts/${workout.id}`, progressWorkout)
-      .then(() => {
+      .then(async (response) => {
+        // Parse the response
+        const data = await response.json();
+        console.log("Save progress response:", data);
+        
         toast({
           title: "Progress saved",
           description: "Your workout progress has been saved. You can continue later.",
@@ -436,6 +440,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
         onExit();
       })
       .catch((error) => {
+        console.error("Error saving progress:", error);
         toast({
           title: "Error",
           description: `Failed to save workout progress: ${error.message}`,
