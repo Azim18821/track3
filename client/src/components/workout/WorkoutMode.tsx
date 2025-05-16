@@ -422,12 +422,19 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       })
     };
     
-    // Use a direct API request instead of the mutation to avoid the mutation setting completed: true
-    apiRequest("PUT", `/api/workouts/${workout.id}`, progressWorkout)
+    // Use a direct fetch instead of our API helper to guarantee we're not setting completed: true
+    fetch(`/api/workouts/${workout.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(progressWorkout)
+    })
       .then(async (response) => {
-        // Parse the response
-        const data = await response.json();
-        console.log("Save progress response:", data);
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
         
         toast({
           title: "Progress saved",
@@ -1010,10 +1017,39 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                     }))
                   };
                   
-                  // Update the state and save
-                  setWorkoutState(completedWorkout);
-                  updateWorkoutMutation.mutate(completedWorkout);
-                  setIsExitAlertOpen(false);
+                  // Instead of using the mutation, make a direct fetch request
+                  fetch(`/api/workouts/${workout.id}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(completedWorkout)
+                  })
+                    .then(async (response) => {
+                      if (!response.ok) {
+                        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                      }
+                      
+                      toast({
+                        title: "Workout completed",
+                        description: "Your workout has been saved as completed.",
+                      });
+                      
+                      // Invalidate queries to update the UI
+                      queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
+                      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+                      setIsExitAlertOpen(false);
+                      onExit();
+                    })
+                    .catch((error) => {
+                      console.error("Error completing workout:", error);
+                      toast({
+                        title: "Error",
+                        description: `Failed to complete workout: ${error.message}`,
+                        variant: "destructive",
+                      });
+                    });
                 }}
                 className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
               >
