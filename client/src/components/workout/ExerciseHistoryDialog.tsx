@@ -184,7 +184,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
@@ -332,8 +332,8 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
                 </div>
               </TabsContent>
               
-              <TabsContent value="history" className="flex-1 mt-0 overflow-auto">
-                <div className="overflow-y-auto rounded border">
+              <TabsContent value="history" className="flex-1 mt-0 overflow-y-auto">
+                <div className="rounded border">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
