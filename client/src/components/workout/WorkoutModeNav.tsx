@@ -11,17 +11,17 @@ const WorkoutModeNav: React.FC<WorkoutModeNavProps> = ({ workoutId }) => {
   const [, navigate] = useLocation();
 
   return (
-    <div className="fixed top-0 left-0 z-50 w-full bg-background border-b">
-      <div className="flex items-center h-14 px-3">
+    <div className="fixed top-0 left-0 z-[100] w-full bg-background/95 backdrop-blur-sm border-b shadow-sm">
+      <div className="flex items-center h-12 px-2">
         <Button 
-          variant="ghost" 
-          size="icon"
+          variant="default" 
           onClick={() => navigate('/workouts')}
-          className="mr-2"
+          className="text-white bg-primary hover:bg-primary/90 flex items-center gap-1 text-sm h-8 rounded-md"
+          aria-label="Back to workouts"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
         </Button>
-        <h1 className="text-base font-semibold flex-1">Workout</h1>
       </div>
     </div>
   );

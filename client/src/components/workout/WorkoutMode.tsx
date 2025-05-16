@@ -485,7 +485,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container pt-12">
       {/* Header - fixed at top */}
       <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 pb-safe shadow-sm">
         <div className="flex items-center">
