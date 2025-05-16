@@ -2,7 +2,6 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 import {
   ArrowLeft,
   Timer,
@@ -76,7 +75,6 @@ interface WorkoutModeProps {
 
 const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -514,16 +512,6 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setLocation('/workouts')}
-            className="flex items-center gap-1 text-xs sm:text-sm h-8 sm:h-9"
-          >
-            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Back to Workouts</span>
-            <span className="sm:hidden">Back</span>
-          </Button>
           <Button 
             variant={isTimerRunning ? "destructive" : "outline"} 
             size="sm" 
