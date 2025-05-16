@@ -360,23 +360,32 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   // Update workout mutation
   const updateWorkoutMutation = useMutation({
     mutationFn: async (updatedWorkout: Workout) => {
+      // Use the completed status from the provided workout object
       return await apiRequest("PUT", `/api/workouts/${workout.id}`, {
         ...updatedWorkout,
-        completed: true, // Mark as completed
-        isPlanMode: false // Convert from plan mode to regular workout
+        isPlanMode: false // Always convert from plan mode to regular workout
       });
     },
-    onSuccess: () => {
-      // Show appropriate toast based on whether this was a plan mode workout
-      if (isPlanModeWorkout) {
-        toast({
-          title: "Plan completed!",
-          description: "Your plan has been converted to a completed workout.",
-        });
+    onSuccess: (data, variables) => {
+      // Check if this was a completed workout or just saved progress
+      if (variables.completed) {
+        // Show appropriate toast based on whether this was a plan mode workout
+        if (isPlanModeWorkout) {
+          toast({
+            title: "Plan completed!",
+            description: "Your plan has been converted to a completed workout.",
+          });
+        } else {
+          toast({
+            title: "Workout completed",
+            description: "Your workout has been saved successfully",
+          });
+        }
       } else {
+        // Toast for saved progress
         toast({
-          title: "Workout completed",
-          description: "Your workout has been saved successfully",
+          title: "Progress saved",
+          description: "Your workout progress has been saved. You can continue later.",
         });
       }
       
