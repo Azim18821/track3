@@ -394,6 +394,29 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     }
   });
 
+  // Save workout progress without completing it
+  const saveWorkoutProgress = () => {
+    // Transform the workout state back to the format expected by the API
+    // Mark any incomplete sets with default values
+    const apiWorkout = {
+      ...workoutState,
+      completed: false, // Explicitly mark as not completed
+      exercises: workoutState.exercises.map(ex => {
+        // For each exercise, keep all set data as-is (whether completed or not)
+        return {
+          ...ex,
+          setsData: ex.setsData?.map(set => {
+            // If the set is not completed, keep the data as-is
+            return set;
+          })
+        };
+      })
+    };
+    
+    // Save to the API
+    updateWorkoutMutation.mutate(apiWorkout);
+  };
+
   // Handle save and complete workout
   const saveAndCompleteWorkout = () => {
     // For plan mode workouts, check if any sets are missing values
@@ -889,10 +912,19 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                 </>
               ) : (
                 <>
-                  <Save className="h-5 w-5 mr-2" />
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
                   Complete Workout
                 </>
               )}
+            </Button>
+            
+            <Button 
+              variant="outline"
+              className="w-full h-10 text-base font-medium mt-3 border-muted-foreground/30"
+              onClick={() => setIsExitAlertOpen(true)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Exit & Save Progress
             </Button>
             
             {!allExercisesCompleted && (
@@ -910,12 +942,51 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Exit Workout Mode?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your progress will be saved, but the workout won't be marked as complete. You can resume later.
+              Do you want to mark this workout as complete before exiting? 
+              All incomplete sets will be saved.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onExit}>Exit Workout</AlertDialogAction>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => {
+                  saveWorkoutProgress();
+                  setIsExitAlertOpen(false);
+                }}
+              >
+                Save & Exit
+              </Button>
+              <Button
+                onClick={() => {
+                  // For each exercise, mark all incomplete sets as completed with current values
+                  const completedWorkout = {
+                    ...workoutState,
+                    completed: true,
+                    exercises: workoutState.exercises.map(ex => ({
+                      ...ex,
+                      setsData: ex.setsData?.map(set => ({
+                        ...set,
+                        completed: true,
+                        // If weight or reps is null or undefined, set to 0
+                        weight: set.weight !== null && set.weight !== undefined ? set.weight : 0,
+                        reps: set.reps !== null && set.reps !== undefined ? set.reps : 0
+                      }))
+                    }))
+                  };
+                  
+                  // Update the state and save
+                  setWorkoutState(completedWorkout);
+                  updateWorkoutMutation.mutate(completedWorkout);
+                  setIsExitAlertOpen(false);
+                }}
+                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+              >
+                Complete & Exit
+              </Button>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
