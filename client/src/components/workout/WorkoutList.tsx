@@ -107,9 +107,9 @@ const WorkoutList: React.FC<WorkoutListProps> = ({
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {sortedWorkouts.map((workout) => (
               <div key={workout.id} className="px-4 py-5 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between">
+                <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-md font-medium">{workout.name}</h4>
                       {workout.completed && (
                         <div className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 rounded-full font-medium">
@@ -121,24 +121,24 @@ const WorkoutList: React.FC<WorkoutListProps> = ({
                       {formatDistanceToNow(new Date(workout.date), { addSuffix: true })} • {workout.duration} minutes
                     </p>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {onStartWorkout && !workout.completed && (
                       <Button 
                         type="button" 
                         variant="default" 
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-green-600 hover:bg-green-700 h-9 flex-shrink-0"
                         onClick={() => onStartWorkout(workout)}
                       >
                         <Play className="mr-1 h-4 w-4" />
-                        Start Workout
+                        <span className="hidden xs:inline">Start</span> Workout
                       </Button>
                     )}
                     <Button 
                       type="button" 
                       variant="outline" 
                       size="sm"
-                      className="dark:border-gray-600"
+                      className="dark:border-gray-600 h-9 flex-1 min-w-[100px]"
                       onClick={() => {
                         if (onViewWorkout) {
                           onViewWorkout(workout);
@@ -147,7 +147,8 @@ const WorkoutList: React.FC<WorkoutListProps> = ({
                         }
                       }}
                     >
-                      {expandedWorkouts[workout.id] && !onViewWorkout ? "Hide Details" : "View Details"}
+                      <span className="hidden xs:inline">{expandedWorkouts[workout.id] && !onViewWorkout ? "Hide" : "View"} Details</span>
+                      <span className="xs:hidden">Details</span>
                       {expandedWorkouts[workout.id] && !onViewWorkout ? (
                         <ChevronUp className="ml-1 h-4 w-4" />
                       ) : (
@@ -158,6 +159,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({
                       <Button 
                         variant="ghost" 
                         size="icon" 
+                        className="h-9 w-9 flex-shrink-0"
                         onClick={() => onDeleteWorkout(workout.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -170,19 +172,21 @@ const WorkoutList: React.FC<WorkoutListProps> = ({
                   <div className="mt-3">
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       {workout.exercises?.map((exercise: any) => (
-                        <div key={exercise.id} className="py-3 flex justify-between text-sm">
-                          <div className="flex-grow">
+                        <div key={exercise.id} className="py-3 flex flex-col sm:flex-row sm:justify-between text-sm">
+                          <div className="flex-grow mb-1 sm:mb-0">
                             <span className="font-medium">{exercise.name}</span>
-                            <span className="text-muted-foreground ml-2">
+                            <span className="text-muted-foreground ml-2 block sm:inline mt-1 sm:mt-0">
                               {exercise.sets} sets × {exercise.reps} reps
                             </span>
                           </div>
-                          <div className="text-primary font-medium">
-                            {exercise.weight ? `${exercise.weight} kg` : 'Bodyweight'}
+                          <div className="text-primary font-medium flex flex-wrap items-center gap-2">
+                            <span>{exercise.weight ? `${exercise.weight} kg` : 'Bodyweight'}</span>
                             {exercise.setsData && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="ml-2 text-xs bg-gray-100 dark:bg-gray-800 p-1 rounded cursor-help">Per-set data</span>
+                                  <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded cursor-help">
+                                    Set details
+                                  </span>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-xs">
                                   <div className="space-y-1 text-xs">
