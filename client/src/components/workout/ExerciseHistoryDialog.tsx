@@ -155,7 +155,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-lg h-[85vh] flex flex-col">
         <DialogHeader className="pb-0">
           <DialogTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
@@ -182,48 +182,49 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
             <p>No history found for this exercise.</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-hidden flex flex-col mt-4">
-            {/* Personal records section */}
-            {personalRecords && (
-              <Card className="mb-4 shrink-0">
-                <CardContent className="pt-4">
-                  <h3 className="font-medium mb-2 flex items-center gap-1.5">
-                    <Trophy className="h-4 w-4 text-amber-500" />
-                    Personal Records
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground text-xs">Max Weight</p>
-                      <p className="font-medium">{personalRecords.maxWeight} kg</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(personalRecords.weightWorkoutDate), 'MMM d, yyyy')}
-                      </p>
+          <div className="flex-1 flex flex-col mt-4 overflow-hidden">
+            {/* Content wrapper with scrollable area */}
+            <div className="overflow-y-auto pr-1 pb-2">
+              {/* Personal records section */}
+              {personalRecords && (
+                <Card className="mb-4">
+                  <CardContent className="pt-4">
+                    <h3 className="font-medium mb-2 flex items-center gap-1.5">
+                      <Trophy className="h-4 w-4 text-amber-500" />
+                      Personal Records
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Max Weight</p>
+                        <p className="font-medium">{personalRecords.maxWeight} kg</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(personalRecords.weightWorkoutDate), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Max Reps</p>
+                        <p className="font-medium">{personalRecords.maxReps}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(personalRecords.repsWorkoutDate), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Max Volume (Set)</p>
+                        <p className="font-medium">{personalRecords.maxVolumePerSet} kg</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Max Volume (Workout)</p>
+                        <p className="font-medium">{personalRecords.maxVolume} kg</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(personalRecords.volumeWorkoutDate), 'MMM d, yyyy')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Max Reps</p>
-                      <p className="font-medium">{personalRecords.maxReps}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(personalRecords.repsWorkoutDate), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Max Volume (Set)</p>
-                      <p className="font-medium">{personalRecords.maxVolumePerSet} kg</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Max Volume (Workout)</p>
-                      <p className="font-medium">{personalRecords.maxVolume} kg</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(personalRecords.volumeWorkoutDate), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </CardContent>
+                </Card>
+              )}
 
-            {/* Exercise history in card-based vertical layout - more mobile friendly */}
-            <div className="overflow-y-auto pr-1 flex-1">
+              {/* Exercise history in card-based vertical layout - more mobile friendly */}
               <div className="space-y-3">
                 {sortedHistory.map((item) => (
                   <Card key={`${item.id}-${item.date}`}>
