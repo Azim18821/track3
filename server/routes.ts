@@ -50,6 +50,7 @@ import onboardingRoutes from "./onboardingRoutes";
 import ingredientsRoutes from "./ingredientsRoutes";
 import multiItemMealRoutes from "./routes/multiItemMealRoutes";
 import trainerRoutes from "./trainerRoutes";
+import notionRoutes from "./notionRoutes";
 import { planGenerationStatus } from "@shared/schema";
 import { generateCoachResponse, CoachInput } from "./coach";
 import {
