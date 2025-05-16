@@ -114,7 +114,12 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
     } | null;
     chartData: ChartDataItem[];
   }>(() => {
-    if (!exerciseHistory.length) return { personalRecords: null, chartData: [] };
+    const emptyResult: { personalRecords: null, chartData: ChartDataItem[] } = { 
+      personalRecords: null, 
+      chartData: [] 
+    };
+    
+    if (!exerciseHistory.length) return emptyResult;
 
     let maxWeight = 0;
     let maxReps = 0;
@@ -134,9 +139,11 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
       if (!workout.sets || !workout.sets.length) {
         return {
           date: format(new Date(workout.date), 'MMM d'),
+          fullDate: workout.date,
           maxWeight: 0,
           avgWeight: 0,
-          volume: 0
+          volume: 0,
+          sets: 0
         };
       }
 
@@ -231,7 +238,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
             <p>No history found for this exercise.</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-auto">
             {/* Personal records section */}
             {personalRecords && (
               <div className="bg-muted/20 p-4 rounded-lg mb-4">
@@ -270,7 +277,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
             )}
 
             {/* Tabs for graph and history */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-4">
                 <TabsTrigger value="graph" className="flex items-center gap-1">
                   <LineChartIcon className="h-4 w-4" />
@@ -353,7 +360,7 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
               </TabsContent>
               
               <TabsContent value="history" className="flex-1 mt-0 overflow-y-auto">
-                <div className="rounded border">
+                <div className="rounded border overflow-y-auto max-h-[350px]">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
