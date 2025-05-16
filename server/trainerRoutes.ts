@@ -1047,4 +1047,408 @@ router.get('/messages/:clientId', async (req, res) => {
   }
 });
 
+// === MEAL TRACKING ROUTES ===
+
+// Get client meals with date range filtering
+router.get('/clients/:clientId/meals', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const clientId = parseInt(req.params.clientId);
+    
+    // Optional date range filtering
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+    
+    // Verify client relationship
+    const clients = await storage.getTrainerClients(trainerId);
+    const isClientOfTrainer = clients.some(c => c.client.id === clientId);
+    
+    if (!isClientOfTrainer) {
+      return res.status(403).json({ message: 'You are not authorized to view meals for this client' });
+    }
+    
+    // Get client meals
+    let meals = await storage.getMeals(clientId);
+    
+    // Apply date filtering if provided
+    if (startDate || endDate) {
+      meals = meals.filter(meal => {
+        const mealDate = new Date(meal.date);
+        if (startDate && endDate) {
+          return mealDate >= startDate && mealDate <= endDate;
+        } else if (startDate) {
+          return mealDate >= startDate;
+        } else if (endDate) {
+          return mealDate <= endDate;
+        }
+        return true;
+      });
+    }
+    
+    // Get client's nutrition goals for context
+    const nutritionGoal = await storage.getNutritionGoal(clientId);
+    
+    // Group meals by date for better organization
+    const mealsByDate = meals.reduce((acc, meal) => {
+      const dateKey = new Date(meal.date).toISOString().split('T')[0];
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(meal);
+      return acc;
+    }, {} as Record<string, typeof meals>);
+    
+    // Calculate daily totals
+    const dailyTotals = Object.entries(mealsByDate).reduce((acc, [date, meals]) => {
+      acc[date] = meals.reduce((totals, meal) => {
+        totals.calories += meal.calories;
+        totals.protein += meal.protein;
+        totals.carbs += meal.carbs;
+        totals.fat += meal.fat;
+        return totals;
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      return acc;
+    }, {} as Record<string, { calories: number, protein: number, carbs: number, fat: number }>);
+    
+    res.json({
+      meals,
+      mealsByDate,
+      dailyTotals,
+      nutritionGoal
+    });
+  } catch (error) {
+    console.error('Error fetching client meals:', error);
+    res.status(500).json({ message: 'Failed to retrieve client meals' });
+  }
+});
+
+// Get detailed meal analysis for a specific date
+router.get('/clients/:clientId/meals/:date', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const clientId = parseInt(req.params.clientId);
+    const date = req.params.date; // Format: YYYY-MM-DD
+    
+    // Verify client relationship
+    const clients = await storage.getTrainerClients(trainerId);
+    const isClientOfTrainer = clients.some(c => c.client.id === clientId);
+    
+    if (!isClientOfTrainer) {
+      return res.status(403).json({ message: 'You are not authorized to view meals for this client' });
+    }
+    
+    // Get client's meals for the specified date
+    const meals = await storage.getMealsByDate(clientId, new Date(date));
+    
+    // Get client's nutrition goal for context
+    const nutritionGoal = await storage.getNutritionGoal(clientId);
+    
+    // Calculate meal type totals
+    const mealTypeTotals = meals.reduce((acc, meal) => {
+      if (!acc[meal.mealType]) {
+        acc[meal.mealType] = {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          meals: []
+        };
+      }
+      
+      acc[meal.mealType].calories += meal.calories;
+      acc[meal.mealType].protein += meal.protein;
+      acc[meal.mealType].carbs += meal.carbs;
+      acc[meal.mealType].fat += meal.fat;
+      acc[meal.mealType].meals.push(meal);
+      
+      return acc;
+    }, {} as Record<string, { calories: number, protein: number, carbs: number, fat: number, meals: typeof meals }>);
+    
+    // Calculate daily totals
+    const dailyTotals = meals.reduce((totals, meal) => {
+      totals.calories += meal.calories;
+      totals.protein += meal.protein;
+      totals.carbs += meal.carbs;
+      totals.fat += meal.fat;
+      return totals;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+    
+    // Calculate adherence percentages if nutrition goal is available
+    let adherence = null;
+    if (nutritionGoal) {
+      adherence = {
+        calories: Math.min(100, (dailyTotals.calories / nutritionGoal.caloriesPerDay) * 100),
+        protein: Math.min(100, (dailyTotals.protein / nutritionGoal.proteinPerDay) * 100),
+        carbs: Math.min(100, (dailyTotals.carbs / nutritionGoal.carbsPerDay) * 100),
+        fat: Math.min(100, (dailyTotals.fat / nutritionGoal.fatPerDay) * 100)
+      };
+    }
+    
+    res.json({
+      date,
+      meals,
+      mealTypeTotals,
+      dailyTotals,
+      nutritionGoal,
+      adherence
+    });
+  } catch (error) {
+    console.error('Error fetching client meals for date:', error);
+    res.status(500).json({ message: 'Failed to retrieve client meals for the specified date' });
+  }
+});
+
+// === CLIENT CREATION ROUTES ===
+
+// Create a new client and assign to the trainer
+router.post('/create-client', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    
+    // Validate request body
+    const schema = z.object({
+      username: z.string().min(3).max(50),
+      email: z.string().email(),
+      password: z.string().min(6),
+      notes: z.string().optional()
+    });
+    
+    const { username, email, password, notes } = schema.parse(req.body);
+    
+    // Check if user already exists
+    const existingUser = await storage.getUserByUsername(username) || 
+                        await storage.getUserByEmail(email);
+    
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'A user with this username or email already exists', 
+        field: existingUser.username === username ? 'username' : 'email' 
+      });
+    }
+    
+    // Create the new user
+    const user = await storage.createUser({
+      username,
+      email,
+      password,
+      isAdmin: false,
+      isTrainer: false,
+      isApproved: true, // Auto-approve clients created by trainers
+      registered_at: new Date()
+    });
+    
+    // Connect the new client to the trainer
+    const relationship = await storage.assignClientToTrainer(trainerId, user.id, notes);
+    
+    // Return success with new client info
+    res.status(201).json({
+      message: 'Client created and assigned successfully',
+      client: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      },
+      relationship
+    });
+    
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ 
+        message: 'Invalid client data', 
+        errors: error.errors 
+      });
+    }
+    console.error('Error creating client:', error);
+    res.status(500).json({ message: 'Failed to create client' });
+  }
+});
+
+// === PLAN TEMPLATES ROUTES ===
+
+// Get all plan templates for a trainer
+router.get('/plan-templates', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templates = await storage.getPlanTemplates(trainerId);
+    res.json(templates);
+  } catch (error) {
+    console.error('Error fetching plan templates:', error);
+    res.status(500).json({ message: 'Failed to retrieve plan templates' });
+  }
+});
+
+// Get plan templates of a specific type (fitness, nutrition, combined)
+router.get('/plan-templates/:type', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const type = req.params.type;
+    
+    // Validate the plan type
+    if (!['fitness', 'nutrition', 'combined'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid plan template type. Must be fitness, nutrition, or combined.' });
+    }
+    
+    const templates = await storage.getPlanTemplatesByType(trainerId, type);
+    res.json(templates);
+  } catch (error) {
+    console.error('Error fetching plan templates by type:', error);
+    res.status(500).json({ message: 'Failed to retrieve plan templates' });
+  }
+});
+
+// Get specific plan template
+router.get('/plan-templates/id/:id', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templateId = parseInt(req.params.id);
+    
+    const template = await storage.getPlanTemplate(templateId);
+    
+    // Verify trainer owns this template
+    if (!template || template.trainerId !== trainerId) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    res.json(template);
+  } catch (error) {
+    console.error('Error fetching plan template:', error);
+    res.status(500).json({ message: 'Failed to retrieve plan template' });
+  }
+});
+
+// Create a new plan template
+router.post('/plan-templates', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    
+    // Validate the request body against the schema
+    const templateData = insertPlanTemplateSchema.parse({
+      ...req.body,
+      trainerId
+    });
+    
+    // Create the template
+    const template = await storage.createPlanTemplate(templateData);
+    
+    res.status(201).json(template);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error('Validation error creating plan template:', error.errors);
+      res.status(400).json({ 
+        message: 'Invalid plan template data', 
+        errors: error.errors 
+      });
+    } else {
+      console.error('Error creating plan template:', error);
+      res.status(500).json({ message: 'Failed to create plan template' });
+    }
+  }
+});
+
+// Update a plan template
+router.put('/plan-templates/:id', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templateId = parseInt(req.params.id);
+    
+    // Get the template to verify ownership
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Verify trainer owns this template
+    if (template.trainerId !== trainerId) {
+      return res.status(403).json({ message: 'You do not have permission to update this template' });
+    }
+    
+    // Update the template
+    const updatedTemplate = await storage.updatePlanTemplate(templateId, req.body);
+    
+    res.json(updatedTemplate);
+  } catch (error) {
+    console.error('Error updating plan template:', error);
+    res.status(500).json({ message: 'Failed to update plan template' });
+  }
+});
+
+// Delete a plan template
+router.delete('/plan-templates/:id', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templateId = parseInt(req.params.id);
+    
+    // Get the template to verify ownership
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Verify trainer owns this template
+    if (template.trainerId !== trainerId) {
+      return res.status(403).json({ message: 'You do not have permission to delete this template' });
+    }
+    
+    // Delete the template
+    const success = await storage.deletePlanTemplate(templateId);
+    
+    if (success) {
+      res.status(200).json({ message: 'Plan template deleted successfully' });
+    } else {
+      res.status(500).json({ message: 'Failed to delete plan template' });
+    }
+  } catch (error) {
+    console.error('Error deleting plan template:', error);
+    res.status(500).json({ message: 'Failed to delete plan template' });
+  }
+});
+
+// Apply a template to a client
+router.post('/plan-templates/:id/apply/:clientId', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templateId = parseInt(req.params.id);
+    const clientId = parseInt(req.params.clientId);
+    
+    // Get the template to verify ownership
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Verify trainer owns this template
+    if (template.trainerId !== trainerId) {
+      return res.status(403).json({ message: 'You do not have permission to use this template' });
+    }
+    
+    // Verify client is assigned to this trainer
+    const clients = await storage.getTrainerClients(trainerId);
+    const isClientOfTrainer = clients.some(c => c.client.id === clientId);
+    
+    if (!isClientOfTrainer) {
+      return res.status(403).json({ message: 'This client is not assigned to you' });
+    }
+    
+    // Apply the template
+    const success = await storage.applyTemplateToClient(templateId, clientId);
+    
+    if (success) {
+      res.status(200).json({ 
+        message: 'Template applied successfully to client',
+        templateId,
+        clientId,
+        templateName: template.name
+      });
+    } else {
+      res.status(500).json({ message: 'Failed to apply template to client' });
+    }
+  } catch (error) {
+    console.error('Error applying template to client:', error);
+    res.status(500).json({ message: 'Failed to apply template to client' });
+  }
+});
+
 export default router;
