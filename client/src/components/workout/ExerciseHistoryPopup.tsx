@@ -139,38 +139,52 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
     if (!history.length) return null;
     
     let maxWeight = 0;
+    let maxWeightReps = 0;
     let maxReps = 0;
+    let maxRepsWeight = 0;
     let maxVolumeSet = 0;
     let maxVolumeWorkout = 0;
     
     history.forEach(workout => {
       if (!workout.sets || !workout.sets.length) return;
       
-      // Max weight in any set
-      const workoutMaxWeight = Math.max(...workout.sets.map(set => set.weight || 0));
-      maxWeight = Math.max(maxWeight, workoutMaxWeight);
-      
-      // Max reps in any set
-      const workoutMaxReps = Math.max(...workout.sets.map(set => set.reps || 0));
-      maxReps = Math.max(maxReps, workoutMaxReps);
-      
-      // Max volume for a single set (weight * reps)
-      let workoutMaxVolumeSet = 0;
-      let workoutTotalVolume = 0;
-      
+      // Check each set for records
       workout.sets.forEach(set => {
-        const setVolume = (set.weight || 0) * (set.reps || 0);
-        workoutMaxVolumeSet = Math.max(workoutMaxVolumeSet, setVolume);
-        workoutTotalVolume += setVolume;
+        const weight = set.weight || 0;
+        const reps = set.reps || 0;
+        const setVolume = weight * reps;
+        
+        // Track max weight record (and its reps)
+        if (weight > maxWeight) {
+          maxWeight = weight;
+          maxWeightReps = reps;
+        }
+        
+        // Track max reps record (and its weight)
+        if (reps > maxReps) {
+          maxReps = reps;
+          maxRepsWeight = weight;
+        }
+        
+        // Track max volume for a single set
+        maxVolumeSet = Math.max(maxVolumeSet, setVolume);
       });
       
-      maxVolumeSet = Math.max(maxVolumeSet, workoutMaxVolumeSet);
+      // Calculate total workout volume
+      let workoutTotalVolume = 0;
+      workout.sets.forEach(set => {
+        workoutTotalVolume += (set.weight || 0) * (set.reps || 0);
+      });
+      
+      // Track max volume for entire workout
       maxVolumeWorkout = Math.max(maxVolumeWorkout, workoutTotalVolume);
     });
     
     return {
       maxWeight,
+      maxWeightReps,
       maxReps,
+      maxRepsWeight,
       maxVolumeSet,
       maxVolumeWorkout
     };
@@ -269,19 +283,19 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-background/90 rounded p-2 border border-border/60">
                         <p className="text-xs text-muted-foreground">Max Weight</p>
-                        <p className="font-medium">{personalRecords.maxWeight} kg</p>
+                        <p className="font-medium">{personalRecords.maxWeight} kg × {personalRecords.maxWeightReps} reps</p>
                       </div>
                       <div className="bg-background/90 rounded p-2 border border-border/60">
                         <p className="text-xs text-muted-foreground">Max Reps</p>
-                        <p className="font-medium">{personalRecords.maxReps}</p>
+                        <p className="font-medium">{personalRecords.maxReps} reps × {personalRecords.maxRepsWeight} kg</p>
                       </div>
                       <div className="bg-background/90 rounded p-2 border border-border/60">
                         <p className="text-xs text-muted-foreground">Best Set Volume</p>
-                        <p className="font-medium">{personalRecords.maxVolumeSet}</p>
+                        <p className="font-medium">{personalRecords.maxVolumeSet} kg</p>
                       </div>
                       <div className="bg-background/90 rounded p-2 border border-border/60">
                         <p className="text-xs text-muted-foreground">Best Workout Volume</p>
-                        <p className="font-medium">{personalRecords.maxVolumeWorkout}</p>
+                        <p className="font-medium">{personalRecords.maxVolumeWorkout} kg</p>
                       </div>
                     </div>
                   </CardContent>
