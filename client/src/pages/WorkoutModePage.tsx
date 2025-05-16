@@ -4,8 +4,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import WorkoutMode from "@/components/workout/WorkoutMode";
+import WorkoutModeNav from "@/components/workout/WorkoutModeNav";
 
 interface SetData {
   reps: number;
@@ -99,14 +100,19 @@ const WorkoutModePage = () => {
   }
 
   return (
-    <WorkoutMode
-      workout={workout}
-      onExit={() => {
-        // Redirect back to the workout tracker
-        queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
-        navigate("/workouts");
-      }}
-    />
+    <>
+      {/* Add the workout mode navigation with back button at the top */}
+      <WorkoutModeNav workoutId={workout.id} />
+      
+      <WorkoutMode
+        workout={workout}
+        onExit={() => {
+          // Redirect back to the workout tracker
+          queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
+          navigate("/workouts");
+        }}
+      />
+    </>
   );
 };
 
