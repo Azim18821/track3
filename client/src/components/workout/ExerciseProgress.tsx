@@ -43,6 +43,18 @@ interface ExerciseData {
   history: ChartDataItem[];
 }
 
+interface ExerciseHistoryItem {
+  id: number;
+  date: string;
+  workoutName: string;
+  sets: {
+    reps: number;
+    weight: number;
+    completed: boolean;
+  }[];
+  completed: boolean;
+}
+
 const ExerciseProgress: React.FC<ExerciseProgressProps> = ({ workouts = [] }) => {
   const { toast } = useToast();
   const [selectedExercise, setSelectedExercise] = useState<string>("");
@@ -73,21 +85,27 @@ const ExerciseProgress: React.FC<ExerciseProgressProps> = ({ workouts = [] }) =>
   }, [workouts, selectedExercise]);
   
   // Fetch exercise history for the selected exercise
-  const { data: exerciseHistory = [], isLoading } = useQuery<any[]>({
+  const { data: exerciseHistory = [], isLoading } = useQuery<Array<ExerciseHistoryItem>>({
     queryKey: [`/api/exercise-history/${encodeURIComponent(selectedExercise)}`, selectedExercise],
     enabled: !!selectedExercise,
-    onError: (error) => {
+    retry: 1,
+    staleTime: 60000
+  });
+  
+  // Handle errors in the data fetching process
+  useEffect(() => {
+    if (!isLoading && Array.isArray(exerciseHistory) && exerciseHistory.length === 0 && selectedExercise) {
       toast({
-        title: "Error fetching exercise history",
-        description: "Could not load exercise history data.",
-        variant: "destructive",
+        title: "No history data",
+        description: "No workout history found for this exercise.",
+        variant: "default",
       });
     }
-  });
+  }, [isLoading, exerciseHistory, selectedExercise, toast]);
   
   // Process exercise history into chart data
   useEffect(() => {
-    if (!exerciseHistory.length) {
+    if (!Array.isArray(exerciseHistory) || exerciseHistory.length === 0) {
       setChartData([]);
       return;
     }

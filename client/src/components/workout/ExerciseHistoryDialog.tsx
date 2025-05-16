@@ -155,8 +155,8 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
+        <DialogHeader className="pb-0">
           <DialogTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
             {exerciseName} History
@@ -182,10 +182,10 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
             <p>No history found for this exercise.</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col overflow-auto">
+          <div className="flex-1 overflow-hidden flex flex-col mt-4">
             {/* Personal records section */}
             {personalRecords && (
-              <Card className="mb-4">
+              <Card className="mb-4 shrink-0">
                 <CardContent className="pt-4">
                   <h3 className="font-medium mb-2 flex items-center gap-1.5">
                     <Trophy className="h-4 w-4 text-amber-500" />
@@ -223,54 +223,56 @@ const ExerciseHistoryDialog: React.FC<ExerciseHistoryDialogProps> = ({
             )}
 
             {/* Exercise history in card-based vertical layout - more mobile friendly */}
-            <div className="space-y-3 overflow-y-auto pr-1">
-              {sortedHistory.map((item) => (
-                <Card key={`${item.id}-${item.date}`}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center text-sm font-medium">
-                        <CalendarDays className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                        {format(new Date(item.date), 'MMM d, yyyy')}
+            <div className="overflow-y-auto pr-1 flex-1">
+              <div className="space-y-3">
+                {sortedHistory.map((item) => (
+                  <Card key={`${item.id}-${item.date}`}>
+                    <CardContent className="pt-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                        <div className="flex items-center text-sm font-medium">
+                          <CalendarDays className="h-4 w-4 mr-1.5 text-muted-foreground" />
+                          {format(new Date(item.date), 'MMM d, yyyy')}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {item.workoutName}
+                          {item.completed && (
+                            <span className="ml-2 inline-flex items-center text-xs text-green-600 dark:text-green-400">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Completed
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground truncate max-w-[150px]">
-                        {item.workoutName}
-                        {item.completed && (
-                          <Badge variant="outline" className="ml-2 bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            <span className="text-xs">Completed</span>
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2">
-                      <h4 className="text-xs uppercase text-muted-foreground mb-1.5">Sets</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {item.sets && item.sets.length > 0 ? (
-                          item.sets.map((set, index) => (
-                            <div key={index} className="text-sm bg-muted/30 p-2 rounded">
-                              <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
-                                <span>Set {index + 1}</span>
-                                {set.completed && <span>✓</span>}
+                      
+                      <div className="mt-3">
+                        <h4 className="text-xs uppercase text-muted-foreground mb-2">Sets</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {item.sets && item.sets.length > 0 ? (
+                            item.sets.map((set, index) => (
+                              <div key={index} className="text-sm bg-muted/30 p-2 rounded">
+                                <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
+                                  <span>Set {index + 1}</span>
+                                  {set.completed && <span>✓</span>}
+                                </div>
+                                <div className="font-medium">
+                                  {set.reps} reps × {set.weight} kg
+                                </div>
                               </div>
-                              <div className="font-medium">
-                                {set.reps} reps × {set.weight} kg
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground text-sm">No set data</span>
-                        )}
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground text-sm">No set data</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        <DialogFooter className="mt-3">
+        <DialogFooter className="mt-3 pt-2 border-t shrink-0">
           <Button onClick={onClose}>Close</Button>
         </DialogFooter>
       </DialogContent>
