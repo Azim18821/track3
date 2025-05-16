@@ -405,25 +405,43 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
   // Save workout progress without completing it
   const saveWorkoutProgress = () => {
-    // Transform the workout state back to the format expected by the API
-    // Mark any incomplete sets with default values
-    const apiWorkout = {
+    // Create a workout with completed: false so it can be continued later
+    const progressWorkout = {
       ...workoutState,
       completed: false, // Explicitly mark as not completed
       exercises: workoutState.exercises.map(ex => {
-        // For each exercise, keep all set data as-is (whether completed or not)
         return {
-          ...ex,
-          setsData: ex.setsData?.map(set => {
-            // If the set is not completed, keep the data as-is
-            return set;
-          })
+          id: ex.id,
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          weight: ex.weight,
+          unit: ex.unit || "kg",
+          setsData: ex.setsData // Keep all set data as-is
         };
       })
     };
     
-    // Save to the API
-    updateWorkoutMutation.mutate(apiWorkout);
+    // Use a direct API request instead of the mutation to avoid the mutation setting completed: true
+    apiRequest("PUT", `/api/workouts/${workout.id}`, progressWorkout)
+      .then(() => {
+        toast({
+          title: "Progress saved",
+          description: "Your workout progress has been saved. You can continue later.",
+        });
+        
+        // Invalidate queries to update the UI
+        queryClient.invalidateQueries({ queryKey: ['/api/workouts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+        onExit();
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: `Failed to save workout progress: ${error.message}`,
+          variant: "destructive",
+        });
+      });
   };
 
   // Handle save and complete workout
@@ -470,6 +488,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       ...workoutState,
       // If this was a plan mode workout, mark that it's no longer in plan mode
       isPlanMode: false,
+      completed: true, // Mark as completed
       exercises: workoutState.exercises.map(ex => {
         // Get average actual values from setsData to update the exercise defaults
         const completedSets = ex.setsData?.filter(set => set.completed) || [];
