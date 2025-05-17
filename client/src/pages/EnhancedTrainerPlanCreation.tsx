@@ -942,7 +942,7 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
       
       console.log('Sending fitness plan update payload:', JSON.stringify(payload));
       
-      const res = await apiRequest('PUT', `/api/trainer/clients/${data.clientId}/fitness-plan/${planIdParam}`, payload);
+      const res = await apiRequest('PATCH', `/api/trainer/fitness-plans/${planIdParam}`, payload);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Failed to update fitness plan');
