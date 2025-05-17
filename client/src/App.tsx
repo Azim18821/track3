@@ -58,6 +58,7 @@ import EnhancedTrainerPlanCreation from "@/pages/EnhancedTrainerPlanCreation";
 import EnhancedTrainerNutritionGoals from "@/pages/EnhancedTrainerNutritionGoals";
 import EnhancedTrainerClientWorkouts from "@/pages/EnhancedTrainerClientWorkouts";
 import TrainerAssignedPlanView from "@/pages/TrainerAssignedPlanView";
+import ClientTrainerPlan from "@/pages/ClientTrainerPlan";
 // Marketing components removed
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useServiceWorker } from "@/hooks/use-service-worker";
@@ -207,7 +208,7 @@ function App() {
                     </Route>
                     <Route path="/fitness-plan">
                       <ProtectedLayout>
-                        <ViewPlan />
+                        <ClientTrainerPlan />
                       </ProtectedLayout>
                     </Route>
                     <Route path="/fitness-plans">
