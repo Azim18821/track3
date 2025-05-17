@@ -143,10 +143,59 @@ export default function CreatePlanTemplate() {
     }
   };
 
+  // Get template data for edit mode
+  useEffect(() => {
+    if (isEditMode && editId) {
+      // Fetch template data if in edit mode
+      const fetchTemplateData = async () => {
+        try {
+          const res = await fetch(`/api/trainer/plan-templates/${editId}`);
+          if (!res.ok) {
+            throw new Error('Failed to fetch template data');
+          }
+          const templateData = await res.json();
+          
+          // Update form with fetched data
+          form.reset({
+            name: templateData.name,
+            description: templateData.description || '',
+            type: templateData.type,
+            category: templateData.category,
+            targetFitnessLevel: templateData.targetFitnessLevel as any || undefined,
+            targetBodyType: templateData.targetBodyType as any || undefined,
+            duration: templateData.duration || undefined,
+            notes: templateData.notes || '',
+          });
+          
+          // Set tags
+          if (templateData.tags && Array.isArray(templateData.tags)) {
+            setTags(templateData.tags);
+          }
+        } catch (error) {
+          console.error('Error fetching template:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load template data',
+            variant: 'destructive'
+          });
+        }
+      };
+      
+      fetchTemplateData();
+    }
+  }, [isEditMode, editId, form, toast]);
+
   // Create template mutation
   const createTemplateMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('/api/trainer/plan-templates', 'POST', data);
+      // Use PUT for edit mode, POST for create
+      const url = isEditMode ? 
+        `/api/trainer/plan-templates/${editId}` : 
+        '/api/trainer/plan-templates';
+      
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const response = await apiRequest(url, method, data);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to create template');
@@ -156,14 +205,14 @@ export default function CreatePlanTemplate() {
     onSuccess: () => {
       toast({ 
         title: 'Success', 
-        description: 'Template created successfully',
+        description: isEditMode ? 'Template updated successfully' : 'Template created successfully',
       });
       navigate('/plan-templates');
     },
     onError: (error: any) => {
       toast({ 
         title: 'Error', 
-        description: error.message || 'Failed to create template',
+        description: error.message || 'Failed to save template',
         variant: 'destructive'
       });
       setIsSaving(false);

@@ -27,6 +27,7 @@ import ExerciseLibrary from "@/pages/ExerciseLibrary";
 import MealLibrary from "@/pages/MealLibrary";
 import PlanTemplates from "@/pages/PlanTemplates";
 import CreatePlanTemplate from "@/pages/CreatePlanTemplate";
+import ViewPlanTemplate from "@/pages/ViewPlanTemplate";
 import LandingPage from "@/pages/LandingPage";
 import AuthPage from "@/pages/auth-page-new";
 import ForgotPassword from "@/pages/forgot-password";
