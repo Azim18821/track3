@@ -381,6 +381,11 @@ function App() {
                         <CreatePlanTemplate />
                       </ProtectedLayout>
                     </Route>
+                    <Route path="/view-plan-template/:id">
+                      <ProtectedLayout>
+                        <ViewPlanTemplate />
+                      </ProtectedLayout>
+                    </Route>
 
                         {/* Fallback route */}
                         <Route>
