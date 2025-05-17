@@ -1040,16 +1040,7 @@ export default function EnhancedTrainerClientDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-2">
-              {/* Debug information */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-muted-foreground mb-4 p-2 bg-slate-100 rounded overflow-auto max-h-24">
-                  <p>Debug - Meals: {clientData?.meals ? `${clientData.meals.length} found` : 'none'}</p>
-                  <p>Debug - Nutrition Goal: {clientData?.nutritionGoal ? 'exists' : 'missing'}</p>
-                  {clientData?.nutritionGoal && (
-                    <p>Goal values: {JSON.stringify(clientData.nutritionGoal)}</p>
-                  )}
-                </div>
-              )}
+              {/* Debug information removed */}
               
               {/* Always render WeeklyNutritionView with fallback values for empty states */}
               <WeeklyNutritionView 
