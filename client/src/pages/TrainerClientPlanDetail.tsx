@@ -268,36 +268,18 @@ export default function TrainerClientPlanDetail() {
         throw new Error('Plan data not available. Please refresh the page and try again.');
       }
       
-      // Check if this is a trainer-created plan by checking for specific properties
-      // that only exist in trainer plans
-      const isTrainerPlan = 'trainerId' in plan;
-      const endpoint = isTrainerPlan 
-        ? `/api/trainer/clients/${clientId}/fitness-plans/${planId}` 
-        : `/api/fitness-plans/${planId}`;
-      
-      console.log(`Using endpoint for deletion: ${endpoint}`);
-      console.log(`Plan type: ${isTrainerPlan ? 'Trainer Plan' : 'Regular Plan'}`);
+      // Use the dedicated endpoint for deleting a client's fitness plan
+      // This endpoint handles both trainer-created plans and regular plans
+      const endpoint = `/api/trainer/clients/${clientId}/fitness-plans/${planId}`;
+      console.log(`Using trainer-client plan deletion endpoint: ${endpoint}`);
       
       // Attempt to delete the plan
       const res = await apiRequest('DELETE', endpoint);
       
-      // If that fails, try the other endpoint as a fallback
       if (!res.ok) {
-        console.error('First deletion attempt failed with status:', res.status);
-        
-        // Try alternative endpoint as fallback
-        const fallbackEndpoint = isTrainerPlan 
-          ? `/api/fitness-plans/${planId}` 
-          : `/api/trainer/clients/${clientId}/fitness-plans/${planId}`;
-          
-        console.log(`Trying fallback endpoint: ${fallbackEndpoint}`);
-        const fallbackRes = await apiRequest('DELETE', fallbackEndpoint);
-        
-        if (!fallbackRes.ok) {
-          console.error('Fallback deletion attempt also failed with status:', fallbackRes.status);
-          const errorText = await fallbackRes.text().catch(() => 'Failed to delete fitness plan');
-          throw new Error(errorText || 'Failed to delete fitness plan');
-        }
+        console.error('Plan deletion failed with status:', res.status);
+        const errorText = await res.text().catch(() => 'Failed to delete fitness plan');
+        throw new Error(errorText || 'Failed to delete fitness plan');
       }
       
       console.log('Plan deletion successful');
