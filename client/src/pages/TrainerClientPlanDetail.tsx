@@ -260,25 +260,54 @@ export default function TrainerClientPlanDetail() {
   // Delete plan mutation
   const deletePlanMutation = useMutation({
     mutationFn: async () => {
+      console.log(`Attempting to delete plan with ID: ${planId}`);
       const res = await apiRequest('DELETE', `/api/trainer/fitness-plans/${planId}`);
-      if (!res.ok) {
-        throw new Error('Failed to delete fitness plan');
+      
+      // Read the response body regardless of status code
+      const responseText = await res.text();
+      let data;
+      
+      try {
+        // Try to parse as JSON if possible
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        // If not valid JSON, use empty object
+        data = {};
       }
-      // Parse the response to get the clientId for proper redirection
-      const data = await res.json();
-      return data;
+      
+      // If response wasn't successful, throw with server message or fallback
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to delete fitness plan');
+      }
+      
+      // Success case
+      return {
+        success: true,
+        clientId: data.clientId || clientId,
+        message: data.message || 'Fitness plan deleted successfully'
+      };
     },
     onSuccess: (data) => {
+      // Ensure we're not showing the deleting state anymore
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      
+      // Show success toast
       toast({
         title: "Success",
-        description: "Fitness plan has been deleted",
+        description: data.message || "Fitness plan has been deleted",
       });
-      // If the server returned a clientId, use it for redirection, otherwise use the one from params
-      const redirectClientId = data?.clientId || clientId;
+      
+      // Redirect to client page
+      const redirectClientId = data.clientId || clientId;
       navigate(`/trainer/clients/${redirectClientId}`);
     },
     onError: (error: Error) => {
+      // Reset UI state
       setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      
+      // Show error toast
       toast({
         title: "Error",
         description: error.message,
