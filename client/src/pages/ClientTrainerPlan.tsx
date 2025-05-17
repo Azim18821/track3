@@ -413,12 +413,12 @@ export default function ClientTrainerPlan() {
             </CardContent>
             <CardFooter>
               <Button 
-                variant="outline" 
+                variant="primary" 
                 className="w-full"
                 onClick={() => navigate("/workouts")}
               >
                 <Dumbbell className="mr-2 h-4 w-4" />
-                Log Workouts
+                View & Log Workouts
               </Button>
             </CardFooter>
           </Card>
@@ -569,12 +569,12 @@ export default function ClientTrainerPlan() {
             </CardContent>
             <CardFooter>
               <Button 
-                variant="outline" 
+                variant="primary" 
                 className="w-full"
                 onClick={() => navigate("/nutrition")}
               >
                 <ChefHat className="mr-2 h-4 w-4" />
-                Log Meals
+                View & Log Nutrition
               </Button>
             </CardFooter>
           </Card>
