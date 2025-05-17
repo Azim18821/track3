@@ -2023,6 +2023,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Fetching active fitness plan for user ID: ${userId}`);
       
       try {
+        // Check if this user is a client with a trainer
+        const hasTrainers = await storage.userHasTrainers(userId);
+        
+        // If user has trainers, try to sync the trainer fitness plan first
+        if (hasTrainers) {
+          // Check if there's a trainer fitness plan for this client
+          const trainerClients = await storage.getClientTrainers(userId);
+          if (trainerClients && trainerClients.length > 0) {
+            // Get the first trainer's ID
+            const trainerId = trainerClients[0].trainer.id;
+            
+            // Find trainer fitness plans for this client
+            const [trainerPlan] = await db
+              .select()
+              .from(storage["trainerFitnessPlans"])
+              .where(
+                and(
+                  eq(storage["trainerFitnessPlans"].clientId, userId),
+                  eq(storage["trainerFitnessPlans"].trainerId, trainerId)
+                )
+              )
+              .orderBy(desc(storage["trainerFitnessPlans"].createdAt))
+              .limit(1);
+            
+            if (trainerPlan) {
+              console.log(`Found trainer fitness plan for client ${userId} from trainer ${trainerId}`);
+              
+              // First, deactivate all existing fitness plans for this user
+              await db
+                .update(fitnessPlans)
+                .set({ 
+                  isActive: false,
+                  deactivatedAt: new Date(),
+                  deactivationReason: "Replaced by trainer plan"
+                })
+                .where(eq(fitnessPlans.userId, userId));
+              
+              // Check if we already have a corresponding fitness plan
+              const [existingPlan] = await db
+                .select()
+                .from(fitnessPlans)
+                .where(
+                  and(
+                    eq(fitnessPlans.userId, userId),
+                    eq(fitnessPlans.trainerPlanId, trainerPlan.id)
+                  )
+                );
+              
+              // If no corresponding plan exists, create one
+              if (!existingPlan) {
+                console.log(`Creating new fitness plan for client ${userId} based on trainer plan ${trainerPlan.id}`);
+                
+                // Convert the trainer plan to a client plan format
+                const newPlan = {
+                  userId: userId,
+                  workoutPlan: trainerPlan.workoutPlan,
+                  mealPlan: trainerPlan.mealPlan,
+                  preferences: {
+                    name: trainerPlan.name || "Trainer Plan",
+                    goal: "trainer_guided",
+                    fitnessLevel: "custom"
+                  },
+                  isActive: true,
+                  createdAt: new Date(),
+                  trainerPlanId: trainerPlan.id
+                };
+                
+                // Insert the new plan
+                const [createdPlan] = await db
+                  .insert(fitnessPlans)
+                  .values(newPlan)
+                  .returning();
+                
+                console.log(`Created new active fitness plan ${createdPlan.id} for client ${userId}`);
+                return res.json(createdPlan);
+              } else {
+                // If a plan exists, ensure it's set to active
+                const [updatedPlan] = await db
+                  .update(fitnessPlans)
+                  .set({ 
+                    isActive: true,
+                    workoutPlan: trainerPlan.workoutPlan,
+                    mealPlan: trainerPlan.mealPlan,
+                    deactivatedAt: null,
+                    deactivationReason: null
+                  })
+                  .where(eq(fitnessPlans.id, existingPlan.id))
+                  .returning();
+                
+                console.log(`Updated existing fitness plan ${updatedPlan.id} for client ${userId}`);
+                return res.json(updatedPlan);
+              }
+            }
+          }
+        }
+        
+        // If we reach here, either the user is not a client or we couldn't find a trainer plan
+        // Proceed with normal logic to find an active plan
         const plan = await storage.getActiveFitnessPlan(userId);
         
         if (!plan) {
