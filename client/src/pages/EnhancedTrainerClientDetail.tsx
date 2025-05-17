@@ -521,12 +521,12 @@ export default function EnhancedTrainerClientDetail() {
       >
         <TabsList className="grid w-full grid-cols-5 mb-3 sm:mb-4 h-10 overflow-x-auto">
           <TabsTrigger value="overview" className="text-xs sm:text-sm px-1 sm:px-2 py-1.5">Overview</TabsTrigger>
-          <TabsTrigger value="workout" onClick={() => navigate(`/trainer/clients/${clientId}/workouts`)} className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
+          <TabsTrigger value="workout" onClick={(e) => e.preventDefault()} className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
             <Dumbbell className="h-3.5 w-3.5 mr-1 sm:hidden" />
             <span className="hidden sm:inline">Workout</span>
             <span className="sm:hidden">Work</span>
           </TabsTrigger>
-          <TabsTrigger value="nutrition" onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)} className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
+          <TabsTrigger value="nutrition" onClick={(e) => e.preventDefault()} className="text-xs sm:text-sm px-0 sm:px-2 py-1.5">
             <Utensils className="h-3.5 w-3.5 mr-1 sm:hidden" />
             <span className="hidden sm:inline">Nutrition</span>
             <span className="sm:hidden">Nutri</span>
