@@ -1192,6 +1192,9 @@ router.delete('/clients/:clientId/workouts/:workoutId', async (req, res) => {
   }
 });
 
+// Track plans that are currently being deleted to prevent duplicate deletions
+const deletingPlans = new Set<number>();
+
 // DELETE a fitness plan - all possible routes supported
 router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer/fitness-plans/:id'], async (req, res) => {
   try {
@@ -1200,53 +1203,84 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
       return res.status(400).json({ message: 'Invalid plan ID' });
     }
 
-    // Always check for and delete from the trainer_fitness_plans table for trainer operations
-    console.log(`Checking for plan ${planId} in trainer_fitness_plans table`);
-    const trainerPlan = await storage.getTrainerFitnessPlan(planId);
-    
-    // Log detailed trainer plan information if found
-    if (trainerPlan) {
-      console.log(`Found plan ${planId} in trainer_fitness_plans table:`, JSON.stringify({
-        id: trainerPlan.id,
-        trainerId: trainerPlan.trainerId,
-        clientId: trainerPlan.clientId,
-        name: trainerPlan.name
-      }));
-      
-      // Verify the trainer is authorized to delete this plan
-      const trainerId = req.user?.id;
-      if (!trainerId) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-      
-      if (trainerPlan.trainerId !== trainerId) {
-        return res.status(403).json({ message: 'You are not authorized to manage this plan' });
-      }
-      
-      const clientId = trainerPlan.clientId;
-      
-      // Clear associated data for this client
-      console.log(`Clearing planned meals and future workouts for client ${clientId}`);
-      await clearClientPlannedMeals(clientId);
-      await clearClientWorkouts(clientId);
-      
-      // Delete the trainer plan
-      const success = await storage.deleteTrainerFitnessPlan(planId);
-      if (!success) {
-        return res.status(500).json({ message: 'Failed to delete trainer fitness plan' });
-      }
-      
-      console.log(`Successfully deleted trainer fitness plan ${planId} and cleared associated data for client ${clientId}`);
-      
-      // Return success with clientId for proper redirect
-      return res.status(200).json({ 
+    // Check if this plan is already being deleted
+    if (deletingPlans.has(planId)) {
+      console.log(`Plan ${planId} is already being deleted. Ignoring duplicate request.`);
+      return res.status(202).json({ 
         success: true, 
-        message: 'Fitness plan deleted successfully',
-        clientId: clientId // Include clientId for redirect
+        message: 'Plan deletion already in progress',
       });
-    } else {
-      console.log(`Plan ${planId} NOT found in trainer_fitness_plans table`);
-      return res.status(404).json({ message: 'Trainer fitness plan not found' });
+    }
+
+    // Add this plan to the set of plans being deleted
+    deletingPlans.add(planId);
+
+    try {
+      // Always check for and delete from the trainer_fitness_plans table for trainer operations
+      console.log(`Checking for plan ${planId} in trainer_fitness_plans table`);
+      const trainerPlan = await storage.getTrainerFitnessPlan(planId);
+      
+      // Log detailed trainer plan information if found
+      if (trainerPlan) {
+        console.log(`Found plan ${planId} in trainer_fitness_plans table:`, JSON.stringify({
+          id: trainerPlan.id,
+          trainerId: trainerPlan.trainerId,
+          clientId: trainerPlan.clientId,
+          name: trainerPlan.name
+        }));
+        
+        // Verify the trainer is authorized to delete this plan
+        const trainerId = req.user?.id;
+        if (!trainerId) {
+          deletingPlans.delete(planId); // Remove from tracking set
+          return res.status(401).json({ message: 'Unauthorized' });
+        }
+        
+        if (trainerPlan.trainerId !== trainerId) {
+          deletingPlans.delete(planId); // Remove from tracking set
+          return res.status(403).json({ message: 'You are not authorized to manage this plan' });
+        }
+        
+        const clientId = trainerPlan.clientId;
+        
+        // Clear associated data for this client
+        console.log(`Clearing planned meals and future workouts for client ${clientId}`);
+        await clearClientPlannedMeals(clientId);
+        await clearClientWorkouts(clientId);
+        
+        // Delete the trainer plan
+        const success = await storage.deleteTrainerFitnessPlan(planId);
+        if (!success) {
+          deletingPlans.delete(planId); // Remove from tracking set
+          return res.status(500).json({ message: 'Failed to delete trainer fitness plan' });
+        }
+        
+        console.log(`Successfully deleted trainer fitness plan ${planId} and cleared associated data for client ${clientId}`);
+        
+        // Remove plan from the tracking set before returning
+        deletingPlans.delete(planId);
+        
+        // Return success with clientId for proper redirect
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Fitness plan deleted successfully',
+          clientId: clientId // Include clientId for redirect
+        });
+      } else {
+        console.log(`Plan ${planId} NOT found in trainer_fitness_plans table`);
+        // Check if it exists in the fitness_plans table as well (just for logging)
+        console.log(`Checking for plan ${planId} in fitness_plans table`);
+        const regularPlan = await storage.getFitnessPlan(planId);
+        if (regularPlan) {
+          console.log(`Note: Plan ${planId} was found in fitness_plans table, but not in trainer_fitness_plans table.`);
+        }
+        deletingPlans.delete(planId); // Remove from tracking set
+        return res.status(404).json({ message: 'Fitness plan not found' });
+      }
+    } catch (error) {
+      // If any error occurs, remove the plan from the tracking set
+      deletingPlans.delete(planId);
+      throw error; // re-throw to be caught by the outer catch block
     }
   } catch (error) {
     console.error('Error deleting fitness plan:', error);
