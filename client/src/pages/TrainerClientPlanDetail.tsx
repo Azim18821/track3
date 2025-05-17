@@ -234,7 +234,8 @@ export default function TrainerClientPlanDetail() {
         mealNotes: data.mealNotes,
       };
       
-      const res = await apiRequest('PATCH', `/api/fitness-plans/${planId}/notes`, payload);
+      // Use the same path pattern as we use for viewing and deleting the plan
+      const res = await apiRequest('PATCH', `/api/trainer/clients/${clientId}/plans/${planId}/notes`, payload);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Failed to update plan notes');
@@ -246,7 +247,7 @@ export default function TrainerClientPlanDetail() {
         title: "Success",
         description: "Plan notes have been updated",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/fitness-plans', planId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientId, 'plans', planId] });
     },
     onError: (error: Error) => {
       toast({
