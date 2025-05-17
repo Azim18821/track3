@@ -4432,6 +4432,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Client: Get fitness plans created by trainers for this client
+  app.get("/api/client/trainer-plans", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const clientId = req.user!.id;
+      
+      console.log(`Getting trainer plans for client ${clientId}`);
+      
+      // Get all trainer plans for this client
+      const trainerPlans = await storage.getClientFitnessPlans(clientId);
+      
+      if (!trainerPlans || trainerPlans.length === 0) {
+        console.log(`No trainer plans found for client ${clientId}`);
+        return res.status(404).json({ message: "No trainer fitness plans found" });
+      }
+      
+      console.log(`Found ${trainerPlans.length} trainer plans for client ${clientId}`);
+      
+      // Format plans for client view - sorting by active status first, then creation date
+      const formattedPlans = trainerPlans
+        .sort((a, b) => {
+          // Sort by active status first (active plans first)
+          if (a.isActive && !b.isActive) return -1;
+          if (!a.isActive && b.isActive) return 1;
+          
+          // Then by creation date (newest first)
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        })
+        .map(plan => ({
+          id: plan.id,
+          name: plan.name || "Fitness Plan",
+          description: plan.description,
+          workoutPlan: plan.workoutPlan,
+          mealPlan: plan.mealPlan,
+          isActive: plan.isActive,
+          createdAt: plan.createdAt,
+          updatedAt: plan.updatedAt,
+          trainer: plan.trainer,
+          // Add a preferences field for compatibility with the client UI
+          preferences: {
+            name: plan.name,
+            goal: plan.notes?.includes('Goal:') ? plan.notes.split('Goal:')[1]?.trim().split(',')[0] : 'general fitness',
+            durationWeeks: 4,
+            level: 'intermediate',
+          }
+        }));
+      
+      res.json(formattedPlans);
+    } catch (error) {
+      console.error("Error fetching trainer plans for client:", error);
+      res.status(500).json({ message: "Failed to fetch trainer fitness plans" });
+    }
+  });
+  
   // Create a new trainer-client request (trainer requesting to connect with a client)
   app.post("/api/trainer/requests", ensureTrainer, async (req: Request, res: Response) => {
     try {
