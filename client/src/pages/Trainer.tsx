@@ -3,7 +3,7 @@ import { useLocation, Link } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-// Removed tabs import as we're not using tabs anymore
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { apiRequest } from '@/lib/queryClient';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -563,7 +563,13 @@ const ClientList: React.FC = () => {
   );
 };
 
-// Removed NutritionPlans component as it's no longer needed
+const NutritionPlans: React.FC = () => {
+  const { data: nutritionPlans, isLoading, error } = useQuery<NutritionPlan[]>({
+    queryKey: ['/api/trainer/nutrition-plans'],
+    retry: 1,
+  });
+  
+  const plans = nutritionPlans || [];
 
   if (isLoading) {
     return (
@@ -762,7 +768,7 @@ const FitnessPlans: React.FC = () => {
 };
 
 const TrainerPage: React.FC = () => {
-  // Removed tabs state as we're showing only clients section
+  const [activeTab, setActiveTab] = useState('clients');
   const [showClientSelectModal, setShowClientSelectModal] = useState(false);
   const [location, setLocation] = useLocation();
   
@@ -819,14 +825,32 @@ const TrainerPage: React.FC = () => {
         </div>
         
         {/* Tabs */}
-        <div className="mb-6 flex justify-between">
-          <h2 className="text-xl font-semibold flex items-center">
-            <UserPlus size={18} className="mr-2 text-blue-600" />
-            <span>My Clients</span>
-          </h2>
-        </div>
-        
-        <ClientList />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="clients" className="py-2.5">
+              <UserPlus size={14} className="mr-1.5" />
+              <span>Clients</span>
+            </TabsTrigger>
+            <TabsTrigger value="nutrition" className="py-2.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M12 2v8"/><path d="M16 18a4 4 0 0 0 0-8H2"/></svg>
+              <span>Nutrition</span>
+            </TabsTrigger>
+            <TabsTrigger value="fitness" className="py-2.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+              <span>Fitness</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="clients" className="p-0 m-0">
+            <ClientList />
+          </TabsContent>
+          <TabsContent value="nutrition" className="p-0 m-0">
+            <NutritionPlans />
+          </TabsContent>
+          <TabsContent value="fitness" className="p-0 m-0">
+            <FitnessPlans />
+          </TabsContent>
+        </Tabs>
       </div>
       
       {/* Client selection modal */}
