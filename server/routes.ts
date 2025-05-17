@@ -918,6 +918,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (workouts.length > 0) {
         console.log("Sample workout data:", JSON.stringify(workouts[0], null, 2));
+      } else {
+        console.log("No workouts found for user ID:", userId);
+        
+        // For debugging - Check if there are any workouts in the database at all
+        try {
+          const allWorkouts = await db.select().from(workouts);
+          console.log(`Total workouts in database: ${allWorkouts.length}`);
+          
+          // Check if any workouts exist for this user with a direct query
+          const directUserWorkouts = await db
+            .select()
+            .from(workouts)
+            .where(eq(workouts.userId, userId));
+          console.log(`Direct query for user ${userId} workouts: ${directUserWorkouts.length}`);
+          
+          if (directUserWorkouts.length > 0) {
+            console.log(`Found ${directUserWorkouts.length} workouts with direct query. Sample:`, 
+              JSON.stringify(directUserWorkouts[0], null, 2));
+          }
+        } catch (debugError) {
+          console.error("Error in debug queries:", debugError);
+        }
       }
       
       // Enhance workouts with exercise data
