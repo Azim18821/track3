@@ -279,7 +279,11 @@ async function createClientMealsFromPlan(clientId: number, mealPlan: any, planId
 // Helper function to get the next occurrence of a specific day of the week
 function getNextDayOfWeek(date: Date, dayOfWeek: number): Date {
   const resultDate = new Date(date.getTime());
-  resultDate.setDate(date.getDate() + (7 + dayOfWeek - date.getDay()) % 7);
+  // Calculate days to add
+  let daysToAdd = (7 + dayOfWeek - date.getDay()) % 7;
+  // If daysToAdd is 0, we're targeting the same day as today
+  // We still want to schedule it for today, not next week
+  resultDate.setDate(date.getDate() + daysToAdd);
   return resultDate;
 }
 
