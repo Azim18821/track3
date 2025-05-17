@@ -821,32 +821,8 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
     }
     
     try {
-      // Create a fitness plan in the standard fitness_plans table
-      // First, deactivate any existing active plans for this client
-      await storage.deactivateUserFitnessPlans(clientId);
-      
-      // Create the new fitness plan
-      const fitnessPlanData = {
-        userId: clientId,
-        preferences: {
-          name: name,
-          goal: goal || 'general_fitness',
-          durationWeeks: durationWeeks || 4,
-          level: level || 'beginner',
-          fitnessLevel: level || 'beginner',
-          trainerId: trainerId, // Store the trainer who created this plan
-          createdByTrainer: true,
-        },
-        workoutPlan: workoutPlan,
-        mealPlan: mealPlan,
-        isActive: true,
-        createdAt: new Date()
-      };
-      
-      // Save the new plan in the standard fitness_plans table
-      const newPlan = await storage.createFitnessPlan(clientId, fitnessPlanData);
-      
-      // Also save the plan in the trainer_fitness_plans table so it appears in the trainer dashboard
+      // For trainer-related plans, we'll only save them in the trainer_fitness_plans table
+      // Create the trainer fitness plan
       const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
         trainerId: trainerId,
         clientId: clientId,
@@ -858,13 +834,10 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
         notes: `Duration: ${durationWeeks || 4} weeks, Level: ${level || 'beginner'}`
       });
       
-      console.log(`Trainer ${trainerId} created a new fitness plan for client ${clientId}. Standard plan ID: ${newPlan.id}, Trainer plan ID: ${trainerFitnessPlan.id}`);
+      console.log(`Trainer ${trainerId} created a new fitness plan for client ${clientId}. Trainer plan ID: ${trainerFitnessPlan.id}`);
       
-      // Return both plans in the response to ensure proper UI updates
-      const responseData = {
-        standardPlan: newPlan,
-        trainerPlan: trainerFitnessPlan
-      };
+      // Prepare the response data
+      const newPlan = trainerFitnessPlan;
       
       // If trainer requested nutrition goals calculation, update the client's nutrition goals
       if (calculateNutritionGoals && mealPlan.dailyMeals) {
@@ -972,7 +945,7 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
         // Don't return an error, as the plan was still successfully created
       }
       
-      return res.status(201).json(newPlan);
+      return res.status(201).json(trainerFitnessPlan);
     } catch (error) {
       console.error('Error creating fitness plan:', error);
       return res.status(500).json({ message: 'Failed to create fitness plan', error: String(error) });
