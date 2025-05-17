@@ -1245,9 +1245,18 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
     // If not found in trainer_fitness_plans, check the regular fitness_plans table
     console.log(`Checking for plan ${planId} in fitness_plans table`);
     const plan = await storage.getFitnessPlan(planId);
+    
     if (!plan) {
+      console.log(`Plan ${planId} NOT found in fitness_plans table either`);
       return res.status(404).json({ message: 'Fitness plan not found in either table' });
     }
+    
+    console.log(`Found plan ${planId} in fitness_plans table:`, JSON.stringify({
+      id: plan.id,
+      userId: plan.userId,
+      isActive: plan.isActive,
+      createdAt: plan.createdAt
+    }));
 
     // Verify the client belongs to this trainer
     const userId = req.user?.id;
@@ -1257,12 +1266,15 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
 
     const clients = await storage.getTrainerClients(userId);
     const clientIds = clients.map(tc => tc.client.id);
+    console.log(`Trainer ${userId} has clients:`, clientIds);
     
     if (!clientIds.includes(plan.userId)) {
+      console.log(`User ${plan.userId} is not a client of trainer ${userId}`);
       return res.status(403).json({ message: 'You are not authorized to manage this plan' });
     }
 
     const clientId = plan.userId;
+    console.log(`Confirmed: User ${clientId} is a client of trainer ${userId}`);
     
     // Clear associated data for this client
     console.log(`Clearing planned meals and future workouts for client ${clientId}`);
@@ -1272,10 +1284,11 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
     // Delete the plan
     const success = await storage.deleteFitnessPlan(planId);
     if (!success) {
+      console.log(`Failed to delete plan ${planId} from fitness_plans table`);
       return res.status(500).json({ message: 'Failed to delete fitness plan' });
     }
 
-    console.log(`Successfully deleted fitness plan ${planId} and cleared associated data for client ${clientId}`);
+    console.log(`Successfully deleted fitness plan ${planId} from fitness_plans table for client ${clientId}`);
     
     // Return success with no content
     res.status(204).end();
