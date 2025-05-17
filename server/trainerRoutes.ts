@@ -5,8 +5,11 @@ import { WebSocket } from 'ws';
 import { 
   insertTrainerNutritionPlanSchema, 
   insertTrainerFitnessPlanSchema,
-  insertPlanTemplateSchema
+  insertPlanTemplateSchema, 
+  fitnessPlans
 } from '@shared/schema';
+import { db } from './db';
+import { eq, and } from 'drizzle-orm';
 import { ensureAuthenticated, ensureTrainer } from './auth';
 
 // Helper function to create workout entries for a client based on their fitness plan
@@ -775,8 +778,109 @@ router.patch('/fitness-plans/:id', async (req, res) => {
       validatedData.mealPlan = req.body.mealPlan;
     }
     
-    // Update fitness plan
+    // Update fitness plan in the trainer_fitness_plans table
     const updatedPlan = await storage.updateTrainerFitnessPlan(planId, validatedData);
+    
+    // Also update the client's regular fitness plan entry for them to view
+    try {
+      const clientId = existingPlan.clientId;
+      
+      // Find the client's active fitness plan
+      const [clientPlan] = await db
+        .select()
+        .from(fitnessPlans)
+        .where(and(
+          eq(fitnessPlans.userId, clientId),
+          eq(fitnessPlans.isActive, true)
+        ));
+        
+      if (clientPlan) {
+        // Prepare update data for client's plan with proper typing
+        const clientPlanUpdate: {
+          workoutPlan?: typeof validatedData.workoutPlan;
+          mealPlan?: typeof validatedData.mealPlan;
+          preferences?: any;
+        } = {};
+        
+        // Copy updated fields
+        if (validatedData.workoutPlan) {
+          clientPlanUpdate.workoutPlan = validatedData.workoutPlan;
+        }
+        
+        if (validatedData.mealPlan) {
+          clientPlanUpdate.mealPlan = validatedData.mealPlan;
+        }
+        
+        // Update preferences if name/description changed
+        if (validatedData.name || validatedData.description || validatedData.notes) {
+          // Get current preferences
+          const currentPrefs = clientPlan.preferences || {};
+          
+          // Create updated preferences
+          const updatedPrefs = {
+            ...currentPrefs,
+            name: validatedData.name || currentPrefs.name,
+            description: validatedData.description || currentPrefs.description
+          };
+          
+          // Parse notes for duration and level if present
+          if (validatedData.notes) {
+            const durationMatch = validatedData.notes.match(/Duration: (\d+)/);
+            if (durationMatch && durationMatch[1]) {
+              updatedPrefs.durationWeeks = parseInt(durationMatch[1]);
+            }
+            
+            const levelMatch = validatedData.notes.match(/Level: (\w+)/);
+            if (levelMatch && levelMatch[1]) {
+              updatedPrefs.level = levelMatch[1];
+            }
+          }
+          
+          clientPlanUpdate.preferences = updatedPrefs;
+        }
+        
+        // Update the client's plan
+        await db
+          .update(fitnessPlans)
+          .set(clientPlanUpdate)
+          .where(eq(fitnessPlans.id, clientPlan.id));
+          
+        console.log(`Updated client's fitness plan ${clientPlan.id} to match trainer plan ${planId}`);
+      } else {
+        // If no active plan found, create a new one for the client
+        const preferences = {
+          name: validatedData.name || existingPlan.name,
+          description: validatedData.description || existingPlan.description,
+          goal: 'general fitness'
+        };
+        
+        // Parse notes for duration and level if present
+        if (existingPlan.notes) {
+          const durationMatch = existingPlan.notes.match(/Duration: (\d+)/);
+          if (durationMatch && durationMatch[1]) {
+            preferences.durationWeeks = parseInt(durationMatch[1]);
+          }
+          
+          const levelMatch = existingPlan.notes.match(/Level: (\w+)/);
+          if (levelMatch && levelMatch[1]) {
+            preferences.level = levelMatch[1];
+          }
+        }
+        
+        // Create new fitness plan for client
+        await storage.createFitnessPlan(clientId, {
+          preferences,
+          workoutPlan: validatedData.workoutPlan || existingPlan.workoutPlan,
+          mealPlan: validatedData.mealPlan || existingPlan.mealPlan,
+          isActive: true
+        });
+        
+        console.log(`Created new fitness plan for client ${clientId} from trainer plan ${planId}`);
+      }
+    } catch (error) {
+      console.error('Error updating client fitness plan:', error);
+      // Continue with response - don't fail if just the client plan update fails
+    }
     
     // We'll keep the meal plan structure in the fitness plan, but won't auto-create meal entries
     // This allows the client to log their meals themselves
@@ -843,7 +947,6 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
     }
     
     try {
-      // For trainer-related plans, we'll only save them in the trainer_fitness_plans table
       // Create the trainer fitness plan
       const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
         trainerId: trainerId,
@@ -857,6 +960,26 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
       });
       
       console.log(`Trainer ${trainerId} created a new fitness plan for client ${clientId}. Trainer plan ID: ${trainerFitnessPlan.id}`);
+      
+      // Also create a regular fitness plan entry for the client to view
+      // First, deactivate any existing active fitness plans for this client
+      await storage.deactivateUserFitnessPlans(clientId);
+      
+      // Create a new fitness plan in the standard fitness_plans table for the client to view
+      const clientFitnessPlan = await storage.createFitnessPlan(clientId, {
+        preferences: {
+          name: name,
+          goal: goal || 'general fitness',
+          durationWeeks: durationWeeks || 4,
+          level: level || 'beginner',
+          description: description || `Fitness plan created by your trainer`
+        },
+        workoutPlan: workoutPlan,
+        mealPlan: mealPlan,
+        isActive: true
+      });
+      
+      console.log(`Created regular fitness plan ${clientFitnessPlan.id} for client ${clientId} to view`);
       
       // Prepare the response data
       const newPlan = trainerFitnessPlan;
