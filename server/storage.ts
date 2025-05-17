@@ -16,6 +16,7 @@ import {
   trainerMessages, type TrainerMessage, type InsertTrainerMessage,
   trainerNutritionPlans, type TrainerNutritionPlan, type InsertTrainerNutritionPlan,
   trainerFitnessPlans, type TrainerFitnessPlan, type InsertTrainerFitnessPlan,
+  planTemplates, type PlanTemplate, type InsertPlanTemplate,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   planGenerationStatus, type PlanGenerationStatus, type InsertPlanGenerationStatus,
   type SetData,
@@ -48,6 +49,14 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  
+  // Plan Templates
+  getPlanTemplates(trainerId: number): Promise<PlanTemplate[]>;
+  getPlanTemplate(id: number): Promise<PlanTemplate | undefined>;
+  createPlanTemplate(template: InsertPlanTemplate): Promise<PlanTemplate>;
+  updatePlanTemplate(id: number, template: Partial<InsertPlanTemplate>): Promise<PlanTemplate | undefined>;
+  deletePlanTemplate(id: number): Promise<boolean>;
+  archivePlanTemplate(id: number, archived: boolean): Promise<boolean>;
   searchUsers(query: string): Promise<User[]>;
   searchUsersByUsername(query: string): Promise<User[]>;
   approveUser(id: number): Promise<User | undefined>;
@@ -1996,6 +2005,66 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trainerFitnessPlans.id, id))
       .returning({ id: trainerFitnessPlans.id });
     return result.length > 0;
+  }
+  
+  // Plan Templates methods
+  async getPlanTemplates(trainerId: number): Promise<PlanTemplate[]> {
+    return await db
+      .select()
+      .from(planTemplates)
+      .where(eq(planTemplates.trainerId, trainerId))
+      .orderBy(desc(planTemplates.createdAt));
+  }
+  
+  async getPlanTemplate(id: number): Promise<PlanTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(planTemplates)
+      .where(eq(planTemplates.id, id));
+    return template;
+  }
+  
+  async createPlanTemplate(template: InsertPlanTemplate): Promise<PlanTemplate> {
+    const [newTemplate] = await db
+      .insert(planTemplates)
+      .values({
+        ...template,
+        updatedAt: new Date() // Ensure updatedAt is set correctly
+      })
+      .returning();
+    return newTemplate;
+  }
+  
+  async updatePlanTemplate(id: number, template: Partial<InsertPlanTemplate>): Promise<PlanTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(planTemplates)
+      .set({
+        ...template,
+        updatedAt: new Date() // Always update the updatedAt timestamp
+      })
+      .where(eq(planTemplates.id, id))
+      .returning();
+    return updatedTemplate;
+  }
+  
+  async deletePlanTemplate(id: number): Promise<boolean> {
+    const result = await db
+      .delete(planTemplates)
+      .where(eq(planTemplates.id, id))
+      .returning({ id: planTemplates.id });
+    return result.length > 0;
+  }
+  
+  async archivePlanTemplate(id: number, archived: boolean): Promise<boolean> {
+    const [result] = await db
+      .update(planTemplates)
+      .set({ 
+        isArchived: archived,
+        updatedAt: new Date()
+      })
+      .where(eq(planTemplates.id, id))
+      .returning({ id: planTemplates.id });
+    return !!result;
   }
   // Password Reset Token Management
   async createPasswordResetToken(userId: number, token: string, expiryHours: number = 1): Promise<PasswordResetToken> {

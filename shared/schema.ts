@@ -180,6 +180,42 @@ export const trainerFitnessPlansRelations = relations(trainerFitnessPlans, ({ on
   client: one(users, { fields: [trainerFitnessPlans.clientId], references: [users.id] }),
 }));
 
+// Plan Templates created by trainers that can be reused for multiple clients
+export const planTemplates = pgTable("plan_templates", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainer_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // "fitness", "nutrition", "combined"
+  category: text("category").notNull(), // "weight_loss", "muscle_gain", "strength", "endurance", etc.
+  // Enhanced flexibility with JSON structures
+  workoutPlan: jsonb("workout_plan"), // Contains workout structure with exercise variations (only for fitness or combined)
+  mealPlan: jsonb("meal_plan"),       // Contains flexible meal plan structure (only for nutrition or combined)
+  targetFitnessLevel: text("target_fitness_level"), // "beginner", "intermediate", "advanced"
+  targetBodyType: text("target_body_type"), // "ectomorph", "mesomorph", "endomorph"
+  tags: text("tags").array(), // Array of tags for filtering and searching
+  duration: integer("duration"), // Duration in weeks
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  notes: text("notes"),
+  isArchived: boolean("is_archived").default(false).notNull(),
+});
+
+// Create insert schema for plan templates
+export const insertPlanTemplateSchema = createInsertSchema(planTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertPlanTemplate = z.infer<typeof insertPlanTemplateSchema>;
+export type PlanTemplate = typeof planTemplates.$inferSelect;
+
+// Relations for plan templates
+export const planTemplatesRelations = relations(planTemplates, ({ one }) => ({
+  trainer: one(users, { fields: [planTemplates.trainerId], references: [users.id] }),
+}));
+
 // Base user schema with only essential fields for registration
 export const baseUserSchema = createInsertSchema(users).pick({
   username: true,
