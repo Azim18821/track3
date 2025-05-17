@@ -268,9 +268,9 @@ export default function TrainerClientPlanDetail() {
         throw new Error('Plan data not available. Please refresh the page and try again.');
       }
       
-      // Use the dedicated endpoint for deleting a client's fitness plan
-      // This endpoint handles both trainer-created plans and regular plans
-      const endpoint = `/api/trainer/clients/${clientId}/fitness-plans/${planId}`;
+      // Use the same endpoint pattern as we use for viewing the plan
+      // This ensures consistency between viewing and deleting operations
+      const endpoint = `/api/trainer/clients/${clientId}/plans/${planId}`;
       console.log(`Using trainer-client plan deletion endpoint: ${endpoint}`);
       
       // Attempt to delete the plan
