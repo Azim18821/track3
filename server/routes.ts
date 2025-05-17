@@ -5232,8 +5232,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get client's most recent weight
       const latestWeight = await storage.getLatestWeight(clientId);
       
-      // Get client's workouts for the trainer view
-      const workouts = await storage.getWorkouts(clientId);
+      // Get client's workouts for the trainer view (with exercises)
+      const clientWorkouts = await storage.getWorkouts(clientId);
+      
+      // Get exercises for each workout
+      const workouts = await Promise.all(
+        clientWorkouts.map(async (workout) => {
+          const exercises = await storage.getExercisesByWorkout(workout.id);
+          return {
+            ...workout,
+            exercises
+          };
+        })
+      );
       
       // Get client's meals for the trainer view
       const meals = await storage.getMeals(clientId);
