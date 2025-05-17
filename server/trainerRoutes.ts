@@ -848,19 +848,26 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
     
     try {
       // For trainer-related plans, we'll only save them in the trainer_fitness_plans table
-      // Create the trainer fitness plan
-      const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
-        trainerId: trainerId,
-        clientId: clientId,
-        name: name,
-        description: description || `Fitness plan for ${goal || 'general fitness'}`,
-        workoutPlan: workoutPlan,
-        mealPlan: mealPlan,
-        isActive: true,
-        notes: `Duration: ${durationWeeks || 4} weeks, Level: ${level || 'beginner'}`
-      });
+      console.log(`Attempting to create trainer fitness plan for trainer ${trainerId} and client ${clientId}`);
       
-      console.log(`Trainer ${trainerId} created a new fitness plan for client ${clientId}. Trainer plan ID: ${trainerFitnessPlan.id}`);
+      // Create the trainer fitness plan
+      try {
+        const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
+          trainerId: trainerId,
+          clientId: clientId,
+          name: name,
+          description: description || `Fitness plan for ${goal || 'general fitness'}`,
+          workoutPlan: workoutPlan,
+          mealPlan: mealPlan,
+          isActive: true,
+          notes: `Duration: ${durationWeeks || 4} weeks, Level: ${level || 'beginner'}`
+        });
+        
+        console.log(`SUCCESS: Trainer ${trainerId} created a new fitness plan for client ${clientId}. Trainer plan ID: ${trainerFitnessPlan.id} in trainer_fitness_plans table`);
+      } catch (createError) {
+        console.error(`ERROR: Failed to create trainer fitness plan in trainer_fitness_plans table:`, createError);
+        throw createError; // Re-throw to be caught by outer catch block
+      }
       
       // Prepare the response data
       const newPlan = trainerFitnessPlan;
