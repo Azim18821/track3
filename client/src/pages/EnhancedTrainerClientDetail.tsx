@@ -982,12 +982,22 @@ export default function EnhancedTrainerClientDetail() {
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center">
                       <p className="text-xs text-muted-foreground">Carbs</p>
-                      <p className="text-lg font-semibold">{clientData.nutritionGoal.carbs_target}</p>
+                      <p className="text-lg font-semibold">
+                        {clientData.nutritionGoal.carbs_target || 
+                         clientData.nutritionGoal.carbsTarget || 
+                         clientData.nutritionGoal.carbsPerDay || 
+                         0}
+                      </p>
                       <p className="text-xs text-muted-foreground">g/day</p>
                     </div>
                     <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 text-center">
                       <p className="text-xs text-muted-foreground">Fat</p>
-                      <p className="text-lg font-semibold">{clientData.nutritionGoal.fat_target}</p>
+                      <p className="text-lg font-semibold">
+                        {clientData.nutritionGoal.fat_target || 
+                         clientData.nutritionGoal.fatTarget || 
+                         clientData.nutritionGoal.fatPerDay || 
+                         0}
+                      </p>
                       <p className="text-xs text-muted-foreground">g/day</p>
                     </div>
                   </div>
