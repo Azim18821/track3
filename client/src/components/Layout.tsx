@@ -27,9 +27,10 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface LayoutProps {
   children: ReactNode;
+  workoutMode?: boolean; // Flag to hide navigation in workout mode
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();

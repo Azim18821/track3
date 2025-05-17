@@ -10,6 +10,7 @@ interface ProtectedLayoutProps {
   children: ReactNode;
   adminOnly?: boolean;
   aiCoachPath?: boolean; // Flag to indicate this is an AI Coach related path
+  workoutMode?: boolean; // Flag to indicate workout mode (hides navigation)
 }
 
 /**
@@ -19,7 +20,7 @@ interface ProtectedLayoutProps {
  * If adminOnly is true, also checks if the user is an admin.
  * If aiCoachPath is true, checks if the user has a trainer and redirects to fitness plan.
  */
-const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children, adminOnly, aiCoachPath }) => {
+const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children, adminOnly, aiCoachPath, workoutMode }) => {
   const { user, isLoading } = useAuth();
   const [location] = useLocation();
   const [hasTrainer, setHasTrainer] = useState(false);
@@ -110,7 +111,7 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children, adminOnly, 
   
   return (
     <ProfileCheckRedirect>
-      <Layout>{children}</Layout>
+      <Layout workoutMode={workoutMode}>{children}</Layout>
     </ProfileCheckRedirect>
   );
 };
