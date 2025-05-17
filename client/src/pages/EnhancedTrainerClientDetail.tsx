@@ -1055,10 +1055,18 @@ export default function EnhancedTrainerClientDetail() {
               <WeeklyNutritionView 
                 meals={clientData?.meals || []} 
                 nutritionGoals={{
-                  calories: clientData?.nutritionGoal?.caloriesTarget || 2000,
-                  protein: clientData?.nutritionGoal?.proteinTarget || 150,
-                  carbs: clientData?.nutritionGoal?.carbsTarget || 200,
-                  fat: clientData?.nutritionGoal?.fatTarget || 70
+                  calories: clientData?.nutritionGoal?.calories_target || 
+                            clientData?.nutritionGoal?.caloriesTarget ||
+                            clientData?.nutritionGoal?.caloriesPerDay || 2000,
+                  protein: clientData?.nutritionGoal?.protein_target || 
+                           clientData?.nutritionGoal?.proteinTarget ||
+                           clientData?.nutritionGoal?.proteinPerDay || 150,
+                  carbs: clientData?.nutritionGoal?.carbs_target || 
+                         clientData?.nutritionGoal?.carbsTarget ||
+                         clientData?.nutritionGoal?.carbsPerDay || 200,
+                  fat: clientData?.nutritionGoal?.fat_target || 
+                       clientData?.nutritionGoal?.fatTarget ||
+                       clientData?.nutritionGoal?.fatPerDay || 70
                 }}
                 onViewDay={(date) => {
                   // Get meals for the selected date
