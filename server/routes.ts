@@ -2023,145 +2023,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Fetching active fitness plan for user ID: ${userId}`);
       
       try {
-        // Simple step-by-step approach to find the appropriate fitness plan
+        const plan = await storage.getActiveFitnessPlan(userId);
         
-        // Step 1: Look for an already active fitness plan first
-        console.log(`Step 1: Looking for active fitness plan for user ${userId}`);
-        const activePlanResult = await db.query(
-          `SELECT * FROM fitness_plans
-           WHERE user_id = $1 AND is_active = true
-           ORDER BY created_at DESC LIMIT 1`,
-          [userId]
-        );
-        
-        if (activePlanResult.rowCount > 0) {
-          console.log(`Found active fitness plan ${activePlanResult.rows[0].id}`);
-          return res.json(activePlanResult.rows[0]);
+        if (!plan) {
+          console.log(`No active fitness plan found for user ID: ${userId}`);
+          return res.status(404).json({ message: "No active fitness plan found" });
         }
         
-        // Step 2: Check if the user is a client with a trainer
-        console.log(`Step 2: Checking if user ${userId} is a client with a trainer`);
-        const clientResult = await db.query(
-          `SELECT * FROM trainer_clients WHERE client_id = $1`,
-          [userId]
-        );
+        console.log(`Found active fitness plan: ${plan.id}`);
         
-        if (clientResult.rowCount > 0) {
-          console.log(`User ${userId} is a client of trainer ${clientResult.rows[0].trainer_id}`);
-          
-          // Step 3: Look for a trainer-created plan for this client
-          console.log(`Step 3: Looking for trainer plan for client ${userId}`);
-          const trainerPlanResult = await db.query(
-            `SELECT * FROM trainer_fitness_plans
-             WHERE client_id = $1
-             ORDER BY created_at DESC LIMIT 1`,
-            [userId]
-          );
-          
-          if (trainerPlanResult.rowCount > 0) {
-            console.log(`Found trainer plan ${trainerPlanResult.rows[0].id}`);
-            const trainerPlan = trainerPlanResult.rows[0];
-            
-            // Check if we already have a linked client plan
-            console.log(`Step 4: Looking for linked client plan`);
-            const linkedPlanResult = await db.query(
-              `SELECT * FROM fitness_plans
-               WHERE user_id = $1 AND trainer_plan_id = $2`,
-              [userId, trainerPlan.id]
-            );
-            
-            if (linkedPlanResult.rowCount > 0) {
-              // Activate the existing linked plan
-              console.log(`Found linked plan ${linkedPlanResult.rows[0].id}, activating it`);
-              const activatedResult = await db.query(
-                `UPDATE fitness_plans
-                 SET is_active = true, deactivated_at = NULL, deactivation_reason = NULL
-                 WHERE id = $1 RETURNING *`,
-                [linkedPlanResult.rows[0].id]
-              );
-              
-              if (activatedResult.rowCount > 0) {
-                return res.json(activatedResult.rows[0]);
-              } else {
-                return res.json(linkedPlanResult.rows[0]);
-              }
-            }
-            
-            // Create a new linked plan
-            console.log(`No linked plan found, creating one from trainer plan ${trainerPlan.id}`);
-            
-            // First deactivate any existing plans
-            await db.query(
-              `UPDATE fitness_plans
-               SET is_active = false, deactivated_at = NOW(), deactivation_reason = 'Replaced by trainer plan'
-               WHERE user_id = $1`,
-              [userId]
-            );
-            
-            // Create new plan linked to the trainer plan
-            const newPlanResult = await db.query(
-              `INSERT INTO fitness_plans
-               (user_id, workout_plan, meal_plan, preferences, is_active, trainer_plan_id)
-               VALUES ($1, $2, $3, $4, true, $5)
-               RETURNING *`,
-              [
-                userId,
-                trainerPlan.workout_plan,
-                trainerPlan.meal_plan,
-                JSON.stringify({
-                  name: trainerPlan.name || "Trainer Plan",
-                  goal: "trainer_guided",
-                  fitnessLevel: "custom"
-                }),
-                trainerPlan.id
-              ]
-            );
-            
-            if (newPlanResult.rowCount > 0) {
-              console.log(`Created new linked fitness plan ${newPlanResult.rows[0].id}`);
-              return res.json(newPlanResult.rows[0]);
-            }
-          }
-        }
-        
-        // Step 5: Look for any fitness plan for this user
-        console.log(`Step 5: Looking for any fitness plan for user ${userId}`);
-        const anyPlanResult = await db.query(
-          `SELECT * FROM fitness_plans
-           WHERE user_id = $1
-           ORDER BY created_at DESC LIMIT 1`,
-          [userId]
-        );
-        
-        if (anyPlanResult.rowCount > 0) {
-          console.log(`Found fitness plan ${anyPlanResult.rows[0].id}, activating it`);
-          const activatedResult = await db.query(
-            `UPDATE fitness_plans
-             SET is_active = true, deactivated_at = NULL, deactivation_reason = NULL
-             WHERE id = $1 RETURNING *`,
-            [anyPlanResult.rows[0].id]
-          );
-          
-          if (activatedResult.rowCount > 0) {
-            return res.json(activatedResult.rows[0]);
-          } else {
-            return res.json(anyPlanResult.rows[0]);
-          }
-        }
-        
-        // No plans found
-        console.log(`No fitness plan found for user ${userId}`);
-        return res.status(404).json({ message: "No active fitness plan found" });
-      } catch (dbError) {
-        console.error(`Database error fetching fitness plan for ${userId}:`, dbError);
+        // Return the full plan data
+        return res.json(plan);
+      } catch (dbError: any) {
+        console.error(`Database error fetching fitness plan:`, dbError);
         return res.status(500).json({ 
-          message: "Database error finding fitness plan",
-          error: dbError instanceof Error ? dbError.message : String(dbError)
+          message: "Database error fetching fitness plan", 
+          error: dbError?.message || "Unknown database error" 
         });
       }
     } catch (error: any) {
       console.error(`Unexpected error fetching fitness plan:`, error);
-      return res.status(500).json({ 
+      res.status(500).json({ 
         message: "Failed to fetch active fitness plan",
         error: error?.message || "Unknown error"
       });
@@ -2235,23 +2117,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Attempting to delete fitness plan ${planId} by user ${userId}`);
       
-      try {
-        const plan = await storage.getFitnessPlan(planId);
-        
-        if (!plan) {
-          console.log(`Plan ${planId} not found for deletion`);
-          return res.status(404).json({ message: "Fitness plan not found" });
-        }
-        
-        // Allow deletion for:
-        // 1. User who owns the plan
-        // 2. Admin users
-        // 3. Trainers who have the plan owner as a client
-        let hasDeletePermission = false;
-        
-        if (plan.userId === userId || req.user!.isAdmin) {
-          console.log(`Delete access granted to user ${userId} for their own plan ${planId} or as admin`);
-          hasDeletePermission = true;
+      const plan = await storage.getFitnessPlan(planId);
+      
+      if (!plan) {
+        console.log(`Plan ${planId} not found for deletion`);
+        return res.status(404).json({ message: "Fitness plan not found" });
+      }
+      
+      // Allow deletion for:
+      // 1. User who owns the plan
+      // 2. Admin users
+      // 3. Trainers who have the plan owner as a client
+      let hasDeletePermission = false;
+      
+      if (plan.userId === userId || req.user!.isAdmin) {
+        console.log(`Delete access granted to user ${userId} for their own plan ${planId} or as admin`);
+        hasDeletePermission = true;
       } else if (req.user!.isTrainer) {
         // Check if the trainer has the plan owner as a client
         console.log(`Trainer ${userId} checking delete access to plan ${planId} owned by user ${plan.userId}`);
