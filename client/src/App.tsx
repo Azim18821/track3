@@ -187,7 +187,7 @@ function App() {
                           </ProtectedLayout>
                         </Route>
                         <Route path="/workout-mode/:id">
-                          <ProtectedLayout>
+                          <ProtectedLayout workoutMode={true}>
                             <WorkoutModePage />
                           </ProtectedLayout>
                         </Route>

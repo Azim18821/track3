@@ -70,93 +70,101 @@ const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
 
       {/* Main content area with fixed header and scrollable content */}
       <div className="fixed inset-0 flex flex-col">
-        {/* Mobile Header - Fixed at top, non-scrollable */}
-        <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14">
-          <div className="flex items-center">
-            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              TrackMadeEazE
-            </h1>
-          </div>
-
-          {user && (
-            <div className="flex items-center space-x-2">
-              <TrainerRequestNotification />
-
-              {/* Theme Toggle Button - Admin Only */}
-              {user?.isAdmin && <ThemeToggle />}
-
-              {/* Messages button in top navigation */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => setLocation('/messages')}
-                    >
-                      <MessageSquare className="text-gray-700 dark:text-gray-300" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Messages</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Profile button in top navigation */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => setLocation('/profile')}
-                    >
-                      <User className="text-gray-700 dark:text-gray-300" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Profile</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Admin-only cache clearing button */}
-              {user?.isAdmin && isMobile && (
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => window.location.href = '/admin/clear-cache'}
-                  className="h-8 w-8"
-                >
-                  <Trash2 size={16} className="text-red-500" />
-                </Button>
-              )}
-
-              {!isMobile && (
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  Sign Out
-                </Button>
-              )}
-
-              {isMobile && (
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                  <LogOut size={18} className="dark:text-gray-300" />
-                </Button>
-              )}
+        {/* Mobile Header - Fixed at top, non-scrollable (hidden in workout mode) */}
+        {!workoutMode && (
+          <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14">
+            <div className="flex items-center">
+              <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                TrackMadeEazE
+              </h1>
             </div>
-          )}
-        </header>
 
-        {/* Page content - With padding for fixed header and bottom nav */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${isMobile ? 'pb-[calc(80px+env(safe-area-inset-bottom))] mt-header-height' : 'p-4 md:p-6'}`}>
+            {user && (
+              <div className="flex items-center space-x-2">
+                <TrainerRequestNotification />
+
+                {/* Theme Toggle Button - Admin Only */}
+                {user?.isAdmin && <ThemeToggle />}
+
+                {/* Messages button in top navigation */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => setLocation('/messages')}
+                      >
+                        <MessageSquare className="text-gray-700 dark:text-gray-300" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Messages</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Profile button in top navigation */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => setLocation('/profile')}
+                      >
+                        <User className="text-gray-700 dark:text-gray-300" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Profile</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Admin-only cache clearing button */}
+                {user?.isAdmin && isMobile && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => window.location.href = '/admin/clear-cache'}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 size={16} className="text-red-500" />
+                  </Button>
+                )}
+
+                {!isMobile && (
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
+                    Sign Out
+                  </Button>
+                )}
+
+                {isMobile && (
+                  <Button variant="ghost" size="icon" onClick={handleLogout}>
+                    <LogOut size={18} className="dark:text-gray-300" />
+                  </Button>
+                )}
+              </div>
+            )}
+          </header>
+        )}
+
+        {/* Page content - Adjust padding based on workout mode */}
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${
+          workoutMode 
+            ? 'pt-safe-area pb-safe-area' // Full screen in workout mode with safe area padding
+            : isMobile 
+              ? 'pb-[calc(80px+env(safe-area-inset-bottom))] mt-header-height' 
+              : 'p-4 md:p-6'
+        }`}>
           {children}
         </main>
 
-        {/* Bottom Navigation - Mobile only */}
-        {isMobile && <BottomNav />}
+        {/* Bottom Navigation - Mobile only and not in workout mode */}
+        {isMobile && !workoutMode && <BottomNav />}
       </div>
 
       {/* Offline indicator */}

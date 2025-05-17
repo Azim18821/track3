@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import WorkoutMode from "@/components/workout/WorkoutMode";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SetData {
   reps: number;
@@ -37,6 +38,7 @@ const WorkoutModePage = () => {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/workout-mode/:id");
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   // Get workout ID from URL parameters
   const workoutId = match && params.id ? parseInt(params.id) : null;
