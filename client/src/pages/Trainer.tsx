@@ -831,17 +831,8 @@ const TrainerPage: React.FC = () => {
             <span>My Clients</span>
           </h2>
         </div>
-          
-          <TabsContent value="clients" className="p-0 m-0">
-            <ClientList />
-          </TabsContent>
-          <TabsContent value="nutrition" className="p-0 m-0">
-            <NutritionPlans />
-          </TabsContent>
-          <TabsContent value="fitness" className="p-0 m-0">
-            <FitnessPlans />
-          </TabsContent>
-        </Tabs>
+        
+        <ClientList />
       </div>
       
       {/* Client selection modal */}
