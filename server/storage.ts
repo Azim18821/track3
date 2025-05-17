@@ -1942,6 +1942,19 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(trainerFitnessPlans.createdAt));
   }
   
+  async getTrainerFitnessPlansForClient(trainerId: number, clientId: number): Promise<TrainerFitnessPlan[]> {
+    return await db
+      .select()
+      .from(trainerFitnessPlans)
+      .where(
+        and(
+          eq(trainerFitnessPlans.trainerId, trainerId),
+          eq(trainerFitnessPlans.clientId, clientId)
+        )
+      )
+      .orderBy(desc(trainerFitnessPlans.isActive), desc(trainerFitnessPlans.createdAt));
+  }
+  
   async getClientFitnessPlans(clientId: number): Promise<(TrainerFitnessPlan & { trainer?: PartialUser })[]> {
     const plans = await db
       .select({

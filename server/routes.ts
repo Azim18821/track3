@@ -5153,8 +5153,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Client not found" });
       }
       
-      // Get client's fitness plan
-      const fitnessPlan = await storage.getActiveFitnessPlan(clientId);
+      // Get client's fitness plan - first check the trainer fitness plans
+      let fitnessPlan = null;
+      
+      // First check for trainer fitness plans 
+      const trainerFitnessPlans = await storage.getTrainerFitnessPlansForClient(trainerId, clientId);
+      if (trainerFitnessPlans && trainerFitnessPlans.length > 0) {
+        // Get the active or most recent plan
+        const activePlan = trainerFitnessPlans.find(plan => plan.isActive);
+        fitnessPlan = activePlan || trainerFitnessPlans[0];
+        
+        // Format the plan to match the standard fitness plan structure for UI compatibility
+        fitnessPlan = {
+          ...fitnessPlan,
+          preferences: {
+            name: fitnessPlan.name,
+            goal: fitnessPlan.notes?.includes('Goal:') ? fitnessPlan.notes.split('Goal:')[1]?.trim().split(',')[0] : 'strength',
+            durationWeeks: parseInt(fitnessPlan.notes?.includes('Duration:') ? fitnessPlan.notes.split('Duration:')[1]?.trim().split('weeks')[0] : '8'),
+            level: fitnessPlan.notes?.includes('Level:') ? fitnessPlan.notes.split('Level:')[1]?.trim() : 'intermediate',
+          }
+        };
+      }
+      
+      // If no trainer plans found, check the standard fitness plans (backwards compatibility)
+      if (!fitnessPlan) {
+        fitnessPlan = await storage.getActiveFitnessPlan(clientId);
+      }
       
       // Get client's nutrition goals
       const nutritionGoal = await storage.getNutritionGoal(clientId);
