@@ -768,7 +768,7 @@ const FitnessPlans: React.FC = () => {
 };
 
 const TrainerPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('clients');
+  // Removed tabs state as we're showing only clients section
   const [showClientSelectModal, setShowClientSelectModal] = useState(false);
   const [location, setLocation] = useLocation();
   
@@ -825,21 +825,12 @@ const TrainerPage: React.FC = () => {
         </div>
         
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="clients" className="py-2.5">
-              <UserPlus size={14} className="mr-1.5" />
-              <span>Clients</span>
-            </TabsTrigger>
-            <TabsTrigger value="nutrition" className="py-2.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M12 2v8"/><path d="M16 18a4 4 0 0 0 0-8H2"/></svg>
-              <span>Nutrition</span>
-            </TabsTrigger>
-            <TabsTrigger value="fitness" className="py-2.5">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
-              <span>Fitness</span>
-            </TabsTrigger>
-          </TabsList>
+        <div className="mb-6 flex justify-between">
+          <h2 className="text-xl font-semibold flex items-center">
+            <UserPlus size={18} className="mr-2 text-blue-600" />
+            <span>My Clients</span>
+          </h2>
+        </div>
           
           <TabsContent value="clients" className="p-0 m-0">
             <ClientList />
