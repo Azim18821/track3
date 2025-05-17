@@ -567,13 +567,16 @@ export default function TrainerClientPlanDetail() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
+                {/* Use a regular button instead of AlertDialogAction to have more control */}
+                <Button
+                  variant="destructive"
                   onClick={(e) => {
-                    // Prevent the default action to avoid multiple clicks
-                    e.preventDefault();
                     // Only confirm if not already deleting
-                    if (!isDeleting) {
-                      confirmDeletePlan();
+                    if (!isDeleting && !isDeletingRef.current) {
+                      // Close dialog first
+                      setShowDeleteConfirm(false);
+                      // Then confirm deletion
+                      setTimeout(() => confirmDeletePlan(), 100);
                     }
                   }}
                   disabled={isDeleting}
@@ -587,7 +590,7 @@ export default function TrainerClientPlanDetail() {
                   ) : (
                     "Delete Plan"
                   )}
-                </AlertDialogAction>
+                </Button>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
