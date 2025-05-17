@@ -829,6 +829,7 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
       const fitnessPlanData = {
         userId: clientId,
         preferences: {
+          name: name,
           goal: goal || 'general_fitness',
           durationWeeks: durationWeeks || 4,
           level: level || 'beginner',
@@ -842,10 +843,28 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
         createdAt: new Date()
       };
       
-      // Save the new plan
+      // Save the new plan in the standard fitness_plans table
       const newPlan = await storage.createFitnessPlan(clientId, fitnessPlanData);
       
-      console.log(`Trainer ${trainerId} created a new fitness plan for client ${clientId} with ID: ${newPlan.id}`);
+      // Also save the plan in the trainer_fitness_plans table so it appears in the trainer dashboard
+      const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
+        trainerId: trainerId,
+        clientId: clientId,
+        name: name,
+        description: description || `Fitness plan for ${goal || 'general fitness'}`,
+        workoutPlan: workoutPlan,
+        mealPlan: mealPlan,
+        isActive: true,
+        notes: `Duration: ${durationWeeks || 4} weeks, Level: ${level || 'beginner'}`
+      });
+      
+      console.log(`Trainer ${trainerId} created a new fitness plan for client ${clientId}. Standard plan ID: ${newPlan.id}, Trainer plan ID: ${trainerFitnessPlan.id}`);
+      
+      // Return both plans in the response to ensure proper UI updates
+      const responseData = {
+        standardPlan: newPlan,
+        trainerPlan: trainerFitnessPlan
+      };
       
       // If trainer requested nutrition goals calculation, update the client's nutrition goals
       if (calculateNutritionGoals && mealPlan.dailyMeals) {
