@@ -866,12 +866,32 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
       return await res.json();
     },
     onSuccess: (data) => {
+      // Invalidate all relevant queries to ensure fresh data is fetched
+      console.log('Plan created successfully, invalidating related queries');
+      
+      // Invalidate client plans list
+      queryClient.invalidateQueries({ queryKey: ['/api/trainer/client-plans'] });
+      
+      // Invalidate specific client data
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientId.toString()] });
+        queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientId] });
+        
+        // Invalidate client's fitness plans
+        queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientId.toString(), 'fitness-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientId, 'fitness-plans'] });
+      }
+      
       toast({
         title: "Fitness plan created",
         description: "The fitness plan has been created successfully and assigned to the client."
       });
-      // Redirect to client detail page
-      navigate(`/trainer/clients/${clientId}`);
+      
+      // Brief delay before redirect to allow cache invalidation to complete
+      setTimeout(() => {
+        // Redirect to client detail page
+        navigate(`/trainer/clients/${clientId}`);
+      }, 200);
     },
     onError: (error: Error) => {
       toast({
