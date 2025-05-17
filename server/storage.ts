@@ -142,6 +142,7 @@ export interface IStorage {
   getActiveFitnessPlan(userId: number): Promise<FitnessPlan | undefined>;
   createFitnessPlan(userId: number, plan: InsertFitnessPlan): Promise<FitnessPlan>;
   updateFitnessPlan(id: number, plan: Partial<InsertFitnessPlan>): Promise<FitnessPlan | undefined>;
+  activateFitnessPlan(id: number): Promise<FitnessPlan | undefined>;
   deactivateFitnessPlan(id: number): Promise<boolean>;
   deleteFitnessPlan(id: number): Promise<boolean>;
   getTrainerPlans(trainerId: number): Promise<FitnessPlan[]>;
