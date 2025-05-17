@@ -957,22 +957,22 @@ export default function EnhancedTrainerClientDetail() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-green-50 dark:bg-green-900/30 rounded-xl p-4 text-center">
                       <p className="text-xs text-muted-foreground">Calories</p>
-                      <p className="text-lg font-semibold">{clientData.nutritionGoal.caloriesPerDay}</p>
+                      <p className="text-lg font-semibold">{clientData.nutritionGoal.calories_target}</p>
                       <p className="text-xs text-muted-foreground">kcal/day</p>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 text-center">
                       <p className="text-xs text-muted-foreground">Protein</p>
-                      <p className="text-lg font-semibold">{clientData.nutritionGoal.proteinPerDay}</p>
+                      <p className="text-lg font-semibold">{clientData.nutritionGoal.protein_target}</p>
                       <p className="text-xs text-muted-foreground">g/day</p>
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-900/30 rounded-xl p-4 text-center">
                       <p className="text-xs text-muted-foreground">Carbs</p>
-                      <p className="text-lg font-semibold">{clientData.nutritionGoal.carbsPerDay}</p>
+                      <p className="text-lg font-semibold">{clientData.nutritionGoal.carbs_target}</p>
                       <p className="text-xs text-muted-foreground">g/day</p>
                     </div>
                     <div className="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 text-center">
                       <p className="text-xs text-muted-foreground">Fat</p>
-                      <p className="text-lg font-semibold">{clientData.nutritionGoal.fatPerDay}</p>
+                      <p className="text-lg font-semibold">{clientData.nutritionGoal.fat_target}</p>
                       <p className="text-xs text-muted-foreground">g/day</p>
                     </div>
                   </div>
