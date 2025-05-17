@@ -736,6 +736,20 @@ router.post('/fitness-plans', async (req, res) => {
     
     // Create fitness plan
     const newPlan = await storage.createTrainerFitnessPlan(validatedData);
+    
+    // Automatically create workouts for this client based on the workout plan
+    try {
+      if (newPlan.workoutPlan && typeof newPlan.workoutPlan === 'object') {
+        console.log('Creating workouts for client from fitness plan');
+        await createClientWorkoutsFromPlan(validatedData.clientId, newPlan.workoutPlan, newPlan.id);
+        console.log('Successfully created workouts for client from fitness plan');
+      }
+    } catch (workoutError) {
+      console.error('Error creating workouts from plan:', workoutError);
+      // We don't want to fail the whole request if workout creation fails
+      // Just log the error and continue
+    }
+    
     res.status(201).json(newPlan);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -787,6 +801,21 @@ router.patch('/fitness-plans/:id', async (req, res) => {
     console.log(`Updated fitness plan ${planId} with meal plan structure for client ${existingPlan.clientId}`);
     
     // Note: We removed the automatic client meal entry creation here so clients can log manually
+    
+    // If the workout plan was updated, update the client's workouts
+    if (validatedData.workoutPlan) {
+      try {
+        console.log(`Updating workouts for client ${existingPlan.clientId} from updated fitness plan`);
+        // Clear existing workouts first
+        await clearClientWorkouts(existingPlan.clientId);
+        // Create workouts from the updated plan
+        await createClientWorkoutsFromPlan(existingPlan.clientId, validatedData.workoutPlan, planId);
+        console.log(`Successfully updated workouts for client ${existingPlan.clientId}`);
+      } catch (workoutError) {
+        console.error('Error updating workouts from plan:', workoutError);
+        // We don't want to fail the whole request if workout update fails
+      }
+    }
     
     res.json(updatedPlan);
   } catch (error) {
