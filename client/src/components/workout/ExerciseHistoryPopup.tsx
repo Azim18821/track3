@@ -94,7 +94,16 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
         }
         
         const data = await response.json();
-        setHistory(data);
+        
+        // Filter out any entries that might be from today's workout session
+        // This ensures we're only showing previous workout history, not the current one
+        const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        const filteredHistory = data.filter(item => {
+          const itemDate = new Date(item.date).toISOString().split('T')[0];
+          return itemDate !== today;
+        });
+        
+        setHistory(filteredHistory);
       } catch (error) {
         console.error('Error fetching exercise history:', error);
         toast({
