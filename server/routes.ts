@@ -2066,7 +2066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`Step 4: Looking for linked client plan`);
             const linkedPlanResult = await db.query(
               `SELECT * FROM fitness_plans
-               WHERE user_id = $1 AND trainer_fitness_plan_id = $2`,
+               WHERE user_id = $1 AND trainer_plan_id = $2`,
               [userId, trainerPlan.id]
             );
             
@@ -2101,7 +2101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Create new plan linked to the trainer plan
             const newPlanResult = await db.query(
               `INSERT INTO fitness_plans
-               (user_id, workout_plan, meal_plan, preferences, is_active, trainer_fitness_plan_id)
+               (user_id, workout_plan, meal_plan, preferences, is_active, trainer_plan_id)
                VALUES ($1, $2, $3, $4, true, $5)
                RETURNING *`,
               [
