@@ -540,60 +540,63 @@ export default function TrainerClientPlanDetail() {
             Edit Plan
           </Button>
           
-          <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive"
-                size="sm"
-                onClick={handleDeletePlan}
-                className="flex-grow sm:flex-grow-0"
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4 mr-2" />
-                )}
-                Delete Plan
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to delete this plan?</AlertDialogTitle>
-                <AlertDialogDescription>
+          {/* Completely redesigned dialog with direct control of open state */}
+          <Button 
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex-grow sm:flex-grow-0"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4 mr-2" />
+            )}
+            Delete Plan
+          </Button>
+          
+          {/* Separate dialog component with manual open state control */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg">
+                <h3 className="text-lg font-medium mb-2">Are you sure you want to delete this plan?</h3>
+                <p className="text-muted-foreground mb-4">
                   This action cannot be undone. The plan and all associated data will be permanently deleted.
                   Client's tracked workouts and meals will be preserved but will no longer be linked to this plan.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                {/* Use a regular button instead of AlertDialogAction to have more control */}
-                <Button
-                  variant="destructive"
-                  onClick={(e) => {
-                    // Only confirm if not already deleting
-                    if (!isDeleting && !isDeletingRef.current) {
-                      // Close dialog first
-                      setShowDeleteConfirm(false);
-                      // Then confirm deletion
-                      setTimeout(() => confirmDeletePlan(), 100);
-                    }
-                  }}
-                  disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete Plan"
-                  )}
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (!isDeleting && !isDeletingRef.current) {
+                        // Close dialog and trigger deletion
+                        setShowDeleteConfirm(false);
+                        confirmDeletePlan();
+                      }
+                    }}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete Plan"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
