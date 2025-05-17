@@ -3,7 +3,7 @@ import { useLocation, Link } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Removed tabs import as we're not using tabs anymore
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { apiRequest } from '@/lib/queryClient';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -563,13 +563,7 @@ const ClientList: React.FC = () => {
   );
 };
 
-const NutritionPlans: React.FC = () => {
-  const { data: nutritionPlans, isLoading, error } = useQuery<NutritionPlan[]>({
-    queryKey: ['/api/trainer/nutrition-plans'],
-    retry: 1,
-  });
-  
-  const plans = nutritionPlans || [];
+// Removed NutritionPlans component as it's no longer needed
 
   if (isLoading) {
     return (
