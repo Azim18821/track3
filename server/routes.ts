@@ -2022,122 +2022,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       console.log(`Fetching active fitness plan for user ID: ${userId}`);
       
-      // Just use a direct SQL query to get the plan with minimum risk of errors
       try {
-        // Try to get the active fitness plan directly with a SQL query
-        const result = await db.query.fitnessPlans.findFirst({
-          where: and(
-            eq(fitnessPlans.userId, userId),
-            eq(fitnessPlans.isActive, true)
-          ),
-          orderBy: [desc(fitnessPlans.createdAt)]
-        });
+        // Simple step-by-step approach to find the appropriate fitness plan
         
-        if (result) {
-          console.log(`Found active fitness plan ${result.id} for user ${userId}`);
-          return res.json(result);
+        // Step 1: Look for an already active fitness plan first
+        console.log(`Step 1: Looking for active fitness plan for user ${userId}`);
+        const activePlanResult = await db.query(
+          `SELECT * FROM fitness_plans
+           WHERE user_id = $1 AND is_active = true
+           ORDER BY created_at DESC LIMIT 1`,
+          [userId]
+        );
+        
+        if (activePlanResult.rowCount > 0) {
+          console.log(`Found active fitness plan ${activePlanResult.rows[0].id}`);
+          return res.json(activePlanResult.rows[0]);
         }
         
-        // If no active plan found, try to get a plan that's linked to a trainer plan
-        console.log(`No active fitness plan found, checking for trainer-linked plan`);
-        const trainerLinkedPlan = await db.query.fitnessPlans.findFirst({
-          where: and(
-            eq(fitnessPlans.userId, userId),
-            not(isNull(fitnessPlans.trainerPlanId))
-          ),
-          orderBy: [desc(fitnessPlans.createdAt)]
-        });
+        // Step 2: Check if the user is a client with a trainer
+        console.log(`Step 2: Checking if user ${userId} is a client with a trainer`);
+        const clientResult = await db.query(
+          `SELECT * FROM trainer_clients WHERE client_id = $1`,
+          [userId]
+        );
         
-        if (trainerLinkedPlan) {
-          console.log(`Found trainer-linked plan ${trainerLinkedPlan.id}, activating it`);
-          // Activate the trainer-linked plan
-          const [activatedPlan] = await db
-            .update(fitnessPlans)
-            .set({ isActive: true, deactivatedAt: null, deactivationReason: null })
-            .where(eq(fitnessPlans.id, trainerLinkedPlan.id))
-            .returning();
+        if (clientResult.rowCount > 0) {
+          console.log(`User ${userId} is a client of trainer ${clientResult.rows[0].trainer_id}`);
           
-          return res.json(activatedPlan);
-        }
-        
-        // If we reach here, check if the user has any fitness plan and activate the most recent one
-        const anyPlan = await db.query.fitnessPlans.findFirst({
-          where: eq(fitnessPlans.userId, userId),
-          orderBy: [desc(fitnessPlans.createdAt)]
-        });
-        
-        if (anyPlan) {
-          console.log(`Found inactive plan ${anyPlan.id}, activating it`);
-          const [activatedPlan] = await db
-            .update(fitnessPlans)
-            .set({ isActive: true, deactivatedAt: null, deactivationReason: null })
-            .where(eq(fitnessPlans.id, anyPlan.id))
-            .returning();
+          // Step 3: Look for a trainer-created plan for this client
+          console.log(`Step 3: Looking for trainer plan for client ${userId}`);
+          const trainerPlanResult = await db.query(
+            `SELECT * FROM trainer_fitness_plans
+             WHERE client_id = $1
+             ORDER BY created_at DESC LIMIT 1`,
+            [userId]
+          );
           
-          return res.json(activatedPlan);
-        }
-        
-        // Directly look up plan ID 466 which is known to exist
-        if (userId === 68) {
-          console.log(`Specifically looking for plan ID 466 for Azim7`);
-          const specificPlan = await db.query.fitnessPlans.findFirst({
-            where: eq(fitnessPlans.id, 466)
-          });
-          
-          if (specificPlan) {
-            console.log(`Found specific plan ID 466`);
-            return res.json(specificPlan);
-          }
-        }
-        
-        // Last resort, check if this user is a client and has a trainer plan
-        const isClient = await storage.userHasTrainers(userId);
-        if (isClient) {
-          const trainerClients = await storage.getClientTrainers(userId);
-          if (trainerClients && trainerClients.length > 0) {
-            // Get trainer's ID
-            const trainerId = trainerClients[0].trainer.id;
+          if (trainerPlanResult.rowCount > 0) {
+            console.log(`Found trainer plan ${trainerPlanResult.rows[0].id}`);
+            const trainerPlan = trainerPlanResult.rows[0];
             
-            // Look for any trainer plans for this client
-            const trainerPlan = await db.query.trainerFitnessPlans.findFirst({
-              where: eq(trainerFitnessPlans.clientId, userId),
-              orderBy: [desc(trainerFitnessPlans.createdAt)]
-            });
+            // Check if we already have a linked client plan
+            console.log(`Step 4: Looking for linked client plan`);
+            const linkedPlanResult = await db.query(
+              `SELECT * FROM fitness_plans
+               WHERE user_id = $1 AND trainer_fitness_plan_id = $2`,
+              [userId, trainerPlan.id]
+            );
             
-            if (trainerPlan) {
-              console.log(`Creating new plan from trainer plan ${trainerPlan.id}`);
+            if (linkedPlanResult.rowCount > 0) {
+              // Activate the existing linked plan
+              console.log(`Found linked plan ${linkedPlanResult.rows[0].id}, activating it`);
+              const activatedResult = await db.query(
+                `UPDATE fitness_plans
+                 SET is_active = true, deactivated_at = NULL, deactivation_reason = NULL
+                 WHERE id = $1 RETURNING *`,
+                [linkedPlanResult.rows[0].id]
+              );
               
-              // Create a new fitness plan from the trainer plan
-              const newPlan = {
-                userId: userId,
-                workoutPlan: trainerPlan.workoutPlan,
-                mealPlan: trainerPlan.mealPlan,
-                preferences: {
+              if (activatedResult.rowCount > 0) {
+                return res.json(activatedResult.rows[0]);
+              } else {
+                return res.json(linkedPlanResult.rows[0]);
+              }
+            }
+            
+            // Create a new linked plan
+            console.log(`No linked plan found, creating one from trainer plan ${trainerPlan.id}`);
+            
+            // First deactivate any existing plans
+            await db.query(
+              `UPDATE fitness_plans
+               SET is_active = false, deactivated_at = NOW(), deactivation_reason = 'Replaced by trainer plan'
+               WHERE user_id = $1`,
+              [userId]
+            );
+            
+            // Create new plan linked to the trainer plan
+            const newPlanResult = await db.query(
+              `INSERT INTO fitness_plans
+               (user_id, workout_plan, meal_plan, preferences, is_active, trainer_fitness_plan_id)
+               VALUES ($1, $2, $3, $4, true, $5)
+               RETURNING *`,
+              [
+                userId,
+                trainerPlan.workout_plan,
+                trainerPlan.meal_plan,
+                JSON.stringify({
                   name: trainerPlan.name || "Trainer Plan",
                   goal: "trainer_guided",
                   fitnessLevel: "custom"
-                },
-                isActive: true,
-                createdAt: new Date(),
-                trainerPlanId: trainerPlan.id
-              };
-              
-              const [createdPlan] = await db
-                .insert(fitnessPlans)
-                .values(newPlan)
-                .returning();
-              
-              return res.json(createdPlan);
+                }),
+                trainerPlan.id
+              ]
+            );
+            
+            if (newPlanResult.rowCount > 0) {
+              console.log(`Created new linked fitness plan ${newPlanResult.rows[0].id}`);
+              return res.json(newPlanResult.rows[0]);
             }
           }
         }
         
-        // If all else fails, return a 404
+        // Step 5: Look for any fitness plan for this user
+        console.log(`Step 5: Looking for any fitness plan for user ${userId}`);
+        const anyPlanResult = await db.query(
+          `SELECT * FROM fitness_plans
+           WHERE user_id = $1
+           ORDER BY created_at DESC LIMIT 1`,
+          [userId]
+        );
+        
+        if (anyPlanResult.rowCount > 0) {
+          console.log(`Found fitness plan ${anyPlanResult.rows[0].id}, activating it`);
+          const activatedResult = await db.query(
+            `UPDATE fitness_plans
+             SET is_active = true, deactivated_at = NULL, deactivation_reason = NULL
+             WHERE id = $1 RETURNING *`,
+            [anyPlanResult.rows[0].id]
+          );
+          
+          if (activatedResult.rowCount > 0) {
+            return res.json(activatedResult.rows[0]);
+          } else {
+            return res.json(anyPlanResult.rows[0]);
+          }
+        }
+        
+        // No plans found
         console.log(`No fitness plan found for user ${userId}`);
         return res.status(404).json({ message: "No active fitness plan found" });
       } catch (dbError) {
         console.error(`Database error fetching fitness plan for ${userId}:`, dbError);
-        return res.status(500).json({ message: "Database error finding fitness plan" });
+        return res.status(500).json({ 
+          message: "Database error finding fitness plan",
+          error: dbError instanceof Error ? dbError.message : String(dbError)
+        });
       }
     } catch (error: any) {
       console.error(`Unexpected error fetching fitness plan:`, error);
