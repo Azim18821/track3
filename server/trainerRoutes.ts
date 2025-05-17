@@ -760,8 +760,35 @@ router.patch('/fitness-plans/:id', async (req, res) => {
     // Partial validation of request body
     const validatedData = insertTrainerFitnessPlanSchema.partial().parse(req.body);
     
+    // Ensure meal plan has weeklyMeals structure for client meal logging compatibility
+    if (req.body.mealPlan && req.body.mealPlan.dailyMeals && !req.body.mealPlan.weeklyMeals) {
+      // Create weeklyMeals structure from dailyMeals
+      const weeklyMeals = {};
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      
+      days.forEach(day => {
+        weeklyMeals[day] = { ...req.body.mealPlan.dailyMeals };
+      });
+      
+      // Update the meal plan with weeklyMeals structure
+      req.body.mealPlan.weeklyMeals = weeklyMeals;
+      validatedData.mealPlan = req.body.mealPlan;
+    }
+    
     // Update fitness plan
     const updatedPlan = await storage.updateTrainerFitnessPlan(planId, validatedData);
+    
+    // Create client meal entries based on the updated meal plan
+    if (existingPlan.clientId && req.body.mealPlan) {
+      try {
+        await createClientMealsFromPlan(existingPlan.clientId, req.body.mealPlan, planId);
+        console.log(`Updated meal entries for client ${existingPlan.clientId} from plan ${planId}`);
+      } catch (error) {
+        console.error('Error updating client meal entries:', error);
+        // Don't fail the request if meal entries update fails
+      }
+    }
+    
     res.json(updatedPlan);
   } catch (error) {
     if (error instanceof z.ZodError) {
