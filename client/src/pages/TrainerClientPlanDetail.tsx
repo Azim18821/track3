@@ -260,9 +260,12 @@ export default function TrainerClientPlanDetail() {
   // Delete plan mutation
   const deletePlanMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('DELETE', `/api/trainer/fitness-plans/${planId}`);
+      // Try the direct fitness plans endpoint since the server route supports it
+      const res = await apiRequest('DELETE', `/api/fitness-plans/${planId}`);
       if (!res.ok) {
-        throw new Error('Failed to delete fitness plan');
+        console.error('Error response from server:', res.status);
+        const errorText = await res.text().catch(() => 'Failed to delete fitness plan');
+        throw new Error(errorText || 'Failed to delete fitness plan');
       }
       return true;
     },
@@ -280,6 +283,7 @@ export default function TrainerClientPlanDetail() {
         description: error.message,
         variant: "destructive",
       });
+      console.error('Delete plan error:', error);
     },
   });
 
