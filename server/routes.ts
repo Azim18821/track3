@@ -6035,8 +6035,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "This client is not assigned to you" });
       }
       
-      // Get the fitness plan
-      const plan = await storage.getFitnessPlan(planId);
+      // First, check the trainer_fitness_plans table for the plan
+      let plan = await storage.getTrainerFitnessPlan(planId);
+      
+      // If found in trainer plans, verify it belongs to this trainer and client
+      if (plan) {
+        if (plan.trainerId !== trainerId) {
+          console.log(`Plan ${planId} does not belong to trainer ${trainerId}`);
+          return res.status(403).json({ message: "This fitness plan does not belong to you" });
+        }
+        
+        if (plan.clientId !== clientId) {
+          console.log(`Plan ${planId} does not belong to client ${clientId}`);
+          return res.status(403).json({ message: "This fitness plan does not belong to the specified client" });
+        }
+        
+        // Format the plan to match the expected structure for the frontend
+        plan = {
+          ...plan,
+          preferences: {
+            name: plan.name,
+            goal: plan.notes?.includes('Goal:') ? plan.notes.split('Goal:')[1]?.trim().split(',')[0] : 'strength',
+            durationWeeks: parseInt(plan.notes?.includes('Duration:') ? plan.notes.split('Duration:')[1]?.trim().split('weeks')[0] : '8'),
+            level: plan.notes?.includes('Level:') ? plan.notes.split('Level:')[1]?.trim() : 'intermediate',
+            workoutDaysPerWeek: Object.keys(plan.workoutPlan?.weeklySchedule || {}).length || 3,
+            fitnessLevel: plan.notes?.includes('Level:') ? plan.notes.split('Level:')[1]?.trim() : 'intermediate'
+          }
+        };
+        
+        // Return the trainer fitness plan
+        console.log(`Successfully returning trainer plan ${planId} to trainer ${trainerId}`);
+        return res.json(plan);
+      }
+      
+      // If not found in trainer plans, check regular fitness plans (for backward compatibility)
+      plan = await storage.getFitnessPlan(planId);
       
       if (!plan) {
         return res.status(404).json({ message: "Fitness plan not found" });
@@ -6048,7 +6081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "This fitness plan does not belong to the specified client" });
       }
       
-      // Return the plan
+      // Return the regular fitness plan
       console.log(`Successfully returning plan ${planId} to trainer ${trainerId}`);
       res.json(plan);
     } catch (error) {

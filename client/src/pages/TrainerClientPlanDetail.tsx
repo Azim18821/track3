@@ -187,16 +187,16 @@ export default function TrainerClientPlanDetail() {
   // Extract client info from response
   const clientInfo = clientData?.client;
 
-  // Fetch fitness plan
+  // Fetch fitness plan from trainer fitness plans
   const { 
     data: plan, 
     isLoading: planLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ['/api/fitness-plans', planId],
+    queryKey: ['/api/trainer/clients', clientId, 'plans', planId],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/fitness-plans/${planId}`);
+      const res = await apiRequest('GET', `/api/trainer/clients/${clientId}/plans/${planId}`);
       if (!res.ok) throw new Error('Failed to fetch fitness plan');
       const data = await res.json();
       console.log("Fitness plan API response:", data);
