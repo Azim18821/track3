@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { WebSocket } from 'ws';
 import { 
   insertTrainerNutritionPlanSchema, 
-  insertTrainerFitnessPlanSchema 
+  insertTrainerFitnessPlanSchema,
+  insertPlanTemplateSchema
 } from '@shared/schema';
 import { ensureAuthenticated, ensureTrainer } from './auth';
 
@@ -330,6 +331,214 @@ const router = Router();
 // Apply authentication middleware to all trainer routes
 router.use(ensureAuthenticated);
 router.use(ensureTrainer);
+
+// === PLAN TEMPLATES ROUTES ===
+
+// Get all plan templates for a trainer
+router.get('/plan-templates', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templates = await storage.getPlanTemplates(trainerId);
+    res.json(templates);
+  } catch (error) {
+    console.error('Error getting plan templates:', error);
+    res.status(500).json({ message: 'Failed to retrieve plan templates' });
+  }
+});
+
+// Get a specific plan template by ID
+router.get('/plan-templates/:id', async (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the template
+    if (template.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to view this template' });
+    }
+    
+    res.json(template);
+  } catch (error) {
+    console.error('Error getting plan template:', error);
+    res.status(500).json({ message: 'Failed to retrieve plan template' });
+  }
+});
+
+// Create a new plan template
+router.post('/plan-templates', async (req, res) => {
+  try {
+    const trainerId = req.user!.id;
+    const templateData = insertPlanTemplateSchema.parse({
+      ...req.body,
+      trainerId
+    });
+    
+    const newTemplate = await storage.createPlanTemplate(templateData);
+    res.status(201).json(newTemplate);
+  } catch (error) {
+    console.error('Error creating plan template:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid template data', errors: error.errors });
+    }
+    res.status(500).json({ message: 'Failed to create plan template' });
+  }
+});
+
+// Update an existing plan template
+router.put('/plan-templates/:id', async (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the template
+    if (template.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to update this template' });
+    }
+    
+    // Remove trainerId from the update data to prevent reassignment
+    const { trainerId, ...updateData } = req.body;
+    
+    const updatedTemplate = await storage.updatePlanTemplate(templateId, updateData);
+    res.json(updatedTemplate);
+  } catch (error) {
+    console.error('Error updating plan template:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid template data', errors: error.errors });
+    }
+    res.status(500).json({ message: 'Failed to update plan template' });
+  }
+});
+
+// Delete a plan template
+router.delete('/plan-templates/:id', async (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the template
+    if (template.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to delete this template' });
+    }
+    
+    const deleted = await storage.deletePlanTemplate(templateId);
+    
+    if (deleted) {
+      res.status(200).json({ message: 'Plan template deleted successfully' });
+    } else {
+      res.status(500).json({ message: 'Failed to delete plan template' });
+    }
+  } catch (error) {
+    console.error('Error deleting plan template:', error);
+    res.status(500).json({ message: 'Failed to delete plan template' });
+  }
+});
+
+// Archive or unarchive a plan template
+router.patch('/plan-templates/:id/archive', async (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const { archived } = req.body;
+    
+    if (typeof archived !== 'boolean') {
+      return res.status(400).json({ message: 'Archived status must be a boolean' });
+    }
+    
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the template
+    if (template.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to modify this template' });
+    }
+    
+    const success = await storage.archivePlanTemplate(templateId, archived);
+    
+    if (success) {
+      res.status(200).json({ 
+        message: archived ? 'Plan template archived successfully' : 'Plan template unarchived successfully',
+        isArchived: archived
+      });
+    } else {
+      res.status(500).json({ message: 'Failed to update plan template archive status' });
+    }
+  } catch (error) {
+    console.error('Error updating plan template archive status:', error);
+    res.status(500).json({ message: 'Failed to update plan template archive status' });
+  }
+});
+
+// Apply a template to create a client plan
+router.post('/plan-templates/:id/apply', async (req, res) => {
+  try {
+    const templateId = parseInt(req.params.id);
+    const { clientId } = req.body;
+    
+    if (!clientId) {
+      return res.status(400).json({ message: 'Client ID is required' });
+    }
+    
+    const template = await storage.getPlanTemplate(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Plan template not found' });
+    }
+    
+    // Check if the requesting trainer is the creator of the template
+    if (template.trainerId !== req.user!.id) {
+      return res.status(403).json({ message: 'You are not authorized to use this template' });
+    }
+    
+    // Check if the client is assigned to this trainer
+    const trainerClients = await storage.getTrainerClients(req.user!.id);
+    const isClientOfTrainer = trainerClients.some(tc => tc.client.id === clientId);
+    
+    if (!isClientOfTrainer) {
+      return res.status(403).json({ message: 'This client is not assigned to you' });
+    }
+    
+    // Create a new plan for the client based on the template
+    let newPlan;
+    if (template.type === 'fitness' || template.type === 'combined') {
+      // Create fitness plan
+      newPlan = await storage.createTrainerFitnessPlan({
+        trainerId: req.user!.id,
+        clientId: clientId,
+        name: template.name,
+        description: template.description || null,
+        workoutPlan: template.workoutPlan || { weeklySchedule: {}, notes: '' },
+        mealPlan: template.type === 'combined' ? (template.mealPlan || { weeklyMeals: {}, notes: '' }) : { weeklyMeals: {}, notes: '' },
+        notes: template.notes || null,
+        isActive: true
+      });
+    } else if (template.type === 'nutrition') {
+      // For nutrition-only templates, create a nutrition plan
+      // Add implementation based on your nutrition plan structure
+    }
+    
+    res.status(201).json({ 
+      message: 'Plan created successfully from template',
+      plan: newPlan
+    });
+  } catch (error) {
+    console.error('Error applying plan template:', error);
+    res.status(500).json({ message: 'Failed to apply plan template' });
+  }
+});
 
 // === NUTRITION PLANS ROUTES ===
 

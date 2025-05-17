@@ -79,6 +79,7 @@ const Sidebar = ({ closeMobileSidebar }: SidebarProps) => {
   const trainerNavItems = [
     { href: "/trainer", label: "My Clients", icon: UserCheck },
     { href: "/trainer/plans", label: "Client Plans", icon: ClipboardList },
+    { href: "/plan-templates", label: "Plan Templates", icon: BookOpen },
     { href: "/trainer/messages", label: "Client Messages", icon: MessageSquare, badge: unreadCount?.count },
   ];
 

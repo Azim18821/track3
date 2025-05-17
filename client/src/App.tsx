@@ -25,6 +25,8 @@ import OnboardingPage from "@/pages/OnboardingPage";
 import GoalsPage from "@/pages/GoalsPage";
 import ExerciseLibrary from "@/pages/ExerciseLibrary";
 import MealLibrary from "@/pages/MealLibrary";
+import PlanTemplates from "@/pages/PlanTemplates";
+import CreatePlanTemplate from "@/pages/CreatePlanTemplate";
 import LandingPage from "@/pages/LandingPage";
 import AuthPage from "@/pages/auth-page-new";
 import ForgotPassword from "@/pages/forgot-password";
@@ -359,6 +361,23 @@ function App() {
                             </div>
                           </div>
                         </div>
+                      </ProtectedLayout>
+                    </Route>
+                    
+                    {/* Plan Templates Routes */}
+                    <Route path="/plan-templates">
+                      <ProtectedLayout>
+                        <PlanTemplates />
+                      </ProtectedLayout>
+                    </Route>
+                    <Route path="/create-plan-template">
+                      <ProtectedLayout>
+                        <CreatePlanTemplate />
+                      </ProtectedLayout>
+                    </Route>
+                    <Route path="/edit-plan-template/:id">
+                      <ProtectedLayout>
+                        <CreatePlanTemplate />
                       </ProtectedLayout>
                     </Route>
 
