@@ -10,6 +10,7 @@ import {
   MessageSquare, Calendar, PlusCircle, Clipboard, CheckCircle,
   Clock
 } from 'lucide-react';
+import { format } from 'date-fns';
 import TrainerNavbar from '@/components/TrainerNavbar';
 import TrainerPageHeader from '@/components/TrainerPageHeader';
 import { Button } from '@/components/ui/button';
@@ -419,19 +420,19 @@ export default function TrainerClientDetail() {
       {/* Client History and Notes Tabs */}
       <Tabs defaultValue="notes" className="mt-3">
         <TabsList className="grid w-full grid-cols-4 h-auto pb-safe">
-          <TabsTrigger value="notes" className="text-xs py-1.5 px-0.5 h-auto rounded-lg">
+          <TabsTrigger value="notes" className="text-xs py-1.5 px-0.5 h-auto rounded-lg" onClick={(e) => e.preventDefault()}>
             <Notebook className="h-3 w-3 mb-0.5 mr-1 sm:mr-1.5" />
             <span className="truncate">Notes</span>
           </TabsTrigger>
-          <TabsTrigger value="workouts" className="text-xs py-1.5 px-0.5 h-auto rounded-lg">
+          <TabsTrigger value="workouts" className="text-xs py-1.5 px-0.5 h-auto rounded-lg" onClick={(e) => e.preventDefault()}>
             <Dumbbell className="h-3 w-3 mb-0.5 mr-1 sm:mr-1.5" />
             <span className="truncate">Workouts</span>
           </TabsTrigger>
-          <TabsTrigger value="nutrition" className="text-xs py-1.5 px-0.5 h-auto rounded-lg">
+          <TabsTrigger value="nutrition" className="text-xs py-1.5 px-0.5 h-auto rounded-lg" onClick={(e) => e.preventDefault()}>
             <CalendarRange className="h-3 w-3 mb-0.5 mr-1 sm:mr-1.5" />
             <span className="truncate">Nutrition</span>
           </TabsTrigger>
-          <TabsTrigger value="weights" className="text-xs py-1.5 px-0.5 h-auto rounded-lg">
+          <TabsTrigger value="weights" className="text-xs py-1.5 px-0.5 h-auto rounded-lg" onClick={(e) => e.preventDefault()}>
             <Scale className="h-3 w-3 mb-0.5 mr-1 sm:mr-1.5" />
             <span className="truncate">Weight</span>
           </TabsTrigger>
