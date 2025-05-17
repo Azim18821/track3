@@ -83,19 +83,17 @@ export default function EnhancedTrainerClientDetail() {
     console.log("EnhancedTrainerClientDetail params:", { clientId, rawParams: params });
   }, [clientId, params]);
   
-  // Set active tab based on current URL
+  // Instead of URL-based navigation, we'll use the activeTab state to control content display
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path.includes('/workouts')) {
-      setActiveTab('workout');
-    } else if (path.includes('/nutrition-goals')) {
-      setActiveTab('nutrition');
-    } else if (path.includes('/messages')) {
-      setActiveTab('messages');
-    } else {
-      setActiveTab('overview');
+    // We'll default to the overview tab
+    setActiveTab('overview');
+    
+    // Update window history to clean URL without redirecting
+    const cleanUrl = `/trainer/clients/${clientId}`;
+    if (window.location.pathname !== cleanUrl) {
+      window.history.replaceState(null, '', cleanUrl);
     }
-  }, []);
+  }, [clientId]);
 
   // Redirect if not trainer
   useEffect(() => {
