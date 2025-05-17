@@ -234,8 +234,7 @@ export default function TrainerClientPlanDetail() {
         mealNotes: data.mealNotes,
       };
       
-      // Use the same path pattern as we use for viewing and deleting the plan
-      const res = await apiRequest('PATCH', `/api/trainer/clients/${clientId}/plans/${planId}/notes`, payload);
+      const res = await apiRequest('PATCH', `/api/fitness-plans/${planId}/notes`, payload);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Failed to update plan notes');
@@ -247,7 +246,7 @@ export default function TrainerClientPlanDetail() {
         title: "Success",
         description: "Plan notes have been updated",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientId, 'plans', planId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fitness-plans', planId] });
     },
     onError: (error: Error) => {
       toast({
@@ -261,29 +260,10 @@ export default function TrainerClientPlanDetail() {
   // Delete plan mutation
   const deletePlanMutation = useMutation({
     mutationFn: async () => {
-      console.log(`Attempting to delete plan ${planId} for client ${clientId}`);
-      
-      // First, check if there are any errors retrieving the plan
-      if (!plan) {
-        console.error('Cannot delete: Plan data is not available');
-        throw new Error('Plan data not available. Please refresh the page and try again.');
-      }
-      
-      // Use the same endpoint pattern as we use for viewing the plan
-      // This ensures consistency between viewing and deleting operations
-      const endpoint = `/api/trainer/clients/${clientId}/plans/${planId}`;
-      console.log(`Using trainer-client plan deletion endpoint: ${endpoint}`);
-      
-      // Attempt to delete the plan
-      const res = await apiRequest('DELETE', endpoint);
-      
+      const res = await apiRequest('DELETE', `/api/trainer/fitness-plans/${planId}`);
       if (!res.ok) {
-        console.error('Plan deletion failed with status:', res.status);
-        const errorText = await res.text().catch(() => 'Failed to delete fitness plan');
-        throw new Error(errorText || 'Failed to delete fitness plan');
+        throw new Error('Failed to delete fitness plan');
       }
-      
-      console.log('Plan deletion successful');
       return true;
     },
     onSuccess: () => {
@@ -300,7 +280,6 @@ export default function TrainerClientPlanDetail() {
         description: error.message,
         variant: "destructive",
       });
-      console.error('Delete plan error:', error);
     },
   });
 

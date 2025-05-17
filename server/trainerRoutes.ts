@@ -825,86 +825,6 @@ router.get('/clients/:clientId/fitness-plans', async (req, res) => {
   }
 });
 
-// Delete fitness plan for a specific client
-router.delete('/clients/:clientId/fitness-plans/:planId', async (req, res) => {
-  try {
-    const trainerId = req.user!.id;
-    const clientId = parseInt(req.params.clientId);
-    const planId = parseInt(req.params.planId);
-    
-    if (isNaN(planId) || isNaN(clientId)) {
-      return res.status(400).json({ message: 'Invalid client ID or plan ID' });
-    }
-    
-    console.log(`Trainer ${trainerId} attempting to delete client ${clientId}'s fitness plan ${planId}`);
-    
-    // Verify that the client is assigned to this trainer
-    const trainerClients = await storage.getTrainerClients(trainerId);
-    const isClientOfTrainer = trainerClients.some(tc => tc.client.id === clientId);
-    
-    if (!isClientOfTrainer) {
-      return res.status(403).json({ message: 'You are not authorized to manage this client' });
-    }
-    
-    // First, check for a trainer-created fitness plan
-    const trainerPlan = await storage.getTrainerFitnessPlan(planId);
-    
-    if (trainerPlan) {
-      // Verify this trainer created the plan and it belongs to the specified client
-      if (trainerPlan.trainerId !== trainerId) {
-        return res.status(403).json({ message: 'You are not authorized to delete this plan' });
-      }
-      
-      if (trainerPlan.clientId !== clientId) {
-        return res.status(403).json({ message: 'This plan does not belong to the specified client' });
-      }
-      
-      // Clear associated data for this client
-      console.log(`Clearing planned meals and future workouts for client ${clientId} before deleting trainer plan`);
-      await clearClientPlannedMeals(clientId);
-      await clearClientWorkouts(clientId);
-      
-      // Delete the trainer plan
-      const success = await storage.deleteTrainerFitnessPlan(planId);
-      if (!success) {
-        return res.status(500).json({ message: 'Failed to delete trainer fitness plan' });
-      }
-      
-      console.log(`Successfully deleted trainer fitness plan ${planId} for client ${clientId}`);
-      return res.status(204).end();
-    }
-    
-    // If no trainer plan found, check for a regular fitness plan (legacy support)
-    const regularPlan = await storage.getFitnessPlan(planId);
-    if (!regularPlan) {
-      console.log(`No fitness plan found with ID ${planId} in either table`);
-      return res.status(404).json({ message: 'Fitness plan not found' });
-    }
-    
-    // Verify the plan belongs to this client
-    if (regularPlan.userId !== clientId) {
-      return res.status(403).json({ message: 'This plan does not belong to the specified client' });
-    }
-    
-    // Clear associated data for this client
-    console.log(`Clearing planned meals and future workouts for client ${clientId} before deleting regular plan`);
-    await clearClientPlannedMeals(clientId);
-    await clearClientWorkouts(clientId);
-    
-    // Delete the regular plan
-    const success = await storage.deleteFitnessPlan(planId);
-    if (!success) {
-      return res.status(500).json({ message: 'Failed to delete regular fitness plan' });
-    }
-    
-    console.log(`Successfully deleted regular fitness plan ${planId} for client ${clientId}`);
-    return res.status(204).end();
-  } catch (error) {
-    console.error('Error deleting client fitness plan:', error);
-    res.status(500).json({ message: 'Failed to delete fitness plan' });
-  }
-});
-
 // Create a fitness plan for a client
 router.post('/clients/:clientId/fitness-plan', async (req, res) => {
   try {
@@ -1277,71 +1197,40 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
     if (isNaN(planId)) {
       return res.status(400).json({ message: 'Invalid plan ID' });
     }
-    
-    const trainerId = req.user?.id;
-    if (!trainerId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    
-    console.log(`Trainer ${trainerId} attempting to delete fitness plan ${planId}`);
-    
-    // First, check for a trainer-created fitness plan
-    const trainerPlan = await storage.getTrainerFitnessPlan(planId);
-    
-    if (trainerPlan) {
-      console.log(`Found trainer fitness plan ${planId}, checking authorization`);
-      
-      // Verify the trainer is the creator of this plan
-      if (trainerPlan.trainerId !== trainerId) {
-        return res.status(403).json({ message: 'You are not authorized to delete this plan' });
-      }
-      
-      const clientId = trainerPlan.clientId;
-      
-      // Clear associated data for this client
-      console.log(`Clearing planned meals and future workouts for client ${clientId} before deleting trainer plan`);
-      await clearClientPlannedMeals(clientId);
-      await clearClientWorkouts(clientId);
-      
-      // Delete the trainer plan
-      const success = await storage.deleteTrainerFitnessPlan(planId);
-      if (!success) {
-        return res.status(500).json({ message: 'Failed to delete trainer fitness plan' });
-      }
-      
-      console.log(`Successfully deleted trainer fitness plan ${planId} for client ${clientId}`);
-      return res.status(204).end();
-    }
-    
-    // If no trainer plan found, check for a regular fitness plan (legacy support)
-    const regularPlan = await storage.getFitnessPlan(planId);
-    if (!regularPlan) {
-      console.log(`No fitness plan found with ID ${planId} in either table`);
+
+    // Get the plan to verify ownership
+    const plan = await storage.getFitnessPlan(planId);
+    if (!plan) {
       return res.status(404).json({ message: 'Fitness plan not found' });
     }
-    
+
     // Verify the client belongs to this trainer
-    const clients = await storage.getTrainerClients(trainerId);
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const clients = await storage.getTrainerClients(userId);
     const clientIds = clients.map(tc => tc.client.id);
     
-    if (!clientIds.includes(regularPlan.userId)) {
+    if (!clientIds.includes(plan.userId)) {
       return res.status(403).json({ message: 'You are not authorized to manage this plan' });
     }
-    
-    const clientId = regularPlan.userId;
+
+    const clientId = plan.userId;
     
     // Clear associated data for this client
-    console.log(`Clearing planned meals and future workouts for client ${clientId} before deleting regular plan`);
+    console.log(`Clearing planned meals and future workouts for client ${clientId}`);
     await clearClientPlannedMeals(clientId);
     await clearClientWorkouts(clientId);
     
-    // Delete the regular plan
+    // Delete the plan
     const success = await storage.deleteFitnessPlan(planId);
     if (!success) {
       return res.status(500).json({ message: 'Failed to delete fitness plan' });
     }
-    
-    console.log(`Successfully deleted regular fitness plan ${planId} for client ${clientId}`);
+
+    console.log(`Successfully deleted fitness plan ${planId} and cleared associated data for client ${clientId}`);
     
     // Return success with no content
     res.status(204).end();
