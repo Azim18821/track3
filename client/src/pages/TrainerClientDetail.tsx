@@ -7,7 +7,8 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { 
   Loader2, ArrowLeft, Save, User, Scale, CalendarRange, 
   Dumbbell, Notebook, UserMinus, AlertTriangle, Plus, 
-  MessageSquare, Calendar, PlusCircle, Clipboard, CheckCircle
+  MessageSquare, Calendar, PlusCircle, Clipboard, CheckCircle,
+  Clock
 } from 'lucide-react';
 import TrainerNavbar from '@/components/TrainerNavbar';
 import TrainerPageHeader from '@/components/TrainerPageHeader';
@@ -491,31 +492,104 @@ export default function TrainerClientDetail() {
         
         <TabsContent value="workouts" className="pt-3">
           <Card className="border border-slate-200 dark:border-slate-800 shadow-sm bg-white/95 dark:bg-card/90 backdrop-blur-sm">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center text-base">
-                <Dumbbell className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
-                Workout History
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Review your client's past workouts and progress
-              </CardDescription>
+            <CardHeader className="p-4 pb-2 flex flex-row justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center text-base">
+                  <Dumbbell className="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  Workout History
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Review and manage your client's workouts
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-8 px-3 rounded-lg bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-200 hover:bg-blue-50 dark:from-blue-900/30 dark:to-indigo-900/30 dark:text-blue-300 dark:border-blue-800"
+                onClick={() => navigate(`/enhanced-trainer-plan-creation?clientId=${clientId}`)}
+              >
+                <PlusCircle className="mr-1 h-3.5 w-3.5" />
+                New Workout
+              </Button>
             </CardHeader>
             <CardContent className="p-4 pt-2">
-              {/* We need to fetch workouts and implement handlers */}
-              {clientData?.workouts ? (
-                <WeeklyWorkoutView 
-                  workouts={clientData.workouts} 
-                  onViewWorkout={(workout) => {
-                    window.alert(`Viewing individual workout detail is coming soon! Workout ID: ${workout.id}`);
-                  }}
-                  onAddWorkout={(date) => {
-                    navigate(`/trainer/clients/${clientId}/workouts`);
-                  }}
-                />
+              {clientData?.workouts && clientData.workouts.length > 0 ? (
+                <div className="space-y-4">
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-3">
+                      {clientData.workouts.sort((a, b) => 
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                      ).map((workout) => (
+                        <Card key={workout.id} className="border border-slate-200 dark:border-slate-800">
+                          <CardHeader className="p-3 pb-2">
+                            <div className="flex justify-between items-center">
+                              <CardTitle className="text-sm font-medium">
+                                {workout.name}
+                              </CardTitle>
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {format(new Date(workout.date), 'MMM d, yyyy')}
+                              </Badge>
+                            </div>
+                            <CardDescription className="text-xs flex items-center">
+                              <Clock className="h-3 w-3 mr-1 inline-block" />
+                              {workout.duration} minutes
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <div className="text-xs text-muted-foreground mt-1 mb-2">
+                              {workout.exercises ? workout.exercises.length : 0} exercises
+                            </div>
+                            {workout.exercises && workout.exercises.length > 0 && (
+                              <ul className="text-xs space-y-1.5">
+                                {workout.exercises.slice(0, 3).map((exercise, idx) => (
+                                  <li key={idx} className="flex items-center">
+                                    <CheckCircle className="h-3 w-3 mr-1.5 text-green-500" />
+                                    <span className="font-medium">{exercise.name}</span>
+                                    <span className="ml-auto text-muted-foreground">
+                                      {exercise.sets} × {exercise.reps}
+                                      {exercise.weight ? ` @ ${exercise.weight}${exercise.unit || 'kg'}` : ''}
+                                    </span>
+                                  </li>
+                                ))}
+                                {workout.exercises.length > 3 && (
+                                  <li className="text-muted-foreground text-center">
+                                    + {workout.exercises.length - 3} more
+                                  </li>
+                                )}
+                              </ul>
+                            )}
+                          </CardContent>
+                          <CardFooter className="p-3 pt-0 flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs"
+                              onClick={() => {
+                                window.alert(`View workout details for: ${workout.name}`);
+                              }}
+                            >
+                              <Clipboard className="h-3 w-3 mr-1" />
+                              Details
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">No workouts found</p>
                   <p className="text-xs mt-1">Your client hasn't logged any workouts yet.</p>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 h-8"
+                    onClick={() => navigate(`/enhanced-trainer-plan-creation?clientId=${clientId}`)}
+                  >
+                    <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                    Add First Workout
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -524,30 +598,154 @@ export default function TrainerClientDetail() {
         
         <TabsContent value="nutrition" className="pt-3">
           <Card className="border border-slate-200 dark:border-slate-800 shadow-sm bg-white/95 dark:bg-card/90 backdrop-blur-sm">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center text-base">
-                <CalendarRange className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
-                Nutrition Tracking
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Review your client's nutrition logs
-              </CardDescription>
+            <CardHeader className="p-4 pb-2 flex flex-row justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center text-base">
+                  <CalendarRange className="mr-2 h-4 w-4 text-green-600 dark:text-green-400" />
+                  Nutrition Goals & Tracking
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Manage nutrition goals and view meal logs
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-8 px-3 rounded-lg bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200 hover:bg-green-50 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-300 dark:border-green-800"
+                onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals/edit`)}
+              >
+                <PlusCircle className="mr-1 h-3.5 w-3.5" />
+                Update Goals
+              </Button>
             </CardHeader>
             <CardContent className="p-4 pt-2">
-              {/* Display nutrition data */}
-              {clientData?.meals && clientData?.nutritionGoal ? (
-                <WeeklyNutritionView 
-                  meals={clientData.meals} 
-                  nutritionGoals={{
-                    calories: clientData.nutritionGoal.caloriesPerDay,
-                    protein: clientData.nutritionGoal.proteinPerDay,
-                    carbs: clientData.nutritionGoal.carbsPerDay,
-                    fat: clientData.nutritionGoal.fatPerDay
-                  }}
-                  onViewDay={(date) => {
-                    window.alert(`Viewing detailed nutrition for ${date} coming soon!`);
-                  }}
-                />
+              {/* Nutrition Goals Summary */}
+              {clientData?.nutritionGoal ? (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium mb-2 flex items-center">
+                    <Clipboard className="h-3.5 w-3.5 mr-1.5 text-green-600" />
+                    Current Nutrition Goals
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <Card className="border-green-100 dark:border-green-900 bg-green-50/50 dark:bg-green-900/20">
+                      <CardContent className="p-3 flex flex-col items-center justify-center">
+                        <p className="text-xs text-green-800 dark:text-green-300 mb-1">Calories</p>
+                        <p className="text-lg font-semibold text-green-700 dark:text-green-400">
+                          {clientData.nutritionGoal.caloriesPerDay}
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-500">kcal/day</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-blue-100 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-900/20">
+                      <CardContent className="p-3 flex flex-col items-center justify-center">
+                        <p className="text-xs text-blue-800 dark:text-blue-300 mb-1">Protein</p>
+                        <p className="text-lg font-semibold text-blue-700 dark:text-blue-400">
+                          {clientData.nutritionGoal.proteinPerDay}g
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-500">
+                          {clientData.nutritionGoal.proteinPercentage}%
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-amber-100 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-900/20">
+                      <CardContent className="p-3 flex flex-col items-center justify-center">
+                        <p className="text-xs text-amber-800 dark:text-amber-300 mb-1">Carbs</p>
+                        <p className="text-lg font-semibold text-amber-700 dark:text-amber-400">
+                          {clientData.nutritionGoal.carbsPerDay}g
+                        </p>
+                        <p className="text-xs text-amber-600 dark:text-amber-500">
+                          {clientData.nutritionGoal.carbsPercentage}%
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card className="border-red-100 dark:border-red-900 bg-red-50/50 dark:bg-red-900/20">
+                      <CardContent className="p-3 flex flex-col items-center justify-center">
+                        <p className="text-xs text-red-800 dark:text-red-300 mb-1">Fat</p>
+                        <p className="text-lg font-semibold text-red-700 dark:text-red-400">
+                          {clientData.nutritionGoal.fatPerDay}g
+                        </p>
+                        <p className="text-xs text-red-600 dark:text-red-500">
+                          {clientData.nutritionGoal.fatPercentage}%
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center p-4 mb-4 border border-dashed rounded-lg border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10">
+                  <CalendarRange className="h-10 w-10 text-green-400 mb-2" />
+                  <h3 className="text-sm font-medium">No nutrition goals set</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Set nutrition goals to help your client track their daily intake
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-green-100 hover:bg-green-200 text-green-800 border-green-300"
+                    onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals/edit`)}
+                  >
+                    <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+                    Set Nutrition Goals
+                  </Button>
+                </div>
+              )}
+              
+              {/* Display meal logs if available */}
+              {clientData?.meals && clientData.meals.length > 0 ? (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2 flex items-center">
+                    <Calendar className="h-3.5 w-3.5 mr-1.5 text-green-600" />
+                    Recent Meal Logs
+                  </h3>
+                  <ScrollArea className="h-[300px] pr-4">
+                    <div className="space-y-3">
+                      {clientData.meals.sort((a, b) => 
+                        new Date(b.date).getTime() - new Date(a.date).getTime()
+                      ).slice(0, 5).map((meal, index) => (
+                        <Card key={index} className="border border-slate-200 dark:border-slate-800">
+                          <CardHeader className="p-3 pb-2">
+                            <div className="flex justify-between items-center">
+                              <CardTitle className="text-sm font-medium">
+                                {meal.name || meal.type || 'Meal'}
+                              </CardTitle>
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {format(new Date(meal.date), 'MMM d, yyyy')}
+                              </Badge>
+                            </div>
+                            <CardDescription className="text-xs flex items-center">
+                              {meal.time && (
+                                <span className="flex items-center mr-2">
+                                  <Clock className="h-3 w-3 mr-1 inline-block" />
+                                  {meal.time}
+                                </span>
+                              )}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <div className="grid grid-cols-4 gap-2 mt-2">
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Calories</p>
+                                <p className="text-sm font-medium">{meal.calories || 0} kcal</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Protein</p>
+                                <p className="text-sm font-medium">{meal.protein || 0}g</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Carbs</p>
+                                <p className="text-sm font-medium">{meal.carbs || 0}g</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground">Fat</p>
+                                <p className="text-sm font-medium">{meal.fat || 0}g</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">No nutrition data found</p>
