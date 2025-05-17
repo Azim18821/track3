@@ -2022,60 +2022,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       console.log(`Fetching active fitness plan for user ID: ${userId}`);
       
-      try {
-        // Check if this user is a client with a trainer
-        const hasTrainers = await storage.userHasTrainers(userId);
+      // First check if the user is a client and has a trainer
+      const isClient = await storage.userHasTrainers(userId);
+      
+      if (isClient) {
+        console.log(`User ${userId} is a client with trainer(s)`);
         
-        // If user has trainers, try to sync the trainer fitness plan first
-        if (hasTrainers) {
-          // Check if there's a trainer fitness plan for this client
-          const trainerClients = await storage.getClientTrainers(userId);
-          if (trainerClients && trainerClients.length > 0) {
-            // Get the first trainer's ID
-            const trainerId = trainerClients[0].trainer.id;
+        // For clients, we'll directly use the plan that was created in the database
+        try {
+          // Directly query the fitness plan
+          const [plan] = await db
+            .select()
+            .from(fitnessPlans)
+            .where(eq(fitnessPlans.userId, userId))
+            .orderBy(desc(fitnessPlans.createdAt))
+            .limit(1);
+          
+          if (plan) {
+            console.log(`Found fitness plan ${plan.id} for client ${userId}`);
+            // Make sure it's marked as active
+            const [activePlan] = await db
+              .update(fitnessPlans)
+              .set({ isActive: true, deactivatedAt: null, deactivationReason: null })
+              .where(eq(fitnessPlans.id, plan.id))
+              .returning();
             
-            // Find trainer fitness plans for this client
-            const [trainerPlan] = await db
-              .select()
-              .from(storage["trainerFitnessPlans"])
-              .where(
-                and(
-                  eq(storage["trainerFitnessPlans"].clientId, userId),
-                  eq(storage["trainerFitnessPlans"].trainerId, trainerId)
-                )
-              )
-              .orderBy(desc(storage["trainerFitnessPlans"].createdAt))
-              .limit(1);
+            console.log(`Activated fitness plan ${activePlan.id} for client ${userId}`);
+            return res.json(activePlan);
+          } else {
+            console.log(`No fitness plan found for client ${userId}, checking for trainer plan`);
             
-            if (trainerPlan) {
-              console.log(`Found trainer fitness plan for client ${userId} from trainer ${trainerId}`);
+            // Try to find the trainer plan
+            const trainerClients = await storage.getClientTrainers(userId);
+            if (trainerClients && trainerClients.length > 0) {
+              const trainerId = trainerClients[0].trainer.id;
               
-              // First, deactivate all existing fitness plans for this user
-              await db
-                .update(fitnessPlans)
-                .set({ 
-                  isActive: false,
-                  deactivatedAt: new Date(),
-                  deactivationReason: "Replaced by trainer plan"
-                })
-                .where(eq(fitnessPlans.userId, userId));
-              
-              // Check if we already have a corresponding fitness plan
-              const [existingPlan] = await db
+              const [trainerPlan] = await db
                 .select()
-                .from(fitnessPlans)
-                .where(
-                  and(
-                    eq(fitnessPlans.userId, userId),
-                    eq(fitnessPlans.trainerPlanId, trainerPlan.id)
-                  )
-                );
+                .from(storage["trainerFitnessPlans"])
+                .where(eq(storage["trainerFitnessPlans"].clientId, userId))
+                .orderBy(desc(storage["trainerFitnessPlans"].createdAt))
+                .limit(1);
               
-              // If no corresponding plan exists, create one
-              if (!existingPlan) {
-                console.log(`Creating new fitness plan for client ${userId} based on trainer plan ${trainerPlan.id}`);
+              if (trainerPlan) {
+                console.log(`Found trainer plan ${trainerPlan.id} for client ${userId}`);
                 
-                // Convert the trainer plan to a client plan format
+                // Create a new plan based on the trainer plan
                 const newPlan = {
                   userId: userId,
                   workoutPlan: trainerPlan.workoutPlan,
@@ -2090,37 +2082,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   trainerPlanId: trainerPlan.id
                 };
                 
-                // Insert the new plan
                 const [createdPlan] = await db
                   .insert(fitnessPlans)
                   .values(newPlan)
                   .returning();
                 
-                console.log(`Created new active fitness plan ${createdPlan.id} for client ${userId}`);
+                console.log(`Created new fitness plan ${createdPlan.id} for client ${userId}`);
                 return res.json(createdPlan);
-              } else {
-                // If a plan exists, ensure it's set to active
-                const [updatedPlan] = await db
-                  .update(fitnessPlans)
-                  .set({ 
-                    isActive: true,
-                    workoutPlan: trainerPlan.workoutPlan,
-                    mealPlan: trainerPlan.mealPlan,
-                    deactivatedAt: null,
-                    deactivationReason: null
-                  })
-                  .where(eq(fitnessPlans.id, existingPlan.id))
-                  .returning();
-                
-                console.log(`Updated existing fitness plan ${updatedPlan.id} for client ${userId}`);
-                return res.json(updatedPlan);
               }
             }
+            
+            return res.status(404).json({ message: "No active fitness plan found" });
           }
+        } catch (err) {
+          console.error(`Error finding fitness plan for client ${userId}:`, err);
+          return res.status(500).json({ message: "Error finding fitness plan" });
         }
-        
-        // If we reach here, either the user is not a client or we couldn't find a trainer plan
-        // Proceed with normal logic to find an active plan
+      } else {
+        // Normal non-client user flow
         const plan = await storage.getActiveFitnessPlan(userId);
         
         if (!plan) {
@@ -2129,15 +2108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`Found active fitness plan: ${plan.id}`);
-        
-        // Return the full plan data
         return res.json(plan);
-      } catch (dbError: any) {
-        console.error(`Database error fetching fitness plan:`, dbError);
-        return res.status(500).json({ 
-          message: "Database error fetching fitness plan", 
-          error: dbError?.message || "Unknown database error" 
-        });
       }
     } catch (error: any) {
       console.error(`Unexpected error fetching fitness plan:`, error);
