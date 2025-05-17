@@ -302,7 +302,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                 </Card>
               )}
 
-              {/* History table */}
+              {/* History table with Accordion */}
               <Card>
                 <CardContent className="p-4">
                   <h3 className="text-sm font-medium flex items-center mb-3">
@@ -316,47 +316,108 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                       <p className="text-xs mt-1">This might be your first time doing it!</p>
                     </div>
                   ) : (
-                    <div className="overflow-hidden border rounded-md border-border">
-                      <Table>
-                        <TableHeader className="bg-muted/40">
-                          <TableRow>
-                            <TableHead className="w-24 py-2">Date</TableHead>
-                            <TableHead className="py-2">Performance</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {history.slice(0, 5).map((item) => (
-                            <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-muted/20">
-                              <TableCell className="py-2 text-xs">
-                                <div className="font-medium">
-                                  {format(new Date(item.date), 'MMM d')}
-                                </div>
-                                <div className="text-muted-foreground">
-                                  {format(new Date(item.date), 'yyyy')}
-                                </div>
-                              </TableCell>
-                              <TableCell className="py-2">
-                                <div className="space-y-1.5">
-                                  {item.sets && item.sets.length > 0 ? (
-                                    item.sets.map((set, index) => (
-                                      <div key={index} className="flex items-center text-sm">
-                                        <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal bg-background">
-                                          {index + 1}
-                                        </Badge>
-                                        <span className="font-medium">
-                                          {set.reps} × {set.weight} kg
-                                        </span>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <span className="text-muted-foreground text-sm">No set data</span>
-                                  )}
-                                </div>
-                              </TableCell>
+                    <div className="border rounded-md border-border">
+                      <div className="overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-muted/40">
+                            <TableRow>
+                              <TableHead className="w-24 py-2">Date</TableHead>
+                              <TableHead className="py-2">Performance</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {/* Always show the most recent workout */}
+                            {history.slice(0, 1).map((item) => (
+                              <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-muted/20">
+                                <TableCell className="py-2 text-xs">
+                                  <div className="font-medium">
+                                    {format(new Date(item.date), 'MMM d')}
+                                  </div>
+                                  <div className="text-muted-foreground">
+                                    {format(new Date(item.date), 'yyyy')}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-2">
+                                  <div className="space-y-1.5">
+                                    {item.sets && item.sets.length > 0 ? (
+                                      item.sets.map((set, index) => (
+                                        <div key={index} className="flex items-center text-sm">
+                                          <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal bg-background">
+                                            {index + 1}
+                                          </Badge>
+                                          <span className="font-medium">
+                                            {set.reps} × {set.weight} kg
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <span className="text-muted-foreground text-sm">No set data</span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      
+                      {/* Previous workouts in collapsible section */}
+                      {history.length > 1 && (
+                        <details className="group">
+                          <summary className="flex items-center justify-center py-2 px-4 cursor-pointer text-sm font-medium bg-muted/20 hover:bg-muted/40 border-t border-border">
+                            <span>Show Previous Workouts</span>
+                            <svg 
+                              className="w-4 h-4 ml-1.5 transition-transform group-open:rotate-180" 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              viewBox="0 0 24 24" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              strokeWidth="2" 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          </summary>
+                          
+                          <div className="overflow-hidden">
+                            <Table>
+                              <TableBody>
+                                {history.slice(1).map((item) => (
+                                  <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-muted/20 border-t border-border">
+                                    <TableCell className="py-2 text-xs">
+                                      <div className="font-medium">
+                                        {format(new Date(item.date), 'MMM d')}
+                                      </div>
+                                      <div className="text-muted-foreground">
+                                        {format(new Date(item.date), 'yyyy')}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="py-2">
+                                      <div className="space-y-1.5">
+                                        {item.sets && item.sets.length > 0 ? (
+                                          item.sets.map((set, index) => (
+                                            <div key={index} className="flex items-center text-sm">
+                                              <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal bg-background">
+                                                {index + 1}
+                                              </Badge>
+                                              <span className="font-medium">
+                                                {set.reps} × {set.weight} kg
+                                              </span>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <span className="text-muted-foreground text-sm">No set data</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </details>
+                      )}
                     </div>
                   )}
                 </CardContent>
