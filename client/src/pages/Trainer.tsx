@@ -3,7 +3,6 @@ import { useLocation, Link } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-// Removed tabs import as we're not using tabs anymore
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { apiRequest } from '@/lib/queryClient';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -22,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 
-// Types for trainer plans
+// Types for trainer clients and plans
 interface TrainerClient {
   id: number;
   username: string;
@@ -431,10 +430,7 @@ const ClientList: React.FC = () => {
   // Handle clients data safely with consistent structure
   const clients = useMemo(() => {
     if (!clientsData) return [];
-    return clientsData.map(item => ({
-      client: item.client,
-      relationship: item.relationship
-    }));
+    return clientsData.map((item: ClientData) => item.client);
   }, [clientsData]);
 
   // Function to navigate to create plan page with a specific client
@@ -469,300 +465,80 @@ const ClientList: React.FC = () => {
           ))}
         </div>
       )}
-
-      {/* Error state */}
-      {error && (
-        <Alert variant="destructive" className="my-3 shadow-sm">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle className="text-sm">Failed to load clients</AlertTitle>
-          <AlertDescription className="text-xs">
-            Unable to retrieve your client list. Please try again later.
-          </AlertDescription>
-        </Alert>
-      )}
-
+      
       {/* Empty state */}
-      {!isLoading && !error && clients.length === 0 ? (
-        <Alert className="my-3 bg-muted/5 border-muted/50 dark:border-muted/20 shadow-sm">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle className="text-sm">No clients yet</AlertTitle>
-          <AlertDescription className="text-xs">
-            You don't have any clients yet. Use the search above to find and request users to become your clients.
-          </AlertDescription>
-        </Alert>
-      ) : !isLoading && !error && clients.length > 0 ? (
-        <div className="space-y-3 my-3">
-          <h3 className="font-medium text-base md:text-lg text-blue-700 dark:text-blue-400">Your Clients</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {clients.map(({client, relationship}) => (
-              <Card key={client?.id} className="hover:shadow-md transition-shadow duration-200 shadow-sm border-muted/80 dark:border-muted/30">
-                <CardHeader className="p-3 md:p-4">
+      {!isLoading && clients.length === 0 && (
+        <div className="text-center py-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
+            <UserPlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h3 className="text-lg font-medium mb-1">No Clients Yet</h3>
+          <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+            You don't have any clients yet. Search for users and send connection requests to add clients.
+          </p>
+        </div>
+      )}
+      
+      {/* Client list */}
+      {!isLoading && clients.length > 0 && (
+        <div>
+          <h3 className="font-medium text-base md:text-lg mb-2 text-blue-700 dark:text-blue-400">Your Clients</h3>
+          <div className="space-y-3">
+            {clients.map((client: TrainerClient) => (
+              <Card key={client.id} className="hover:shadow-md transition-shadow border-muted/80 dark:border-muted/30">
+                <CardHeader className="py-3 px-4">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10 shrink-0">
                       <AvatarFallback className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white dark:from-blue-500 dark:to-indigo-500">
-                        {client?.username ? client.username.substring(0, 2).toUpperCase() : 'CL'}
+                        {client?.username ? client.username.substring(0, 2).toUpperCase() : 'US'}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <CardTitle className="text-lg">{client?.username || 'Client'}</CardTitle>
-                      <CardDescription className="text-xs">{client?.email || 'No email'}</CardDescription>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Client since {new Date(relationship?.startedAt || Date.now()).toLocaleDateString()}
-                      </div>
+                    <div className="overflow-hidden">
+                      <CardTitle className="text-base truncate">{client.username}</CardTitle>
+                      <CardDescription className="text-xs truncate">{client.email}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Badge variant="default" className="text-xs bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">
-                      Active
-                    </Badge>
-                    
+                <CardFooter className="py-2 px-4 flex flex-wrap gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={() => handleCreatePlan(client.id)}
+                  >
+                    <PlusCircle size={14} className="mr-1" />
+                    Create Plan
+                  </Button>
+                  <Link to={`/client/${client.id}`} className="flex-1 md:flex-none">
                     <Button 
                       size="sm" 
-                      variant="ghost" 
-                      className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/30"
-                      onClick={() => client && handleCreatePlan(client.id)}
+                      variant="ghost"
+                      className="h-8 text-xs w-full"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15h6"/></svg>
-                      New Plan
+                      <ChevronRight size={14} className="mr-1" />
+                      View Details
                     </Button>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2 pb-4">
-                  <div className="flex flex-wrap gap-2 w-full">
-                    <Link href={`/trainer/clients/${client?.id}/nutrition-goals`} className="flex-1 min-w-[100px]">
-                      <Button size="sm" variant="outline" className="w-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M12 2v8"/><path d="m4.93 10.93 1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="m19.07 10.93-1.41 1.41"/><path d="M22 22H2"/><path d="m16 6-4 4-4-4"/><path d="M16 18a4 4 0 0 0 0-8H2"/></svg>
-                        Nutrition
-                      </Button>
-                    </Link>
-                    <Link href={`/trainer/clients/${client?.id}`} className="flex-1 min-w-[100px]">
-                      <Button size="sm" variant="outline" className="w-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                        Details
-                      </Button>
-                    </Link>
-                    <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      className="w-full flex-1 min-w-[80px]"
-                      onClick={() => client && setLocation(`/messages?clientId=${client.id}`)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                      Message
-                    </Button>
-                  </div>
+                  </Link>
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="h-8 text-xs"
+                    onClick={() => client && setLocation(`/messages?clientId=${client.id}`)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Message
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
           </div>
         </div>
-      ) : null}
-    </div>
-  );
-};
-
-// Removed NutritionPlans component as it's no longer needed
-
-  if (isLoading) {
-    return (
-      <div className="space-y-3 my-3">
-        <div className="flex items-center justify-between p-3 border rounded-lg animate-pulse bg-muted/5 dark:bg-muted/10 shadow-sm">
-          <div className="space-y-2 flex-1">
-            <div className="h-4 bg-muted/20 rounded w-1/4"></div>
-            <div className="h-2 bg-muted/20 rounded w-1/2 mt-2"></div>
-          </div>
-          <div className="w-12 h-4 bg-muted/20 rounded-full"></div>
-        </div>
-        <div className="flex items-center justify-between p-3 border rounded-lg animate-pulse bg-muted/5 dark:bg-muted/10 shadow-sm">
-          <div className="space-y-2 flex-1">
-            <div className="h-4 bg-muted/20 rounded w-1/3"></div>
-            <div className="h-2 bg-muted/20 rounded w-2/5 mt-2"></div>
-          </div>
-          <div className="w-12 h-4 bg-muted/20 rounded-full"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive" className="my-3 shadow-sm">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle className="text-sm">Failed to load nutrition plans</AlertTitle>
-        <AlertDescription className="text-xs">
-          Unable to retrieve nutrition plans. Please try again later.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (plans.length === 0) {
-    return (
-      <Alert className="my-3 bg-muted/5 border-muted/50 dark:border-muted/20 shadow-sm">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle className="text-sm">No nutrition plans yet</AlertTitle>
-        <AlertDescription className="text-xs">
-          Create a nutrition plan for your clients to help them reach their goals.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-3">
-      {plans.map((plan) => (
-        <Card key={plan.id} className="hover:shadow-md transition-shadow duration-200 shadow-sm border-muted/80 dark:border-muted/30">
-          <CardHeader className="p-3 md:p-4 pb-2">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base md:text-lg">{plan.name}</CardTitle>
-              <Badge variant={plan.active ? "default" : "outline"} className="text-[10px] md:text-xs">
-                {plan.active ? "Active" : "Inactive"}
-              </Badge>
-            </div>
-            <CardDescription className="text-xs md:text-sm line-clamp-1">
-              {plan.description || "No description provided"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1">
-            <div className="grid grid-cols-2 gap-2 md:gap-3">
-              <div className="border rounded-md p-2 md:p-3 bg-muted/5 dark:bg-muted/10 border-muted/70 dark:border-muted/30">
-                <div className="text-xs md:text-sm font-medium text-blue-700 dark:text-blue-400">Calories</div>
-                <div className="text-base md:text-lg font-bold">{plan.caloriesTarget} <span className="text-[10px] md:text-xs font-normal text-muted-foreground">kcal</span></div>
-              </div>
-              <div className="border rounded-md p-2 md:p-3 bg-muted/5 dark:bg-muted/10 border-muted/70 dark:border-muted/30">
-                <div className="text-xs md:text-sm font-medium text-blue-700 dark:text-blue-400">Protein</div>
-                <div className="text-base md:text-lg font-bold">{plan.proteinTarget} <span className="text-[10px] md:text-xs font-normal text-muted-foreground">g</span></div>
-              </div>
-              <div className="border rounded-md p-2 md:p-3 bg-muted/5 dark:bg-muted/10 border-muted/70 dark:border-muted/30">
-                <div className="text-xs md:text-sm font-medium text-blue-700 dark:text-blue-400">Carbs</div>
-                <div className="text-base md:text-lg font-bold">{plan.carbsTarget} <span className="text-[10px] md:text-xs font-normal text-muted-foreground">g</span></div>
-              </div>
-              <div className="border rounded-md p-2 md:p-3 bg-muted/5 dark:bg-muted/10 border-muted/70 dark:border-muted/30">
-                <div className="text-xs md:text-sm font-medium text-blue-700 dark:text-blue-400">Fat</div>
-                <div className="text-base md:text-lg font-bold">{plan.fatTarget} <span className="text-[10px] md:text-xs font-normal text-muted-foreground">g</span></div>
-              </div>
-            </div>
-            
-            <div className="mt-3 text-[10px] md:text-xs text-muted-foreground">
-              Created: {new Date(plan.createdAt).toLocaleDateString()}
-            </div>
-          </CardContent>
-          <CardFooter className="p-3 md:p-4 pt-0">
-            <Link href={`/trainer/clients/${plan.clientId}/nutrition-goals`} className="w-full">
-              <Button size="sm" className="w-full text-xs md:text-sm h-8 md:h-9">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 md:mr-2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
-                View Details
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
-  );
-};
-
-const FitnessPlans: React.FC = () => {
-  const { data: fitnessPlans, isLoading, error } = useQuery<FitnessPlan[]>({
-    queryKey: ['/api/trainer/fitness-plans'],
-    retry: 1,
-  });
-  
-  const plans = fitnessPlans || [];
-
-  if (isLoading) {
-    return (
-      <div className="space-y-3 my-3">
-        <div className="flex items-center justify-between p-3 border rounded-lg animate-pulse bg-muted/5 dark:bg-muted/10 shadow-sm">
-          <div className="space-y-2 flex-1">
-            <div className="h-4 bg-muted/20 rounded w-1/4"></div>
-            <div className="h-2 bg-muted/20 rounded w-1/2 mt-2"></div>
-          </div>
-          <div className="w-12 h-4 bg-muted/20 rounded-full"></div>
-        </div>
-        <div className="flex items-center justify-between p-3 border rounded-lg animate-pulse bg-muted/5 dark:bg-muted/10 shadow-sm">
-          <div className="space-y-2 flex-1">
-            <div className="h-4 bg-muted/20 rounded w-1/3"></div>
-            <div className="h-2 bg-muted/20 rounded w-2/5 mt-2"></div>
-          </div>
-          <div className="w-12 h-4 bg-muted/20 rounded-full"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive" className="my-3 shadow-sm">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle className="text-sm">Failed to load fitness plans</AlertTitle>
-        <AlertDescription className="text-xs">
-          Unable to retrieve fitness plans. Please try again later.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (plans.length === 0) {
-    return (
-      <Alert className="my-3 bg-muted/5 border-muted/50 dark:border-muted/20 shadow-sm">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle className="text-sm">No fitness plans yet</AlertTitle>
-        <AlertDescription className="text-xs">
-          Create a fitness plan for your clients to help them reach their fitness goals.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 my-3">
-      {plans.map((plan) => (
-        <Card key={plan.id} className="hover:shadow-md transition-shadow duration-200 shadow-sm border-muted/80 dark:border-muted/30">
-          <CardHeader className="p-3 md:p-4 pb-2">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base md:text-lg">{plan.name}</CardTitle>
-              <Badge variant={plan.isActive ? "default" : "outline"} className="text-[10px] md:text-xs">
-                {plan.isActive ? "Active" : "Inactive"}
-              </Badge>
-            </div>
-            <CardDescription className="text-xs md:text-sm line-clamp-1">
-              {plan.description || "No description provided"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-4 pt-1">
-            <div className="border rounded-md p-3 bg-muted/5 dark:bg-muted/10 border-muted/70 dark:border-muted/30">
-              {plan.notes ? (
-                <div>
-                  <h4 className="font-medium text-xs md:text-sm mb-1 text-blue-700 dark:text-blue-400">Plan Notes:</h4>
-                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{plan.notes}</p>
-                </div>
-              ) : (
-                <p className="text-xs md:text-sm text-muted-foreground italic">No additional notes for this plan</p>
-              )}
-            </div>
-            
-            <div className="mt-3 text-[10px] md:text-xs text-muted-foreground">
-              Created: {new Date(plan.createdAt).toLocaleDateString()}
-            </div>
-          </CardContent>
-          <CardFooter className="p-3 md:p-4 pt-0">
-            <Link href={`/trainer/clients/${plan.clientId}`} className="w-full">
-              <Button size="sm" className="w-full text-xs md:text-sm h-8 md:h-9">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 md:mr-2"><path d="M18 6H5c-1 0-2 .5-2 2v9c0 1.5 1 2 2 2h13c1 0 2-.5 2-2V8c0-1.5-1-2-2-2Z"/><path d="M15 2v4"/><path d="M8 2v4"/><path d="M2 10h19"/></svg>
-                View Details
-              </Button>
-            </Link>
-          </CardFooter>
-        </Card>
-      ))}
+      )}
     </div>
   );
 };
 
 const TrainerPage: React.FC = () => {
-  // Removed tabs state as we're showing only clients section
   const [showClientSelectModal, setShowClientSelectModal] = useState(false);
   const [location, setLocation] = useLocation();
   
@@ -774,43 +550,50 @@ const TrainerPage: React.FC = () => {
     // Validate that the clientId is valid
     if (isNaN(numericClientId)) {
       toast({
-        title: "Invalid client selection",
-        description: "The selected client ID is not valid. Please try again.",
-        variant: "destructive"
+        title: 'Invalid Selection',
+        description: 'Please select a valid client.',
+        variant: 'destructive'
       });
       return;
     }
     
-    // Navigate to plan creation
-    setShowClientSelectModal(false);
+    // Navigate to the create plan page with the client ID
     setLocation(`/enhanced-trainer-plan-creation?clientId=${numericClientId}`);
+    
+    // Close the modal
+    setShowClientSelectModal(false);
   };
   
-  // Query to fetch clients for selection
-  const { data: clientsData, isLoading: isClientsLoading, error: clientsError } = useQuery<ClientData[]>({
-    queryKey: ['/api/trainer/clients'],
-    retry: 1,
-  });
-  
-  // Extract array of clients from nested data structure
-  const clients = useMemo(() => {
-    if (!clientsData || !Array.isArray(clientsData)) return [];
-    return clientsData.map((item: ClientData) => item.client);
-  }, [clientsData]);
-  
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <div className="container px-4 py-6 mx-auto max-w-5xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft size={16} className="mr-1" />
-            Back to Home
-          </Link>
-          
+    <div className="container max-w-5xl mx-auto px-4 py-6">
+      <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
           <Button 
+            variant="ghost" 
             size="sm" 
-            className="bg-primary hover:bg-primary/90"
+            className="mb-2 -ml-3"
+            onClick={() => setLocation("/dashboard")}
+          >
+            <ArrowLeft size={16} className="mr-1" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold">Trainer Dashboard</h1>
+        </div>
+        <div className="flex gap-2 mt-2 md:mt-0">
+          <Link to="/plan-templates" className="flex-1 md:flex-none">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full md:w-auto"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              Plan Templates
+            </Button>
+          </Link>
+          <Button 
+            variant="default" 
+            size="sm"
+            className="flex-1 md:flex-none"
             onClick={() => setShowClientSelectModal(true)}
           >
             <PlusCircle size={14} className="mr-1.5" />
@@ -818,7 +601,7 @@ const TrainerPage: React.FC = () => {
           </Button>
         </div>
         
-        {/* Tabs */}
+        {/* Main content - Only showing the Client List */}
         <div className="mb-6 flex justify-between">
           <h2 className="text-xl font-semibold flex items-center">
             <UserPlus size={18} className="mr-2 text-blue-600" />
@@ -831,66 +614,21 @@ const TrainerPage: React.FC = () => {
       
       {/* Client selection modal */}
       <Dialog open={showClientSelectModal} onOpenChange={setShowClientSelectModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Select Client</DialogTitle>
             <DialogDescription>
-              Choose a client to create a fitness plan for
+              Choose a client to create a new plan for.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="max-h-[60vh] overflow-y-auto py-3">
-            {isClientsLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3 p-2">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="space-y-1 flex-1">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-3 w-40" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : clientsError ? (
-              <Alert variant="destructive">
-                <AlertCircle size={14} />
-                <AlertTitle className="text-sm ml-2">Error loading clients</AlertTitle>
-                <AlertDescription className="text-xs ml-6">
-                  Please try again later
-                </AlertDescription>
-              </Alert>
-            ) : clients.length === 0 ? (
-              <div className="py-6 text-center">
-                <p className="text-muted-foreground">No clients available</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Use the client search to find and request new clients
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {clients.map((client: TrainerClient) => (
-                  <div 
-                    key={client.id}
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
-                    onClick={() => handleClientSelect(client.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {client?.username ? client.username.substring(0, 2).toUpperCase() : 'CL'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-sm">{client?.username || 'Client'}</p>
-                        <p className="text-xs text-muted-foreground">{client?.email || 'No email'}</p>
-                      </div>
-                    </div>
-                    <ChevronRight size={16} className="text-muted-foreground" />
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="py-4">
+            <div className="space-y-2 max-h-[50vh] overflow-auto">
+              {/* Client selection will go here */}
+              <p className="text-center text-muted-foreground py-4">
+                Loading clients...
+              </p>
+            </div>
           </div>
           
           <DialogFooter className="flex justify-end gap-2">
