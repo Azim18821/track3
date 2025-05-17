@@ -547,7 +547,14 @@ export default function TrainerClientPlanDetail() {
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
                 <AlertDialogAction 
-                  onClick={confirmDeletePlan}
+                  onClick={(e) => {
+                    // Prevent the default action to avoid multiple clicks
+                    e.preventDefault();
+                    // Only confirm if not already deleting
+                    if (!isDeleting) {
+                      confirmDeletePlan();
+                    }
+                  }}
                   disabled={isDeleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
