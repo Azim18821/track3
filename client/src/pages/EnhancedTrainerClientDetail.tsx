@@ -919,7 +919,7 @@ export default function EnhancedTrainerClientDetail() {
                     variant="outline"
                     size="sm"
                     className="mt-4"
-                    onClick={() => navigate(`/trainer/clients/${clientId}/workouts`)}
+                    onClick={handleAddWorkout}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Create Workout
@@ -969,7 +969,12 @@ export default function EnhancedTrainerClientDetail() {
                     <Button 
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
+                      onClick={() => {
+                        toast({
+                          title: "Nutrition Goals",
+                          description: "Editing nutrition goals directly from this tab will be available soon.",
+                        });
+                      }}
                     >
                       <PenSquare className="mr-2 h-4 w-4" />
                       Edit Nutrition Goals
