@@ -2235,22 +2235,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Attempting to delete fitness plan ${planId} by user ${userId}`);
       
-      const plan = await storage.getFitnessPlan(planId);
-      
-      if (!plan) {
-        console.log(`Plan ${planId} not found for deletion`);
-        return res.status(404).json({ message: "Fitness plan not found" });
-      }
-      
-      // Allow deletion for:
-      // 1. User who owns the plan
-      // 2. Admin users
-      // 3. Trainers who have the plan owner as a client
-      let hasDeletePermission = false;
-      
-      if (plan.userId === userId || req.user!.isAdmin) {
-        console.log(`Delete access granted to user ${userId} for their own plan ${planId} or as admin`);
-        hasDeletePermission = true;
+      try {
+        const plan = await storage.getFitnessPlan(planId);
+        
+        if (!plan) {
+          console.log(`Plan ${planId} not found for deletion`);
+          return res.status(404).json({ message: "Fitness plan not found" });
+        }
+        
+        // Allow deletion for:
+        // 1. User who owns the plan
+        // 2. Admin users
+        // 3. Trainers who have the plan owner as a client
+        let hasDeletePermission = false;
+        
+        if (plan.userId === userId || req.user!.isAdmin) {
+          console.log(`Delete access granted to user ${userId} for their own plan ${planId} or as admin`);
+          hasDeletePermission = true;
       } else if (req.user!.isTrainer) {
         // Check if the trainer has the plan owner as a client
         console.log(`Trainer ${userId} checking delete access to plan ${planId} owned by user ${plan.userId}`);
