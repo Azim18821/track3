@@ -204,7 +204,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-xl max-h-[80vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2">
