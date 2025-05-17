@@ -340,6 +340,7 @@ export default function TrainerClientDetail() {
                     variant="outline"
                     size="sm"
                     className="text-xs h-8 px-3 rounded-lg"
+                    onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
                   >
                     Edit Goals
                   </Button>
@@ -352,6 +353,7 @@ export default function TrainerClientDetail() {
                   variant="outline"
                   size="sm"
                   className="text-xs h-8 px-3 rounded-lg"
+                  onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
                 >
                   Set Goals
                 </Button>
@@ -388,7 +390,9 @@ export default function TrainerClientDetail() {
                     variant="default"
                     size="sm"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs h-8 px-3 rounded-lg"
-
+                    onClick={() => {
+                      navigate(`/trainer/clients/${clientId}/plans/${clientData.fitnessPlan.id}`);
+                    }}
                   >
                     Manage Plan
                   </Button>
@@ -401,7 +405,7 @@ export default function TrainerClientDetail() {
                   variant="outline"
                   size="sm"
                   className="text-xs h-8 px-3 rounded-lg bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-200 hover:bg-blue-50 dark:from-blue-900/30 dark:to-indigo-900/30 dark:text-blue-300 dark:border-blue-800"
-
+                  onClick={() => navigate(`/enhanced-trainer-plan-creation?clientId=${clientId}`)}
                 >
                   Create Plan
                 </Button>
