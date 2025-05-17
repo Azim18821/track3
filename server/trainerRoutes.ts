@@ -37,7 +37,7 @@ interface WorkoutPlan {
   notes?: string;
 }
 
-async function createClientWorkoutsFromPlan(clientId: number, workoutPlan: WorkoutPlan, planId: number) {
+async function createClientWorkoutsFromPlan(clientId: number, workoutPlan: any, planId: number) {
   try {
     // First clear any existing future workouts for this client
     const today = new Date();
@@ -758,6 +758,13 @@ router.post('/fitness-plans', async (req, res) => {
         console.log('Creating workouts for client from fitness plan');
         await createClientWorkoutsFromPlan(validatedData.clientId, newPlan.workoutPlan, newPlan.id);
         console.log('Successfully created workouts for client from fitness plan');
+        
+        // Verify that workouts were created
+        const clientWorkouts = await storage.getWorkouts(validatedData.clientId);
+        console.log(`Verification: Client ${validatedData.clientId} now has ${clientWorkouts.length} workouts`);
+        if (clientWorkouts.length > 0) {
+          console.log(`Sample workout: ${JSON.stringify(clientWorkouts[0], null, 2)}`);
+        }
       }
     } catch (workoutError) {
       console.error('Error creating workouts from plan:', workoutError);
@@ -826,6 +833,13 @@ router.patch('/fitness-plans/:id', async (req, res) => {
         // Create workouts from the updated plan
         await createClientWorkoutsFromPlan(existingPlan.clientId, validatedData.workoutPlan, planId);
         console.log(`Successfully updated workouts for client ${existingPlan.clientId}`);
+        
+        // Verify that workouts were created by retrieving them
+        const clientWorkouts = await storage.getWorkouts(existingPlan.clientId);
+        console.log(`Verification: Client ${existingPlan.clientId} now has ${clientWorkouts.length} workouts`);
+        if (clientWorkouts.length > 0) {
+          console.log(`Sample workout: ${JSON.stringify(clientWorkouts[0], null, 2)}`);
+        }
       } catch (workoutError) {
         console.error('Error updating workouts from plan:', workoutError);
         // We don't want to fail the whole request if workout update fails
