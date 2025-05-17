@@ -2023,21 +2023,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Fetching active fitness plan for user ID: ${userId}`);
       
       try {
-        const plan = await storage.getActiveFitnessPlan(userId);
+        // First, check for active trainer-created fitness plans for this client
+        let fitnessPlan: any = null;
         
-        if (!plan) {
-          console.log(`No active fitness plan found for user ID: ${userId}`);
-          return res.status(404).json({ message: "No active fitness plan found" });
+        // Get trainer-created fitness plans for this client
+        try {
+          const trainerFitnessPlans = await storage.getClientFitnessPlans(userId);
+          
+          if (trainerFitnessPlans && trainerFitnessPlans.length > 0) {
+            // Get the active or most recent plan
+            const activePlan = trainerFitnessPlans.find(plan => plan.isActive);
+            fitnessPlan = activePlan || trainerFitnessPlans[0];
+            
+            // Format the plan to match the standard fitness plan structure for UI compatibility
+            fitnessPlan = {
+              ...fitnessPlan,
+              preferences: {
+                name: fitnessPlan.name,
+                goal: fitnessPlan.notes?.includes('Goal:') ? fitnessPlan.notes.split('Goal:')[1]?.trim().split(',')[0] : 'strength',
+                durationWeeks: parseInt(fitnessPlan.notes?.includes('Duration:') ? fitnessPlan.notes.split('Duration:')[1]?.trim().split('weeks')[0] : '8'),
+                level: fitnessPlan.notes?.includes('Level:') ? fitnessPlan.notes.split('Level:')[1]?.trim() : 'intermediate',
+                workoutDaysPerWeek: Object.keys(fitnessPlan.workoutPlan?.weeklySchedule || {}).length || 3,
+                fitnessLevel: fitnessPlan.notes?.includes('Level:') ? fitnessPlan.notes.split('Level:')[1]?.trim() : 'intermediate'
+              },
+              // Ensure mealPlan structure is correctly formatted for the frontend
+              mealPlan: {
+                ...(fitnessPlan.mealPlan || {}),
+                // Handle both weekly meals and weekly meal plan formats
+                weeklyMeals: fitnessPlan.mealPlan?.weeklyMeals || fitnessPlan.mealPlan?.weeklyMealPlan || {},
+                notes: fitnessPlan.mealPlan?.notes || ""
+              }
+            };
+            
+            console.log(`Found trainer-created fitness plan for client ${userId}: ${fitnessPlan.id}`);
+          }
+        } catch (trainerPlanError) {
+          console.error(`Error fetching trainer plans for client ${userId}:`, trainerPlanError);
+          // Continue to check for self-created plans
         }
         
-        console.log(`Found active fitness plan: ${plan.id}`);
+        // If no trainer plan is found, check for user's self-created plans
+        if (!fitnessPlan) {
+          const plan = await storage.getActiveFitnessPlan(userId);
+          
+          if (!plan) {
+            console.log(`No active fitness plan found for user ID: ${userId}`);
+            return res.status(404).json({ message: "No active fitness plan found" });
+          }
+          
+          fitnessPlan = plan;
+          console.log(`Found user's self-created active fitness plan: ${plan.id}`);
+        }
         
         // Return the full plan data
-        return res.json(plan);
+        return res.json(fitnessPlan);
       } catch (dbError: any) {
         console.error(`Database error fetching fitness plan:`, dbError);
         return res.status(500).json({ 
-          message: "Database error fetching fitness plan", 
+          message: "Database error finding fitness plan", 
           error: dbError?.message || "Unknown database error" 
         });
       }
