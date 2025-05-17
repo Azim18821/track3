@@ -264,14 +264,18 @@ export default function TrainerClientPlanDetail() {
       if (!res.ok) {
         throw new Error('Failed to delete fitness plan');
       }
-      return true;
+      // Parse the response to get the clientId for proper redirection
+      const data = await res.json();
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Success",
         description: "Fitness plan has been deleted",
       });
-      navigate(`/trainer/clients/${clientId}`);
+      // If the server returned a clientId, use it for redirection, otherwise use the one from params
+      const redirectClientId = data?.clientId || clientId;
+      navigate(`/trainer/clients/${redirectClientId}`);
     },
     onError: (error: Error) => {
       setIsDeleting(false);
