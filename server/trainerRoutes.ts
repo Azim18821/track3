@@ -1202,8 +1202,14 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
     console.log(`Checking for plan ${planId} in trainer_fitness_plans table`);
     const trainerPlan = await storage.getTrainerFitnessPlan(planId);
     
+    // Log detailed trainer plan information if found
     if (trainerPlan) {
-      console.log(`Found plan ${planId} in trainer_fitness_plans table`);
+      console.log(`Found plan ${planId} in trainer_fitness_plans table:`, JSON.stringify({
+        id: trainerPlan.id,
+        trainerId: trainerPlan.trainerId,
+        clientId: trainerPlan.clientId,
+        name: trainerPlan.name
+      }));
       
       // Verify the trainer is authorized to delete this plan
       const trainerId = req.user?.id;
@@ -1232,6 +1238,8 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
       
       // Return success with no content
       return res.status(204).end();
+    } else {
+      console.log(`Plan ${planId} NOT found in trainer_fitness_plans table`);
     }
     
     // If not found in trainer_fitness_plans, check the regular fitness_plans table
