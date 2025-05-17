@@ -757,22 +757,6 @@ router.patch('/fitness-plans/:id', async (req, res) => {
       return res.status(403).json({ message: 'You are not authorized to update this plan' });
     }
     
-    // Process mealPlan data if present to ensure it has both dailyMeals and weeklyMeals
-    if (req.body.mealPlan && req.body.mealPlan.dailyMeals) {
-      // Ensure weeklyMeals is created if only dailyMeals is provided
-      if (!req.body.mealPlan.weeklyMeals) {
-        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        req.body.mealPlan.weeklyMeals = {};
-        
-        // Copy dailyMeals to each day of the week
-        for (const day of days) {
-          req.body.mealPlan.weeklyMeals[day] = { ...req.body.mealPlan.dailyMeals };
-        }
-        
-        console.log('Created weeklyMeals structure from dailyMeals for consistent UI rendering');
-      }
-    }
-    
     // Partial validation of request body
     const validatedData = insertTrainerFitnessPlanSchema.partial().parse(req.body);
     

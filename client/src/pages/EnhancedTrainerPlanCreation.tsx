@@ -581,7 +581,6 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
-  const queryClient = useQueryClient();
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -951,10 +950,6 @@ export default function EnhancedTrainerPlanCreation({ showDeprecationWarning = f
       return await res.json();
     },
     onSuccess: (data) => {
-      // Invalidate all relevant queries to make sure the updated plan shows up correctly
-      queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientIdParam, 'plans', planIdParam] });
-      queryClient.invalidateQueries({ queryKey: ['/api/trainer/clients', clientIdParam] });
-      
       toast({
         title: "Fitness plan updated",
         description: "The fitness plan has been updated successfully."
