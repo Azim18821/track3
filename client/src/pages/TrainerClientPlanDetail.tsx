@@ -260,13 +260,47 @@ export default function TrainerClientPlanDetail() {
   // Delete plan mutation
   const deletePlanMutation = useMutation({
     mutationFn: async () => {
-      // Try the direct fitness plans endpoint since the server route supports it
-      const res = await apiRequest('DELETE', `/api/fitness-plans/${planId}`);
-      if (!res.ok) {
-        console.error('Error response from server:', res.status);
-        const errorText = await res.text().catch(() => 'Failed to delete fitness plan');
-        throw new Error(errorText || 'Failed to delete fitness plan');
+      console.log(`Attempting to delete plan ${planId} for client ${clientId}`);
+      
+      // First, check if there are any errors retrieving the plan
+      if (!plan) {
+        console.error('Cannot delete: Plan data is not available');
+        throw new Error('Plan data not available. Please refresh the page and try again.');
       }
+      
+      // Check if this is a trainer-created plan by checking for specific properties
+      // that only exist in trainer plans
+      const isTrainerPlan = 'trainerId' in plan;
+      const endpoint = isTrainerPlan 
+        ? `/api/trainer/clients/${clientId}/fitness-plans/${planId}` 
+        : `/api/fitness-plans/${planId}`;
+      
+      console.log(`Using endpoint for deletion: ${endpoint}`);
+      console.log(`Plan type: ${isTrainerPlan ? 'Trainer Plan' : 'Regular Plan'}`);
+      
+      // Attempt to delete the plan
+      const res = await apiRequest('DELETE', endpoint);
+      
+      // If that fails, try the other endpoint as a fallback
+      if (!res.ok) {
+        console.error('First deletion attempt failed with status:', res.status);
+        
+        // Try alternative endpoint as fallback
+        const fallbackEndpoint = isTrainerPlan 
+          ? `/api/fitness-plans/${planId}` 
+          : `/api/trainer/clients/${clientId}/fitness-plans/${planId}`;
+          
+        console.log(`Trying fallback endpoint: ${fallbackEndpoint}`);
+        const fallbackRes = await apiRequest('DELETE', fallbackEndpoint);
+        
+        if (!fallbackRes.ok) {
+          console.error('Fallback deletion attempt also failed with status:', fallbackRes.status);
+          const errorText = await fallbackRes.text().catch(() => 'Failed to delete fitness plan');
+          throw new Error(errorText || 'Failed to delete fitness plan');
+        }
+      }
+      
+      console.log('Plan deletion successful');
       return true;
     },
     onSuccess: () => {
