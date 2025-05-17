@@ -778,16 +778,11 @@ router.patch('/fitness-plans/:id', async (req, res) => {
     // Update fitness plan
     const updatedPlan = await storage.updateTrainerFitnessPlan(planId, validatedData);
     
-    // Create client meal entries based on the updated meal plan
-    if (existingPlan.clientId && req.body.mealPlan) {
-      try {
-        await createClientMealsFromPlan(existingPlan.clientId, req.body.mealPlan, planId);
-        console.log(`Updated meal entries for client ${existingPlan.clientId} from plan ${planId}`);
-      } catch (error) {
-        console.error('Error updating client meal entries:', error);
-        // Don't fail the request if meal entries update fails
-      }
-    }
+    // We'll keep the meal plan structure in the fitness plan, but won't auto-create meal entries
+    // This allows the client to log their meals themselves
+    console.log(`Updated fitness plan ${planId} with meal plan structure for client ${existingPlan.clientId}`);
+    
+    // Note: We removed the automatic client meal entry creation here so clients can log manually
     
     res.json(updatedPlan);
   } catch (error) {
