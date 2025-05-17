@@ -63,18 +63,40 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
     // Add workouts to their respective days
     if (workouts && workouts.length > 0) {
       workouts.forEach(workout => {
-        // Standardize date format - some dates might come with time component
-        let workoutDate = workout.date;
-        if (workoutDate.includes('T')) {
-          // If the date has a time component, strip it off
-          workoutDate = workoutDate.split('T')[0];
+        // Standardize date format - handle different date formats
+        let workoutDate: string;
+        
+        // First handle the case where date is an object from JSON
+        if (typeof workout.date === 'object' && workout.date !== null) {
+          // If it's a Date object that has been serialized to JSON
+          const dateObj = new Date(workout.date as any);
+          workoutDate = format(dateObj, 'yyyy-MM-dd');
+        } else {
+          // Handle string date formats
+          let dateStr = String(workout.date); // Ensure it's a string
+          
+          if (dateStr.includes('T')) {
+            // If the date has a time component, strip it off
+            workoutDate = dateStr.split('T')[0];
+          } else {
+            workoutDate = dateStr;
+          }
+        }
+        
+        // Try to normalize the date using date-fns if it's not in correct format
+        try {
+          const parsedDate = new Date(workoutDate);
+          if (!isNaN(parsedDate.getTime())) {
+            workoutDate = format(parsedDate, 'yyyy-MM-dd');
+          }
+        } catch (e) {
+          console.error("Failed to parse date:", workoutDate, e);
         }
         
         if (sortedWorkouts[workoutDate]) {
           sortedWorkouts[workoutDate].push({...workout, date: workoutDate});
         } else {
           // If the date is outside the current week view, we won't show it
-          // But we could expand this later to show workouts from other weeks
           // console.log(`Workout ${workout.id} has date ${workoutDate} which is not in the current week view`);
         }
       });
