@@ -2020,24 +2020,6 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
   
-  // Method to get fitness plans created for a client by their trainers
-  async getClientFitnessPlans(clientId: number): Promise<TrainerFitnessPlan[]> {
-    try {
-      console.log(`Getting fitness plans for client ${clientId} created by trainers`);
-      const plans = await db
-        .select()
-        .from(trainerFitnessPlans)
-        .where(eq(trainerFitnessPlans.clientId, clientId))
-        .orderBy(desc(trainerFitnessPlans.createdAt));
-      
-      console.log(`Found ${plans.length} trainer-created fitness plans for client ${clientId}`);
-      return plans;
-    } catch (error) {
-      console.error(`Error getting trainer-created fitness plans for client ${clientId}:`, error);
-      return [];
-    }
-  }
-  
   // Plan Templates methods
   async getPlanTemplates(trainerId: number): Promise<PlanTemplate[]> {
     return await db
