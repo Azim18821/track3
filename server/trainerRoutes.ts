@@ -48,46 +48,61 @@ async function createClientWorkoutsFromPlan(clientId: number, workoutPlan: Worko
       return;
     }
 
+    // Extract plan duration - default to 8 weeks if not specified
+    const planDurationWeeks = (workoutPlan.notes && workoutPlan.notes.includes('Duration:')) 
+      ? parseInt(workoutPlan.notes.split('Duration:')[1]?.trim().split('weeks')[0]) || 8
+      : 8;
+      
+    console.log(`Creating workouts for a ${planDurationWeeks}-week plan`);
+    
     const weeklySchedule = workoutPlan.weeklySchedule;
     
-    // For each day in the weekly schedule, create a workout
+    // For each day in the weekly schedule, create workouts for the entire plan duration
     for (const [day, dayData] of Object.entries(weeklySchedule)) {
       // Skip if the day has no exercises
       if (!dayData.exercises || dayData.exercises.length === 0) {
         continue;
       }
       
-      // Calculate the date for this workout (next occurrence of this day)
-      const workoutDate = getNextDayOfWeek(today, getDayNumber(day));
-      
-      // Create the workout
-      const workout = await storage.createWorkout(clientId, {
-        name: dayData.name || `${day.charAt(0).toUpperCase() + day.slice(1)} Workout`,
-        date: workoutDate,
-        duration: calculateTotalWorkoutDuration(dayData.exercises),
-        notes: dayData.notes || `Auto-generated from fitness plan #${planId}`
-      });
-      
-      console.log(`Created workout '${workout.name}' for client ${clientId} scheduled on ${workoutDate.toISOString()}`);
-      
-      // Create exercises for this workout
-      for (const exercise of dayData.exercises) {
-        await storage.createExercise({
-          workoutId: workout.id,
-          name: exercise.name,
-          sets: exercise.sets || 3,
-          reps: exercise.reps || 10,
-          weight: exercise.weight || 0,
-          unit: exercise.unit || 'kg',
-          rest: exercise.rest || '60s',
-          // If the plan has advanced sets data, include it
-          setsData: exercise.useAdvancedSets && exercise.setsData ? exercise.setsData : undefined,
-          setType: exercise.setType || undefined,
-          supersetWith: exercise.supersetWith || undefined
+      // For each week in the plan duration, create a workout
+      for (let week = 0; week < planDurationWeeks; week++) {
+        // Calculate the date for this workout
+        // First get the next occurrence of this day
+        const firstOccurrence = getNextDayOfWeek(today, getDayNumber(day));
+        
+        // Then add the weeks to get the correct date for this workout
+        const workoutDate = new Date(firstOccurrence);
+        workoutDate.setDate(workoutDate.getDate() + (week * 7));
+        
+        // Create the workout
+        const workout = await storage.createWorkout(clientId, {
+          name: dayData.name || `${day.charAt(0).toUpperCase() + day.slice(1)} Workout (Week ${week + 1})`,
+          date: workoutDate,
+          duration: calculateTotalWorkoutDuration(dayData.exercises),
+          notes: dayData.notes || `Auto-generated from fitness plan #${planId} - Week ${week + 1}`
         });
+        
+        console.log(`Created workout '${workout.name}' for client ${clientId} scheduled on ${workoutDate.toISOString()}`);
+        
+        // Create exercises for this workout
+        for (const exercise of dayData.exercises) {
+          await storage.createExercise({
+            workoutId: workout.id,
+            name: exercise.name,
+            sets: exercise.sets || 3,
+            reps: exercise.reps || 10,
+            weight: exercise.weight || 0,
+            unit: exercise.unit || 'kg',
+            rest: exercise.rest || '60s',
+            // If the plan has advanced sets data, include it
+            setsData: exercise.useAdvancedSets && exercise.setsData ? exercise.setsData : undefined,
+            setType: exercise.setType || undefined,
+            supersetWith: exercise.supersetWith || undefined
+          });
+        }
+        
+        console.log(`Added ${dayData.exercises.length} exercises to workout '${workout.name}'`);
       }
-      
-      console.log(`Added ${dayData.exercises.length} exercises to workout '${workout.name}'`);
     }
     
     return true;
