@@ -396,23 +396,6 @@ export default function ClientTrainerPlan() {
                               </div>
                             </div>
                           ))}
-                          
-                          <Button 
-                            variant="default" 
-                            size="sm" 
-                            className="w-full mt-4"
-                            onClick={() => navigate("/workouts/start", { 
-                              state: { 
-                                workoutName: workout.name,
-                                workoutDay: day,
-                                exercises: workout.exercises,
-                                planId: planId
-                              }
-                            })}
-                          >
-                            <Dumbbell className="mr-2 h-4 w-4" />
-                            Start This Workout
-                          </Button>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
@@ -473,23 +456,6 @@ export default function ClientTrainerPlan() {
                           }`}
                         />
                       </CollapsibleTrigger>
-                      <div className="px-4 pb-2 pt-0 border-t">
-                        <Button 
-                          variant="default" 
-                          size="sm" 
-                          className="w-full mt-2"
-                          onClick={() => navigate("/nutrition/log-day", { 
-                            state: { 
-                              dayMeals: meals,
-                              dayName: day,
-                              planId: planId
-                            }
-                          })}
-                        >
-                          <Utensils className="mr-2 h-4 w-4" />
-                          Add All Meals for Today
-                        </Button>
-                      </div>
                       <CollapsibleContent className="p-4 pt-1 border-t">
                         <div className="space-y-4">
                           {/* Breakfast */}
@@ -512,24 +478,6 @@ export default function ClientTrainerPlan() {
                                   C: {meals.breakfast.carbs}g
                                 </span>
                               </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="mt-2 w-full flex items-center justify-center"
-                                onClick={() => navigate("/nutrition/log", { 
-                                  state: { 
-                                    mealName: meals.breakfast.name, 
-                                    mealType: "breakfast",
-                                    calories: meals.breakfast.calories,
-                                    protein: meals.breakfast.protein,
-                                    carbs: meals.breakfast.carbs,
-                                    fat: meals.breakfast.fat || 0
-                                  }
-                                })}
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Log Breakfast
-                              </Button>
                             </div>
                           )}
 
@@ -553,24 +501,6 @@ export default function ClientTrainerPlan() {
                                   C: {meals.lunch.carbs}g
                                 </span>
                               </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="mt-2 w-full flex items-center justify-center"
-                                onClick={() => navigate("/nutrition/log", { 
-                                  state: { 
-                                    mealName: meals.lunch.name, 
-                                    mealType: "lunch",
-                                    calories: meals.lunch.calories,
-                                    protein: meals.lunch.protein,
-                                    carbs: meals.lunch.carbs,
-                                    fat: meals.lunch.fat || 0
-                                  }
-                                })}
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Log Lunch
-                              </Button>
                             </div>
                           )}
 
@@ -594,24 +524,6 @@ export default function ClientTrainerPlan() {
                                   C: {meals.dinner.carbs}g
                                 </span>
                               </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="mt-2 w-full flex items-center justify-center"
-                                onClick={() => navigate("/nutrition/log", { 
-                                  state: { 
-                                    mealName: meals.dinner.name, 
-                                    mealType: "dinner",
-                                    calories: meals.dinner.calories,
-                                    protein: meals.dinner.protein,
-                                    carbs: meals.dinner.carbs,
-                                    fat: meals.dinner.fat || 0
-                                  }
-                                })}
-                              >
-                                <Check className="h-4 w-4 mr-1" />
-                                Log Dinner
-                              </Button>
                             </div>
                           )}
 
