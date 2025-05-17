@@ -1198,10 +1198,47 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
       return res.status(400).json({ message: 'Invalid plan ID' });
     }
 
-    // Get the plan to verify ownership
+    // First check if the plan exists in the trainer_fitness_plans table
+    console.log(`Checking for plan ${planId} in trainer_fitness_plans table`);
+    const trainerPlan = await storage.getTrainerFitnessPlan(planId);
+    
+    if (trainerPlan) {
+      console.log(`Found plan ${planId} in trainer_fitness_plans table`);
+      
+      // Verify the trainer is authorized to delete this plan
+      const trainerId = req.user?.id;
+      if (!trainerId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      
+      if (trainerPlan.trainerId !== trainerId) {
+        return res.status(403).json({ message: 'You are not authorized to manage this plan' });
+      }
+      
+      const clientId = trainerPlan.clientId;
+      
+      // Clear associated data for this client
+      console.log(`Clearing planned meals and future workouts for client ${clientId}`);
+      await clearClientPlannedMeals(clientId);
+      await clearClientWorkouts(clientId);
+      
+      // Delete the trainer plan
+      const success = await storage.deleteTrainerFitnessPlan(planId);
+      if (!success) {
+        return res.status(500).json({ message: 'Failed to delete trainer fitness plan' });
+      }
+      
+      console.log(`Successfully deleted trainer fitness plan ${planId} and cleared associated data for client ${clientId}`);
+      
+      // Return success with no content
+      return res.status(204).end();
+    }
+    
+    // If not found in trainer_fitness_plans, check the regular fitness_plans table
+    console.log(`Checking for plan ${planId} in fitness_plans table`);
     const plan = await storage.getFitnessPlan(planId);
     if (!plan) {
-      return res.status(404).json({ message: 'Fitness plan not found' });
+      return res.status(404).json({ message: 'Fitness plan not found in either table' });
     }
 
     // Verify the client belongs to this trainer
