@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation, useParams } from 'wouter';
@@ -288,9 +288,12 @@ export default function TrainerClientPlanDetail() {
       };
     },
     onSuccess: (data) => {
-      // Ensure we're not showing the deleting state anymore
+      // Reset all state and flags
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+      isDeletingRef.current = false;
+      
+      console.log("Plan deleted successfully, showing success message and redirecting");
       
       // Show success toast
       toast({
@@ -298,14 +301,19 @@ export default function TrainerClientPlanDetail() {
         description: data.message || "Fitness plan has been deleted",
       });
       
-      // Redirect to client page
+      // Redirect to client page with a slight delay
       const redirectClientId = data.clientId || clientId;
-      navigate(`/trainer/clients/${redirectClientId}`);
+      setTimeout(() => {
+        navigate(`/trainer/clients/${redirectClientId}`);
+      }, 100);
     },
     onError: (error: Error) => {
-      // Reset UI state
+      // Reset all state and flags
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+      isDeletingRef.current = false;
+      
+      console.log("Plan deletion failed with error:", error.message);
       
       // Show error toast
       toast({
@@ -320,8 +328,21 @@ export default function TrainerClientPlanDetail() {
     setShowDeleteConfirm(true);
   };
 
+  // Track whether a deletion is already in progress with a ref to avoid race conditions
+  const isDeletingRef = useRef(false);
+  
   const confirmDeletePlan = () => {
+    // Only proceed if not already deleting
+    if (isDeletingRef.current) {
+      console.log("Delete operation already in progress, ignoring duplicate request");
+      return;
+    }
+    
+    // Set both the state for UI and the ref for logic control
     setIsDeleting(true);
+    isDeletingRef.current = true;
+    
+    console.log("Starting plan deletion, marking as in-progress");
     deletePlanMutation.mutate();
   };
 
