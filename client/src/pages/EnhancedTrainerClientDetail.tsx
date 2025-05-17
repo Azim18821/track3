@@ -981,12 +981,7 @@ export default function EnhancedTrainerClientDetail() {
                     <Button 
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        toast({
-                          title: "Nutrition Goals",
-                          description: "Editing nutrition goals directly from this tab will be available soon.",
-                        });
-                      }}
+                      onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
                     >
                       <PenSquare className="mr-2 h-4 w-4" />
                       Edit Nutrition Goals
