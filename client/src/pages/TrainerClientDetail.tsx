@@ -340,7 +340,6 @@ export default function TrainerClientDetail() {
                     variant="outline"
                     size="sm"
                     className="text-xs h-8 px-3 rounded-lg"
-                    onClick={() => navigate(`/trainer/clients/${clientId}/nutrition-goals`)}
                   >
                     Edit Goals
                   </Button>
