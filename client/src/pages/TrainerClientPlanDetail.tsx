@@ -295,10 +295,12 @@ export default function TrainerClientPlanDetail() {
       
       console.log("Plan deleted successfully, showing success message and redirecting");
       
-      // Invalidate all client-related queries to ensure lists update properly
+      // Invalidate all client and plan-related queries to ensure lists update properly
       queryClient.invalidateQueries({ queryKey: [`/api/trainer/clients/${clientId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/trainer/clients/${clientId}/fitness-plans`] });
       queryClient.invalidateQueries({ queryKey: [`/api/trainer/clients`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trainer/plans`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/trainer/client-plans`] });
       
       // Show success toast
       toast({
@@ -306,11 +308,11 @@ export default function TrainerClientPlanDetail() {
         description: data.message || "Fitness plan has been deleted",
       });
       
-      // Redirect to client page with a slight delay to give cache time to update
+      // Redirect to client page with a longer delay to ensure cache is fully updated
       const redirectClientId = data.clientId || clientId;
       setTimeout(() => {
         navigate(`/trainer/clients/${redirectClientId}`);
-      }, 300);
+      }, 500);
     },
     onError: (error: Error) => {
       // Reset all state and flags
