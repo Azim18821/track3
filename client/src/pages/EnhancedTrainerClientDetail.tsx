@@ -905,7 +905,21 @@ export default function EnhancedTrainerClientDetail() {
                 <WeeklyWorkoutView 
                   workouts={clientData.workouts} 
                   onViewWorkout={(workout) => {
-                    window.alert(`Viewing workout detail is coming soon! Workout ID: ${workout.id}`);
+                    // Instead of alert, implement a proper workout detail view dialog
+                    toast({
+                      title: "Workout Details",
+                      description: `Viewing details for workout: ${workout.name || 'Unnamed Workout'}`,
+                      duration: 3000
+                    });
+                    
+                    // In the future, replace this with a proper detail dialog
+                    const exercises = workout.exercises?.length 
+                      ? `${workout.exercises.length} exercises` 
+                      : "No exercises recorded";
+                      
+                    const details = `Date: ${new Date(workout.date).toLocaleDateString()}\nDuration: ${workout.duration} min\n${exercises}`;
+                    
+                    window.alert(`Workout Details:\n${details}`);
                   }}
                   onAddWorkout={handleAddWorkout}
                 />
@@ -1027,7 +1041,32 @@ export default function EnhancedTrainerClientDetail() {
                   fat: clientData?.nutritionGoal?.fatTarget || 70
                 }}
                 onViewDay={(date) => {
-                  window.alert(`Viewing detailed nutrition for ${date} coming soon!`);
+                  // Get meals for the selected date
+                  const mealsForDay = clientData?.meals?.filter(meal => {
+                    const mealDate = new Date(meal.loggedAt || meal.createdAt);
+                    return mealDate.toISOString().split('T')[0] === date;
+                  }) || [];
+                  
+                  // Display meals for the day with proper formatting
+                  if (mealsForDay.length > 0) {
+                    const mealDetails = mealsForDay.map(meal => {
+                      return `${meal.name || 'Unnamed meal'}: ${meal.calories || 0} calories`;
+                    }).join('\n');
+                    
+                    toast({
+                      title: `Nutrition for ${new Date(date).toLocaleDateString()}`,
+                      description: `${mealsForDay.length} meals logged on this day`,
+                      duration: 3000,
+                    });
+                    
+                    window.alert(`Meals for ${new Date(date).toLocaleDateString()}:\n\n${mealDetails}`);
+                  } else {
+                    toast({
+                      title: `Nutrition for ${new Date(date).toLocaleDateString()}`,
+                      description: "No meals logged on this day",
+                      duration: 3000,
+                    });
+                  }
                 }}
               />
 
