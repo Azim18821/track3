@@ -783,7 +783,7 @@ export default function TrainerClientPlanDetail() {
                     This fitness plan doesn't have any scheduled meals yet
                   </p>
                   <Button 
-                    onClick={() => navigate(`/enhanced-trainer-plan-creation?clientId=${clientId}&planId=${planId}&edit=true`)}
+                    onClick={() => navigate(`/trainer/clients/${clientId}/plans/${planId}/edit?tab=meals`)}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600"
                   >
                     <PlusCircle className="h-4 w-4 mr-2" />
