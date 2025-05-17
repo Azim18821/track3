@@ -6060,6 +6060,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             level: plan.notes?.includes('Level:') ? plan.notes.split('Level:')[1]?.trim() : 'intermediate',
             workoutDaysPerWeek: Object.keys(plan.workoutPlan?.weeklySchedule || {}).length || 3,
             fitnessLevel: plan.notes?.includes('Level:') ? plan.notes.split('Level:')[1]?.trim() : 'intermediate'
+          },
+          // Ensure mealPlan structure is correctly formatted for the frontend
+          mealPlan: {
+            ...(plan.mealPlan || {}),
+            // Handle both weekly meals and weekly meal plan formats
+            weeklyMeals: plan.mealPlan?.weeklyMeals || plan.mealPlan?.weeklyMealPlan || {},
+            notes: plan.mealPlan?.notes || ""
           }
         };
         
