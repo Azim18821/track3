@@ -114,7 +114,12 @@ export default function EnhancedTrainerClientDetail() {
     queryFn: async () => {
       const res = await apiRequest('GET', `/api/trainer/clients/${clientId}`);
       if (!res.ok) throw new Error('Failed to fetch client details');
-      return await res.json();
+      const data = await res.json();
+      console.log('Client data response:', data);
+      if (data.nutritionGoal) {
+        console.log('Nutrition goal data:', data.nutritionGoal);
+      }
+      return data;
     },
     enabled: !!(user?.isTrainer || user?.isAdmin) && !!clientId
   });
