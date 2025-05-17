@@ -297,7 +297,25 @@ export default function ViewPlan() {
   // Responsive UI state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // Fetch active fitness plan
+  // First check if user has any trainer assigned plans
+  const { data: trainerAssignedPlans = [], isLoading: trainerPlansLoading } = useQuery({
+    queryKey: ["/api/client/trainer-plans"],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/client/trainer-plans");
+        if (!res.ok) {
+          console.log("No trainer plans found, will check for self-created plans");
+          return [];
+        }
+        return await res.json();
+      } catch (error) {
+        console.error("Error fetching trainer plans:", error);
+        return [];
+      }
+    },
+  });
+  
+  // Then fetch active fitness plan (self-created) as a fallback
   const {
     data: activePlan,
     isLoading: planLoading,
@@ -316,6 +334,8 @@ export default function ViewPlan() {
       }
       return await res.json();
     },
+    // Only fetch self-created plan if no trainer plans are available
+    enabled: trainerAssignedPlans.length === 0 && !trainerPlansLoading,
   });
 
   // Fetch user workouts for plan integration
