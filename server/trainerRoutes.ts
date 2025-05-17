@@ -934,12 +934,12 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
       // Create client workout and meal entries based on the fitness plan
       try {
         // Process workout plan data and create client workout entries
-        await createClientWorkoutsFromPlan(clientId, workoutPlan, newPlan.id);
+        await createClientWorkoutsFromPlan(clientId, workoutPlan, trainerFitnessPlan.id);
         
         // Process meal plan data and create client meal entries
-        await createClientMealsFromPlan(clientId, mealPlan, newPlan.id);
+        await createClientMealsFromPlan(clientId, mealPlan, trainerFitnessPlan.id);
         
-        console.log(`Successfully created workout and meal entries for client ${clientId} from plan ${newPlan.id}`);
+        console.log(`Successfully created workout and meal entries for client ${clientId} from plan ${trainerFitnessPlan.id}`);
       } catch (error) {
         console.error('Error creating client workout/meal entries from plan:', error);
         // Don't return an error, as the plan was still successfully created
