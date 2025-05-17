@@ -851,25 +851,20 @@ router.post('/clients/:clientId/fitness-plan', async (req, res) => {
       console.log(`Attempting to create trainer fitness plan for trainer ${trainerId} and client ${clientId}`);
       
       // Create the trainer fitness plan
-      try {
-        const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
-          trainerId: trainerId,
-          clientId: clientId,
-          name: name,
-          description: description || `Fitness plan for ${goal || 'general fitness'}`,
-          workoutPlan: workoutPlan,
-          mealPlan: mealPlan,
-          isActive: true,
-          notes: `Duration: ${durationWeeks || 4} weeks, Level: ${level || 'beginner'}`
-        });
-        
-        console.log(`SUCCESS: Trainer ${trainerId} created a new fitness plan for client ${clientId}. Trainer plan ID: ${trainerFitnessPlan.id} in trainer_fitness_plans table`);
-      } catch (createError) {
-        console.error(`ERROR: Failed to create trainer fitness plan in trainer_fitness_plans table:`, createError);
-        throw createError; // Re-throw to be caught by outer catch block
-      }
+      const trainerFitnessPlan = await storage.createTrainerFitnessPlan({
+        trainerId: trainerId,
+        clientId: clientId,
+        name: name,
+        description: description || `Fitness plan for ${goal || 'general fitness'}`,
+        workoutPlan: workoutPlan,
+        mealPlan: mealPlan,
+        isActive: true,
+        notes: `Duration: ${durationWeeks || 4} weeks, Level: ${level || 'beginner'}`
+      });
       
-      // Prepare the response data
+      console.log(`SUCCESS: Trainer ${trainerId} created a new fitness plan for client ${clientId}. Trainer plan ID: ${trainerFitnessPlan.id} in trainer_fitness_plans table`);
+        
+      // Store the created fitness plan for response
       const newPlan = trainerFitnessPlan;
       
       // If trainer requested nutrition goals calculation, update the client's nutrition goals
@@ -1205,7 +1200,7 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
       return res.status(400).json({ message: 'Invalid plan ID' });
     }
 
-    // First check if the plan exists in the trainer_fitness_plans table
+    // Always check for and delete from the trainer_fitness_plans table for trainer operations
     console.log(`Checking for plan ${planId} in trainer_fitness_plans table`);
     const trainerPlan = await storage.getTrainerFitnessPlan(planId);
     
@@ -1243,62 +1238,16 @@ router.delete(['/fitness-plans/:id', '/trainer/fitness-plans/:id', '/api/trainer
       
       console.log(`Successfully deleted trainer fitness plan ${planId} and cleared associated data for client ${clientId}`);
       
-      // Return success with no content
-      return res.status(204).end();
+      // Return success with clientId for proper redirect
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Fitness plan deleted successfully',
+        clientId: clientId // Include clientId for redirect
+      });
     } else {
       console.log(`Plan ${planId} NOT found in trainer_fitness_plans table`);
+      return res.status(404).json({ message: 'Trainer fitness plan not found' });
     }
-    
-    // If not found in trainer_fitness_plans, check the regular fitness_plans table
-    console.log(`Checking for plan ${planId} in fitness_plans table`);
-    const plan = await storage.getFitnessPlan(planId);
-    
-    if (!plan) {
-      console.log(`Plan ${planId} NOT found in fitness_plans table either`);
-      return res.status(404).json({ message: 'Fitness plan not found in either table' });
-    }
-    
-    console.log(`Found plan ${planId} in fitness_plans table:`, JSON.stringify({
-      id: plan.id,
-      userId: plan.userId,
-      isActive: plan.isActive,
-      createdAt: plan.createdAt
-    }));
-
-    // Verify the client belongs to this trainer
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const clients = await storage.getTrainerClients(userId);
-    const clientIds = clients.map(tc => tc.client.id);
-    console.log(`Trainer ${userId} has clients:`, clientIds);
-    
-    if (!clientIds.includes(plan.userId)) {
-      console.log(`User ${plan.userId} is not a client of trainer ${userId}`);
-      return res.status(403).json({ message: 'You are not authorized to manage this plan' });
-    }
-
-    const clientId = plan.userId;
-    console.log(`Confirmed: User ${clientId} is a client of trainer ${userId}`);
-    
-    // Clear associated data for this client
-    console.log(`Clearing planned meals and future workouts for client ${clientId}`);
-    await clearClientPlannedMeals(clientId);
-    await clearClientWorkouts(clientId);
-    
-    // Delete the plan
-    const success = await storage.deleteFitnessPlan(planId);
-    if (!success) {
-      console.log(`Failed to delete plan ${planId} from fitness_plans table`);
-      return res.status(500).json({ message: 'Failed to delete fitness plan' });
-    }
-
-    console.log(`Successfully deleted fitness plan ${planId} from fitness_plans table for client ${clientId}`);
-    
-    // Return success with no content
-    res.status(204).end();
   } catch (error) {
     console.error('Error deleting fitness plan:', error);
     res.status(500).json({ message: 'Failed to delete fitness plan' });
