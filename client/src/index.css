@@ -636,12 +636,13 @@ body, html {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
   
-  /* For fixed header spacing - No safe area */
+  /* For fixed header spacing with proper safe area support */
   .mt-header-height {
-    margin-top: 3rem;
+    margin-top: calc(3rem + env(safe-area-inset-top));
     padding-top: 0.5rem;
-    padding-bottom: 4rem;
-    height: calc(100vh - 3rem);
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+    height: calc(100vh - 3rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height: calc(100svh - 3rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); /* Modern viewport height */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
