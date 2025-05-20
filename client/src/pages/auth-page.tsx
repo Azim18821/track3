@@ -131,7 +131,7 @@ export default function AuthPage() {
   }, [loginForm, setActiveTab, setRegistrationComplete, setRegisteredUser]);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <div className="min-h-screen min-h-[-webkit-fill-available] flex flex-col md:flex-row bg-black">
       {/* Auth Form Section */}
       <div className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
