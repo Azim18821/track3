@@ -27,9 +27,11 @@ import {
   Calendar, 
   TrendingUp,
   SkipForward,
-  Clock
+  Clock,
+  Trophy,
+  RotateCw
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
@@ -213,8 +215,8 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden border-0 shadow-lg">
-        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-lg">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col overflow-hidden border-0 shadow-lg">
+        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-t-lg">
           <DialogTitle className="flex justify-between items-center gap-2 text-white">
             <div className="flex items-center gap-2">
               <Dumbbell className="h-5 w-5 text-white" />
@@ -222,21 +224,23 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
             </div>
             {nextExercise && (
               <Tabs value={activeTab} onValueChange={handleTabChange} className="mr-0">
-                <TabsList className="grid grid-cols-2 h-8 bg-white/20">
+                <TabsList className="grid grid-cols-2 h-7 bg-white/20">
                   <TabsTrigger value="current" className="text-xs px-3 data-[state=active]:bg-white/30 data-[state=active]:text-white text-white/80">Current</TabsTrigger>
                   <TabsTrigger value="next" className="text-xs px-3 data-[state=active]:bg-white/30 data-[state=active]:text-white text-white/80">Next</TabsTrigger>
                 </TabsList>
               </Tabs>
             )}
           </DialogTitle>
-          {selectedExercise && (
-            <div className="mt-2 flex items-center gap-1 text-white/90">
-              <span>Performance data for</span> 
-              <Badge variant="secondary" className="font-medium bg-white/30 text-white hover:bg-white/40 border-0">
-                {selectedExercise.name}
-              </Badge>
-            </div>
-          )}
+          <DialogDescription className="text-white/90 mt-1 text-sm">
+            {selectedExercise && (
+              <div className="flex items-center gap-1">
+                <span>Data for</span> 
+                <Badge variant="secondary" className="font-medium bg-white/30 text-white hover:bg-white/40 border-0">
+                  {selectedExercise.name}
+                </Badge>
+              </div>
+            )}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -247,31 +251,37 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
             </div>
           ) : (
             <div className="space-y-4 px-1">
-              {/* Recommended values card */}
+              {/* Enhanced Recommended values card */}
               {recommendedValues && (
-                <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
-                  <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="hidden sm:flex bg-primary/20 p-2 rounded-full">
-                      <Award className="h-6 w-6 text-primary" />
+                <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/10 border-blue-200 dark:border-blue-800/30 mx-4 mb-6 shadow-sm overflow-hidden">
+                  <div className="border-b border-blue-200 dark:border-blue-800/30 bg-blue-100/50 dark:bg-blue-900/30 px-4 py-3 flex items-center">
+                    <div className="bg-blue-500 text-white p-1.5 rounded-full mr-2">
+                      <Trophy className="h-4 w-4" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium flex items-center">
-                        <Award className="h-4 w-4 mr-1.5 sm:hidden text-primary" />
-                        Today's Recommended Values
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5 mb-2">
-                        Based on your last workout on {recommendedValues.date}
-                      </p>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-background/90 rounded p-2 border border-border/60">
-                          <p className="text-xs text-muted-foreground">Weight</p>
-                          <p className="font-semibold">{recommendedValues.weight} kg</p>
-                        </div>
-                        <div className="bg-background/90 rounded p-2 border border-border/60">
-                          <p className="text-xs text-muted-foreground">Reps</p>
-                          <p className="font-semibold">{recommendedValues.reps}</p>
-                        </div>
+                    <CardTitle className="text-base font-bold text-blue-800 dark:text-blue-300">
+                      Today's Recommended Values
+                    </CardTitle>
+                  </div>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-3 flex items-center">
+                      <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                      Based on your last workout on {recommendedValues.date}
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="bg-white dark:bg-blue-900/20 rounded-lg p-3 shadow-sm">
+                        <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1 flex items-center">
+                          <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
+                          Weight
+                        </p>
+                        <p className="font-semibold text-lg text-blue-900 dark:text-blue-200">{recommendedValues.weight} kg</p>
+                      </div>
+                      <div className="bg-white dark:bg-blue-900/20 rounded-lg p-3 shadow-sm">
+                        <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1 flex items-center">
+                          <RotateCw className="h-3.5 w-3.5 mr-1.5" />
+                          Reps
+                        </p>
+                        <p className="font-semibold text-lg text-blue-900 dark:text-blue-200">{recommendedValues.reps}</p>
                       </div>
                     </div>
                   </CardContent>
