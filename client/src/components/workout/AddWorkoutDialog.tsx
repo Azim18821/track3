@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -114,6 +114,13 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
     control: form.control,
     name: "exercises"
   });
+  
+  // Effect to update the date field when initialDate changes
+  useEffect(() => {
+    if (initialDate && isOpen) {
+      form.setValue('date', initialDate);
+    }
+  }, [initialDate, isOpen, form]);
 
   // Mutation for adding a workout
   const addWorkoutMutation = useMutation({
