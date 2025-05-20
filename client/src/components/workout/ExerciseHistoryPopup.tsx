@@ -39,26 +39,14 @@ interface SetData {
   completed: boolean;
 }
 
-// Define cardio data interface
-interface CardioData {
-  distance?: number | null;
-  duration?: number | null;
-  distanceUnit?: string; // km, miles, etc.
-  intensity?: string; // low, moderate, high, interval
-  caloriesBurned?: number | null;
-  completed: boolean;
-}
-
 interface Exercise {
   id?: number;
   name: string;
-  exerciseType?: "strength" | "cardio"; // Define exercise type
-  sets?: number; // Optional for cardio
+  sets: number;
   reps?: number;
   weight?: number;
   unit?: string;
   setsData?: SetData[];
-  cardioData?: CardioData; // Cardio-specific data
 }
 
 interface ExerciseHistory {
@@ -67,8 +55,6 @@ interface ExerciseHistory {
   workoutId: number;
   workoutName: string;
   sets: SetData[];
-  cardioData?: CardioData; // Add cardio data to history as well
-  exerciseType?: "strength" | "cardio"; // Track exercise type
   completed: boolean;
 }
 
@@ -263,8 +249,8 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
             </div>
           ) : (
             <div className="space-y-4 px-1">
-              {/* Recommended values card - only show for strength exercises */}
-              {recommendedValues && selectedExercise?.exerciseType !== "cardio" && (
+              {/* Recommended values card */}
+              {recommendedValues && (
                 <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10">
                   <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="hidden sm:flex bg-primary/20 p-2 rounded-full">
@@ -287,47 +273,6 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                         <div className="bg-background/90 rounded p-2 border border-border/60">
                           <p className="text-xs text-muted-foreground">Reps</p>
                           <p className="font-semibold">{recommendedValues.reps}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {/* For cardio exercises, show previous cardio stats */}
-              {selectedExercise?.exerciseType === "cardio" && history.length > 0 && (
-                <Card className="border-green-500/20 bg-green-500/5 dark:bg-green-500/10">
-                  <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="hidden sm:flex bg-green-500/20 p-2 rounded-full">
-                      <Clock className="h-6 w-6 text-green-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium flex items-center">
-                        <Clock className="h-4 w-4 mr-1.5 sm:hidden text-green-500" />
-                        Previous Cardio Performance
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5 mb-2">
-                        Based on your last cardio session
-                      </p>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        <div className="bg-background/90 rounded p-2 border border-border/60">
-                          <p className="text-xs text-muted-foreground">Duration</p>
-                          <p className="font-semibold">
-                            {history[0]?.cardioData?.duration || "-"} min
-                          </p>
-                        </div>
-                        <div className="bg-background/90 rounded p-2 border border-border/60">
-                          <p className="text-xs text-muted-foreground">Distance</p>
-                          <p className="font-semibold">
-                            {history[0]?.cardioData?.distance || "-"} {history[0]?.cardioData?.distanceUnit || "km"}
-                          </p>
-                        </div>
-                        <div className="bg-background/90 rounded p-2 border border-border/60">
-                          <p className="text-xs text-muted-foreground">Calories</p>
-                          <p className="font-semibold">
-                            {history[0]?.cardioData?.caloriesBurned || "-"}
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -391,7 +336,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                           </TableHeader>
                           <TableBody>
                             {/* Always show the most recent workout */}
-                            {history.slice(0, 1).map((item: ExerciseHistory) => (
+                            {history.slice(0, 1).map((item) => (
                               <TableRow key={`${item.workoutId}-${item.date}`} className="hover:bg-muted/20">
                                 <TableCell className="py-2 text-xs">
                                   <div className="font-medium">
@@ -402,54 +347,22 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-2">
-                                  {/* Show different content based on exercise type */}
-                                  {item.exerciseType === "cardio" ? (
-                                    <div className="space-y-1.5">
-                                      <div className="grid grid-cols-2 gap-2 text-sm">
-                                        {item.cardioData?.duration && (
-                                          <div className="flex items-center">
-                                            <Clock className="h-4 w-4 mr-1.5 text-green-500" />
-                                            <span>{item.cardioData.duration} min</span>
-                                          </div>
-                                        )}
-                                        {item.cardioData?.distance && (
-                                          <div className="flex items-center">
-                                            <TrendingUp className="h-4 w-4 mr-1.5 text-green-500" />
-                                            <span>{item.cardioData.distance} {item.cardioData.distanceUnit || 'km'}</span>
-                                          </div>
-                                        )}
-                                        {item.cardioData?.caloriesBurned && (
-                                          <div className="flex items-center">
-                                            <BarChart3 className="h-4 w-4 mr-1.5 text-green-500" />
-                                            <span>{item.cardioData.caloriesBurned} calories</span>
-                                          </div>
-                                        )}
-                                        {item.cardioData?.intensity && (
-                                          <div className="flex items-center">
-                                            <Award className="h-4 w-4 mr-1.5 text-green-500" />
-                                            <span>{item.cardioData.intensity} intensity</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-1.5">
-                                      {item.sets && item.sets.length > 0 ? (
-                                        item.sets.map((set, index) => (
-                                          <div key={index} className="flex items-center text-sm">
-                                            <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal bg-background">
-                                              {index + 1}
-                                            </Badge>
-                                            <span className="font-medium">
-                                              {set.reps} × {set.weight} kg
-                                            </span>
-                                          </div>
-                                        ))
-                                      ) : (
-                                        <span className="text-muted-foreground text-sm">No set data</span>
-                                      )}
-                                    </div>
-                                  )}
+                                  <div className="space-y-1.5">
+                                    {item.sets && item.sets.length > 0 ? (
+                                      item.sets.map((set, index) => (
+                                        <div key={index} className="flex items-center text-sm">
+                                          <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center mr-2 text-xs font-normal bg-background">
+                                            {index + 1}
+                                          </Badge>
+                                          <span className="font-medium">
+                                            {set.reps} × {set.weight} kg
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <span className="text-muted-foreground text-sm">No set data</span>
+                                    )}
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             ))}

@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Use dynamic import for ExerciseHistoryPopup to avoid type conflicts
-// This ensures both components have their own independent type definitions
 const ExerciseHistoryPopup = React.lazy(() => import("./ExerciseHistoryPopup"));
 
 interface SetData {
@@ -58,7 +57,6 @@ interface CardioData {
   completed: boolean;
 }
 
-// Define the main Exercise interface
 interface Exercise {
   id?: number;
   name: string;
@@ -70,8 +68,6 @@ interface Exercise {
   setsData?: SetData[]; // Per-set data for strength exercises
   cardioData?: CardioData; // Cardio-specific data
 }
-
-// Remove the duplicate interface and add type assertions where needed
 
 interface Workout {
   id: number;
@@ -354,13 +350,13 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       };
       
       // Add the new set to the setsData array
-      const updatedSetsData = [...(currentExercise.setsData || []), newSet];
+      const updatedSetsData = [...currentExercise.setsData!, newSet];
       
       // Update the exercise object
       updatedExercises[exerciseIndex] = {
         ...currentExercise,
         // Increment the sets count
-        sets: (currentExercise.sets || 0) + 1,
+        sets: currentExercise.sets + 1,
         setsData: updatedSetsData
       };
       
@@ -1323,10 +1319,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           <ExerciseHistoryPopup
             isOpen={isHistoryPopupOpen}
             onClose={() => setIsHistoryPopupOpen(false)}
-            currentExercise={workoutState.exercises[activeExerciseIndex] as any}
+            currentExercise={workoutState.exercises[activeExerciseIndex]}
             nextExercise={
               activeExerciseIndex < workoutState.exercises.length - 1
-                ? workoutState.exercises[activeExerciseIndex + 1] as any
+                ? workoutState.exercises[activeExerciseIndex + 1]
                 : null
             }
             onStartNextExercise={() => {
