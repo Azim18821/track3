@@ -1323,10 +1323,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           <ExerciseHistoryPopup
             isOpen={isHistoryPopupOpen}
             onClose={() => setIsHistoryPopupOpen(false)}
-            currentExercise={workoutState.exercises[activeExerciseIndex]}
+            currentExercise={workoutState.exercises[activeExerciseIndex] as any}
             nextExercise={
               activeExerciseIndex < workoutState.exercises.length - 1
-                ? workoutState.exercises[activeExerciseIndex + 1]
+                ? workoutState.exercises[activeExerciseIndex + 1] as any
                 : null
             }
             onStartNextExercise={() => {
