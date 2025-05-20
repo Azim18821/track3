@@ -398,10 +398,10 @@ body, html {
       bottom: 0;
     }
     
-    /* iOS Navigation Bar Fixes */
+    /* Navigation Bar - No safe area padding */
     .bottom-nav {
-      padding-bottom: env(safe-area-inset-bottom) !important;
-      height: calc(5rem + env(safe-area-inset-bottom)) !important;
+      padding-bottom: 0;
+      height: 5rem;
       z-index: 100 !important;
       -webkit-transform: translateZ(0);
       transform: translateZ(0);
@@ -413,8 +413,8 @@ body, html {
       /* Rounded top corners for modern iOS look */
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
-      /* Ensure proper height with home indicator and no gap at bottom */
-      min-height: calc(80px + env(safe-area-inset-bottom));
+      /* Fixed height without safe area */
+      min-height: 80px;
       /* Additional fixes to eliminate any black gap */
       overflow: visible;
       position: relative;
@@ -686,7 +686,7 @@ body, html {
     padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
   }
   
-  /* Workout mode modal specific fixes */
+  /* Workout mode modal specific fixes - No safe area */
   .workout-modal-container {
     max-height: 100vh;
     max-height: -webkit-fill-available;
@@ -696,7 +696,7 @@ body, html {
   
   .workout-modal-content {
     -webkit-overflow-scrolling: touch;
-    padding-bottom: env(safe-area-inset-bottom, 20px);
+    padding-bottom: 0;
     overflow-y: auto;
   }
   
@@ -734,78 +734,10 @@ body, html {
     background-color: #111827; /* Dark mode background color */
   }
   
-  /* Safe area utilities */
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-  
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .pl-safe {
-    padding-left: env(safe-area-inset-left);
-  }
-  
-  .pr-safe {
-    padding-right: env(safe-area-inset-right);
-  }
-  
-  /* Enhanced safe area utilities with minimum values */
-  .pt-safe-min {
-    padding-top: max(0.5rem, env(safe-area-inset-top));
-  }
-  
-  .pb-safe-min {
-    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-  }
-  
-  .pl-safe-min {
-    padding-left: max(0.5rem, env(safe-area-inset-left));
-  }
-  
-  .pr-safe-min {
-    padding-right: max(0.5rem, env(safe-area-inset-right));
-  }
-  
-  /* Margin versions for safe areas */
-  .mt-safe {
-    margin-top: env(safe-area-inset-top);
-  }
-  
-  .mb-safe {
-    margin-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .ml-safe {
-    margin-left: env(safe-area-inset-left);
-  }
-  
-  .mr-safe {
-    margin-right: env(safe-area-inset-right);
-  }
-  
-  /* Negative margins for safe areas (useful for full bleed layouts) */
-  .neg-mt-safe {
-    margin-top: calc(-1 * env(safe-area-inset-top));
-  }
-  
-  .neg-mb-safe {
-    margin-bottom: calc(-1 * env(safe-area-inset-bottom));
-  }
-  
-  .neg-ml-safe {
-    margin-left: calc(-1 * env(safe-area-inset-left));
-  }
-  
-  .neg-mr-safe {
-    margin-right: calc(-1 * env(safe-area-inset-right));
-  }
-  
-  /* Keyboard avoiding container */
+  /* Keyboard avoiding container - without safe area padding */
   .keyboard-avoiding-container {
     position: relative;
-    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    padding-bottom: 2rem;
     transition: all 0.3s ease;
   }
   
