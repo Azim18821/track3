@@ -26,6 +26,7 @@ import {
   ArrowLeft, Loader2, Plus, Save, Trash2, Edit, Calendar, Dumbbell, 
   ChevronDown, ChevronUp, ArrowUpDown, Check
 } from 'lucide-react';
+import CardioWorkoutForm from '@/components/workout/CardioWorkoutForm';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
