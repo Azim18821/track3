@@ -20,8 +20,86 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, X, Search } from "lucide-react";
+import { Loader2, Plus, X, Search, Calculator } from "lucide-react";
 import { format } from "date-fns";
+
+// MET values for common cardio exercises
+// Function to calculate calories burned
+const calculateCaloriesBurned = (
+  exercise: string, 
+  intensity: string,
+  weightKg: number,
+  durationMinutes: number
+): number => {
+  // Normalize exercise name to match our MET values
+  const normalizedExercise = Object.keys(CARDIO_MET_VALUES).find(
+    key => exercise.toLowerCase().includes(key)
+  ) || 'default';
+  
+  // Get appropriate MET value
+  const metValue = CARDIO_MET_VALUES[normalizedExercise][intensity as keyof typeof CARDIO_MET_VALUES['default']] 
+    || CARDIO_MET_VALUES['default'][intensity as keyof typeof CARDIO_MET_VALUES['default']]
+    || CARDIO_MET_VALUES['default']['moderate'];
+  
+  // Convert duration from minutes to hours
+  const durationHours = durationMinutes / 60;
+  
+  // Calculate calories burned: MET × Weight (kg) × Duration (hours)
+  const caloriesBurned = Math.round(metValue * weightKg * durationHours);
+  
+  return caloriesBurned;
+};
+
+const CARDIO_MET_VALUES = {
+  'walking': {
+    low: 2.8,
+    moderate: 3.5, 
+    high: 5.0,
+    interval: 6.0
+  },
+  'running': {
+    low: 6.0,
+    moderate: 9.8,
+    high: 12.3,
+    interval: 14.0
+  },
+  'cycling': {
+    low: 4.0,
+    moderate: 8.0,
+    high: 12.0,
+    interval: 13.0
+  },
+  'swimming': {
+    low: 6.0,
+    moderate: 8.0,
+    high: 10.0,
+    interval: 11.0
+  },
+  'elliptical': {
+    low: 5.0,
+    moderate: 7.0,
+    high: 9.0,
+    interval: 10.0
+  },
+  'rowing': {
+    low: 4.0,
+    moderate: 7.0,
+    high: 12.0,
+    interval: 14.0
+  },
+  'stair climbing': {
+    low: 4.0,
+    moderate: 8.0,
+    high: 12.0,
+    interval: 13.0
+  },
+  'default': {
+    low: 4.0,
+    moderate: 7.0,
+    high: 10.0,
+    interval: 12.0
+  }
+};
 
 // Define the SetData interface for tracking per-set information
 interface SetData {
@@ -119,6 +197,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isPlanMode, setIsPlanMode] = useState(false);
   const [hasCardio, setHasCardio] = useState(false);
+  const [userWeight, setUserWeight] = useState(70); // Default weight in kg
 
   // Create a memoized form schema based on the current plan mode state
   const currentFormSchema = useMemo(() => createFormSchema(isPlanMode), [isPlanMode]);
