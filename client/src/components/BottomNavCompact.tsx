@@ -116,13 +116,15 @@ export function BottomNavCompact() {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200"
+      className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav transition-all duration-200"
       style={{
         borderTopLeftRadius: '20px',
         borderTopRightRadius: '20px',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        height: 'calc(64px + env(safe-area-inset-bottom))'
       }}
     >
-      {/* iOS safe area padding bottom is handled with pb-safe class */}
+      {/* iOS safe area padding bottom is handled via inline styles */}
       <div className="grid h-16 grid-cols-5 px-1 py-0">
         {/* Left side items */}
         {leftItems.map((item, index) => (

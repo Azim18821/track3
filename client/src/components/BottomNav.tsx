@@ -114,8 +114,16 @@ export function BottomNav() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div className="bottom-nav backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg">
-      {/* iOS safe area padding bottom is handled with the bottom-nav class */}
+    <div 
+      className="bottom-nav backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        height: 'calc(60px + env(safe-area-inset-bottom))',
+        borderTopLeftRadius: '16px',
+        borderTopRightRadius: '16px'
+      }}
+    >
+      {/* iOS safe area padding bottom is handled via inline styles */}
       <div className="grid h-[60px] grid-cols-5 px-1">
         {/* Left side items */}
         {leftItems.map((item, index) => (

@@ -563,33 +563,42 @@ body, html {
     padding-right: 0;
   }
   
-  /* Bottom navigation - No safe area padding */
+  /* Bottom navigation with safe area padding */
   .bottom-nav {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    height: 60px; /* Fixed height without safe area */
+    height: calc(60px + env(safe-area-inset-bottom)); /* Base height plus safe area */
     background-color: rgba(255, 255, 255, 0.8); /* Same as the existing nav */
     backdrop-filter: blur(12px);
     display: flex;
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-    padding-bottom: 0; /* No safe area padding */
+    z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom); /* Apply safe area padding */
+    /* iOS 15+ improvements */
+    -webkit-backdrop-filter: blur(12px);
+    /* Modern curved edges for better iOS feel */
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    /* Prevent weird rendering issues with transform */
+    transform: translateZ(0);
+    will-change: transform;
   }
   
-  /* Extend background to the bottom */
+  /* Extend background to the bottom to avoid any gaps */
   .bottom-nav::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -50px; /* Extend beyond the visible area */
-    height: 50px;
+    bottom: calc(-1 * env(safe-area-inset-bottom) - 20px); /* Cover any safe area gap plus extra */
+    height: calc(env(safe-area-inset-bottom) + 20px); /* Cover full safe area plus extra */
     background-color: rgba(255, 255, 255, 0.8); /* Match the nav background */
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: -1;
   }
   
@@ -599,22 +608,27 @@ body, html {
     backdrop-filter: blur(12px);
   }
   
-  /* Header spacing - No notch padding */
+  /* Header spacing with safe area insets for notch devices */
   .app-header {
-    padding-top: 0.5rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    min-height: 3rem;
+    padding-top: calc(0.5rem + env(safe-area-inset-top));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    min-height: calc(3rem + env(safe-area-inset-top));
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 50;
-    background-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     touch-action: none;
     display: flex;
     align-items: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    /* Prevent weird rendering issues */
+    transform: translateZ(0);
+    will-change: transform;
   }
 
   .dark .app-header {
@@ -632,7 +646,7 @@ body, html {
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Full screen container - No safe area */
+  /* Full screen container with safe area support */
   .full-screen-container {
     min-height: 100vh;
     min-height: 100dvh; /* Modern viewport height units */
@@ -643,21 +657,35 @@ body, html {
     flex-direction: column;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     position: relative; /* Ensure proper stacking context */
-    padding-bottom: 0; /* No iOS safe area */
+    /* Add safe area padding for iOS */
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    /* Improve rendering on iOS */
+    transform: translateZ(0);
   }
   
-  /* Workout mode modal specific fixes - No safe area */
+  /* Workout mode modal specific fixes with safe area support */
   .workout-modal-container {
     max-height: 100vh;
+    max-height: 100svh; /* Modern dynamic viewport height */
     max-height: -webkit-fill-available;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+    /* Ensure safe areas are respected */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* Prevent rendering issues */
+    transform: translateZ(0);
   }
   
   .workout-modal-content {
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 0;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px); /* Add padding for home indicator */
     overflow-y: auto;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
   }
   
   /* Improve touch scrolling */
@@ -672,6 +700,8 @@ body, html {
     height: 100svh; /* Modern viewport height */
     width: 100vw; /* Ensure full width */
     max-width: 100%; /* Prevent overflow */
+    /* Disable double-tap to zoom for iOS */
+    touch-action: manipulation;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     background-color: #ffffff; /* Light mode background color */
   }
