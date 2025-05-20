@@ -193,15 +193,7 @@ body, html {
   --ring: 20 14.3% 4.1%;
   --radius: 0.5rem;
   
-  /* Safe area insets as CSS variables 
-   * These will be populated by SafeAreaProvider component
-   * with the actual values from env() function
-   */
-  --sat: 0px; /* safe area top */
-  --sar: 0px; /* safe area right */
-  --sab: 0px; /* safe area bottom */
-  --sal: 0px; /* safe area left */
-  --has-notch: 0; /* 1 if device has a notch, 0 otherwise */
+  /* No safe area insets - for full screen experience */
   
   /* Font sizing for different device types */
   --font-size-base: 16px;
