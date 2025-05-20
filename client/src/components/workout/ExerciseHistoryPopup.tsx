@@ -347,9 +347,14 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                 <CardContent className="py-3 px-3">
                   
                   {history.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <p>No history found for this exercise.</p>
-                      <p className="text-xs mt-1">This might be your first time doing it!</p>
+                    <div className="text-center py-8 px-4 flex flex-col items-center">
+                      <div className="bg-slate-100 dark:bg-slate-800 rounded-full p-3 mb-3">
+                        <Clock className="h-10 w-10 text-slate-400 dark:text-slate-500" />
+                      </div>
+                      <p className="font-medium text-slate-700 dark:text-slate-300">No previous history found</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[220px]">
+                        Complete this workout to start tracking your progress with this exercise!
+                      </p>
                     </div>
                   ) : (
                     <div className="border rounded-md border-border">
