@@ -47,26 +47,14 @@ interface SetData {
   completed: boolean;
 }
 
-// Define cardio data interface
-interface CardioData {
-  distance?: number | null;
-  duration?: number | null;
-  distanceUnit?: string; // km, miles, etc.
-  intensity?: string; // low, moderate, high, interval
-  caloriesBurned?: number | null;
-  completed: boolean;
-}
-
 interface Exercise {
   id?: number;
   name: string;
-  exerciseType?: "strength" | "cardio"; // Define exercise type
-  sets?: number; // Optional for cardio
+  sets: number;
   reps?: number; // Make reps optional for plan mode
   weight?: number; // Default weight value is already optional
   unit?: string; // Weight unit (kg, lbs, etc.)
-  setsData?: SetData[]; // Per-set data for strength exercises
-  cardioData?: CardioData; // Cardio-specific data
+  setsData?: SetData[]; // Per-set data
 }
 
 interface Workout {
@@ -123,39 +111,18 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   
   const [workoutState, setWorkoutState] = useState<Workout>({
     ...workout,
-    exercises: workout.exercises.map(ex => {
-      // Check if this is a cardio exercise
-      if (ex.exerciseType === "cardio") {
-        return {
-          ...ex,
-          // Initialize cardioData if it doesn't exist
-          cardioData: ex.cardioData || {
-            distance: null,
-            duration: null,
-            distanceUnit: "km",
-            intensity: "moderate",
-            caloriesBurned: null,
-            completed: false
-          }
-        };
-      } else {
-        // This is a strength exercise (default)
-        return {
-          ...ex,
-          // Set a default exerciseType if not specified
-          exerciseType: "strength",
-          // Initialize setsData for strength exercises if it doesn't exist
-          setsData: ex.setsData || Array.from({ length: ex.sets || 3 }, () => ({
-            // Handle plan mode workouts that might not have reps/weight defined
-            // For plan mode, we'll initialize with empty strings that will show just the placeholder
-            // This keeps inputs controlled but visually empty with just placeholders
-            reps: typeof ex.reps === 'number' ? ex.reps : null, // Using null to display empty field with placeholder
-            weight: typeof ex.weight === 'number' ? ex.weight : null, // Using null to display empty field with placeholder
-            completed: false
-          }))
-        };
-      }
-    })
+    exercises: workout.exercises.map(ex => ({
+      ...ex,
+      // Initialize setsData if it doesn't exist
+      setsData: ex.setsData || Array.from({ length: ex.sets }, () => ({
+        // Handle plan mode workouts that might not have reps/weight defined
+        // For plan mode, we'll initialize with empty strings that will show just the placeholder
+        // This keeps inputs controlled but visually empty with just placeholders
+        reps: typeof ex.reps === 'number' ? ex.reps : null, // Using null to display empty field with placeholder
+        weight: typeof ex.weight === 'number' ? ex.weight : null, // Using null to display empty field with placeholder
+        completed: false
+      }))
+    }))
   });
 
   // We need to track if we're in rest mode (counting down)
@@ -373,45 +340,22 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
     });
   };
 
-  // Check if all exercises are completed and have valid values
-  const allExercisesCompleted = workoutState.exercises.every(exercise => {
-    if (exercise.exerciseType === "cardio") {
-      // For cardio exercises, check if it's marked as completed and has at least duration
-      return exercise.cardioData?.completed &&
-             typeof exercise.cardioData.duration === 'number' && 
-             exercise.cardioData.duration > 0;
-    } else {
-      // For strength exercises, check if all sets are completed with valid values
-      return exercise.setsData?.every(set => 
-        set.completed && 
-        typeof set.reps === 'number' && 
-        set.reps > 0 && 
-        typeof set.weight === 'number'
-      );
-    }
-  });
+  // Check if all sets for all exercises are completed and have valid values
+  const allExercisesCompleted = workoutState.exercises.every(exercise => 
+    exercise.setsData?.every(set => 
+      set.completed && 
+      typeof set.reps === 'number' && 
+      set.reps > 0 && 
+      typeof set.weight === 'number'
+    )
+  );
 
-  // Calculate progress - account for both cardio and strength exercises
-  const totalSets = workoutState.exercises.reduce((total, ex) => {
-    if (ex.exerciseType === "cardio") {
-      // Each cardio exercise counts as 1 "set" for progress calculation
-      return total + 1;
-    } else {
-      return total + (ex.sets || 0);
-    }
-  }, 0);
-  
-  const completedSets = workoutState.exercises.reduce((total, ex) => {
-    if (ex.exerciseType === "cardio") {
-      // If cardio is completed, add 1 to the total
-      return total + (ex.cardioData?.completed ? 1 : 0);
-    } else {
-      // For strength exercises, count completed sets
-      return total + (ex.setsData?.filter(set => set.completed).length || 0);
-    }
-  }, 0);
-  
-  const progressPercentage = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+  // Calculate progress
+  const totalSets = workoutState.exercises.reduce((total, ex) => total + ex.sets, 0);
+  const completedSets = workoutState.exercises.reduce((total, ex) => 
+    total + (ex.setsData?.filter(set => set.completed).length || 0), 0
+  );
+  const progressPercentage = Math.round((completedSets / totalSets) * 100);
 
   // Update workout mutation
   const updateWorkoutMutation = useMutation({
@@ -466,27 +410,15 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       ...workoutState,
       completed: false, // Explicitly mark as not completed
       exercises: workoutState.exercises.map(ex => {
-        // Handle different exercise types
-        if (ex.exerciseType === "cardio") {
-          return {
-            id: ex.id,
-            name: ex.name,
-            exerciseType: "cardio",
-            cardioData: ex.cardioData // Keep cardio data as-is
-          };
-        } else {
-          // Strength exercise (default)
-          return {
-            id: ex.id,
-            name: ex.name,
-            exerciseType: "strength",
-            sets: ex.sets || 0,
-            reps: ex.reps,
-            weight: ex.weight,
-            unit: ex.unit || "kg",
-            setsData: ex.setsData // Keep strength set data as-is
-          };
-        }
+        return {
+          id: ex.id,
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          weight: ex.weight,
+          unit: ex.unit || "kg",
+          setsData: ex.setsData // Keep all set data as-is
+        };
       })
     };
     
@@ -846,173 +778,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
               </div>
             )}
 
-            {/* Exercise tracking based on type (strength or cardio) */}
+            {/* Sets tracking with per-set weight and reps */}
             <div className="space-y-3">
-              {activeExercise.exerciseType === "cardio" ? (
-                // Cardio exercise display
-                <div className="border rounded-md overflow-hidden transition-colors">
-                  <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border">
-                    <h3 className="font-medium text-sm flex items-center">
-                      <Badge variant="outline" className="mr-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                        Cardio
-                      </Badge>
-                      {activeExercise.name}
-                    </h3>
-                    <Button
-                      variant={activeExercise.cardioData?.completed ? "default" : "outline"}
-                      size="sm"
-                      className={`h-7 text-xs ${
-                        activeExercise.cardioData?.completed
-                          ? "bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 dark:text-white" 
-                          : "border-border"
-                      }`}
-                      onClick={() => {
-                        // Toggle cardio completion
-                        setWorkoutState(prevState => {
-                          const updatedExercises = [...prevState.exercises];
-                          updatedExercises[activeExerciseIndex] = {
-                            ...updatedExercises[activeExerciseIndex],
-                            cardioData: {
-                              ...updatedExercises[activeExerciseIndex].cardioData!,
-                              completed: !updatedExercises[activeExerciseIndex].cardioData?.completed
-                            }
-                          };
-                          return {
-                            ...prevState,
-                            exercises: updatedExercises
-                          };
-                        });
-                      }}
-                    >
-                      {activeExercise.cardioData?.completed ? (
-                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Completed</>
-                      ) : (
-                        "Mark Complete"
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <div className="p-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Duration (minutes)</label>
-                      <Input
-                        type="number"
-                        value={activeExercise.cardioData?.duration === null || activeExercise.cardioData?.duration === undefined ? '' : activeExercise.cardioData?.duration}
-                        min={0}
-                        onChange={(e) => {
-                          const newDuration = e.target.value === '' ? null : parseFloat(e.target.value);
-                          setWorkoutState(prevState => {
-                            const updatedExercises = [...prevState.exercises];
-                            updatedExercises[activeExerciseIndex] = {
-                              ...updatedExercises[activeExerciseIndex],
-                              cardioData: {
-                                ...updatedExercises[activeExerciseIndex].cardioData!,
-                                duration: newDuration
-                              }
-                            };
-                            return {
-                              ...prevState,
-                              exercises: updatedExercises
-                            };
-                          });
-                        }}
-                        className="h-10"
-                        placeholder="Duration"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Distance ({activeExercise.cardioData?.distanceUnit || 'km'})</label>
-                      <Input
-                        type="number"
-                        value={activeExercise.cardioData?.distance === null || activeExercise.cardioData?.distance === undefined ? '' : activeExercise.cardioData?.distance}
-                        min={0}
-                        step="0.01"
-                        onChange={(e) => {
-                          const newDistance = e.target.value === '' ? null : parseFloat(e.target.value);
-                          setWorkoutState(prevState => {
-                            const updatedExercises = [...prevState.exercises];
-                            updatedExercises[activeExerciseIndex] = {
-                              ...updatedExercises[activeExerciseIndex],
-                              cardioData: {
-                                ...updatedExercises[activeExerciseIndex].cardioData!,
-                                distance: newDistance
-                              }
-                            };
-                            return {
-                              ...prevState,
-                              exercises: updatedExercises
-                            };
-                          });
-                        }}
-                        className="h-10"
-                        placeholder="Distance"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Intensity</label>
-                      <select
-                        value={activeExercise.cardioData?.intensity || ''}
-                        onChange={(e) => {
-                          setWorkoutState(prevState => {
-                            const updatedExercises = [...prevState.exercises];
-                            updatedExercises[activeExerciseIndex] = {
-                              ...updatedExercises[activeExerciseIndex],
-                              cardioData: {
-                                ...updatedExercises[activeExerciseIndex].cardioData!,
-                                intensity: e.target.value
-                              }
-                            };
-                            return {
-                              ...prevState,
-                              exercises: updatedExercises
-                            };
-                          });
-                        }}
-                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                      >
-                        <option value="">Select intensity</option>
-                        <option value="low">Low</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="high">High</option>
-                        <option value="interval">Interval Training</option>
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Calories Burned</label>
-                      <Input
-                        type="number"
-                        value={activeExercise.cardioData?.caloriesBurned === null || activeExercise.cardioData?.caloriesBurned === undefined ? '' : activeExercise.cardioData?.caloriesBurned}
-                        min={0}
-                        onChange={(e) => {
-                          const newCalories = e.target.value === '' ? null : parseFloat(e.target.value);
-                          setWorkoutState(prevState => {
-                            const updatedExercises = [...prevState.exercises];
-                            updatedExercises[activeExerciseIndex] = {
-                              ...updatedExercises[activeExerciseIndex],
-                              cardioData: {
-                                ...updatedExercises[activeExerciseIndex].cardioData!,
-                                caloriesBurned: newCalories
-                              }
-                            };
-                            return {
-                              ...prevState,
-                              exercises: updatedExercises
-                            };
-                          });
-                        }}
-                        className="h-10"
-                        placeholder="Calories"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Strength exercise display - existing code
-                activeExercise.setsData?.map((setData, setIndex) => {
-                  return (
+              {activeExercise.setsData?.map((setData, setIndex) => (
                 <div key={setIndex} className={`border rounded-md overflow-hidden transition-colors ${
                   setData.completed 
                     ? "border-green-500/30 bg-green-500/5 dark:bg-green-500/10"
@@ -1070,7 +838,6 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   </div>
                 </div>
               ))}
-            
               
               {/* Add Extra Set Button */}
               <Button 
@@ -1238,37 +1005,16 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   const completedWorkout = {
                     ...workoutState,
                     completed: true,
-                    exercises: workoutState.exercises.map(ex => {
-                      if (ex.exerciseType === "cardio") {
-                        // Handle cardio exercise
-                        return {
-                          ...ex,
-                          cardioData: {
-                            ...ex.cardioData!,
-                            completed: true,
-                            // If any values are null or undefined, set to sensible defaults
-                            duration: ex.cardioData?.duration ?? 30,
-                            distance: ex.cardioData?.distance ?? 0,
-                            caloriesBurned: ex.cardioData?.caloriesBurned ?? 0,
-                            intensity: ex.cardioData?.intensity ?? "moderate",
-                            distanceUnit: ex.cardioData?.distanceUnit ?? "km"
-                          }
-                        };
-                      } else {
-                        // Handle strength exercise
-                        return {
-                          ...ex,
-                          exerciseType: "strength",
-                          setsData: ex.setsData?.map(set => ({
-                            ...set,
-                            completed: true,
-                            // If weight or reps is null or undefined, set to 0
-                            weight: set.weight !== null && set.weight !== undefined ? set.weight : 0,
-                            reps: set.reps !== null && set.reps !== undefined ? set.reps : 0
-                          }))
-                        };
-                      }
-                    })
+                    exercises: workoutState.exercises.map(ex => ({
+                      ...ex,
+                      setsData: ex.setsData?.map(set => ({
+                        ...set,
+                        completed: true,
+                        // If weight or reps is null or undefined, set to 0
+                        weight: set.weight !== null && set.weight !== undefined ? set.weight : 0,
+                        reps: set.reps !== null && set.reps !== undefined ? set.reps : 0
+                      }))
+                    }))
                   };
                   
                   // Instead of using the mutation, make a direct fetch request
