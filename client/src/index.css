@@ -89,18 +89,6 @@ body, html {
   --background: rgba(255, 255, 255, 0.8);
 }
 
-/* Fix for iOS home indicator bar */
-body::after {
-  content: '';
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 34px; /* Height of the home indicator area */
-  background-color: #000000;
-  z-index: 9999;
-}
-
 .dark {
   --background: rgba(17, 24, 39, 0.8); /* dark:bg-gray-900 with opacity */
 }
