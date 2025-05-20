@@ -470,16 +470,14 @@ body, html {
       background-color: white;
     }
     
-    /* iOS-specific app header */
-    @supports (padding-top: env(safe-area-inset-top)) {
-      .app-header {
-        padding-top: env(safe-area-inset-top);
-        height: calc(3.5rem + env(safe-area-inset-top)) !important;
-      }
+    /* iOS-specific app header - No safe area */
+    .app-header {
+      padding-top: 0;
+      height: 3.5rem !important;
+    }
       
-      .mt-header-height {
-        margin-top: calc(3.5rem + env(safe-area-inset-top)) !important;
-      }
+    .mt-header-height {
+      margin-top: 3.5rem !important;
     }
     
     /* iOS-specific containers - No safe area padding */
@@ -547,19 +545,19 @@ body, html {
   @apply h-12 rounded-xl text-base px-6 font-medium transition-all;
 }
   
-/* Notch and rounded corner handling */
+/* No notch handling needed */
   .notch-friendly-container {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-left: 0;
+    padding-right: 0;
   }
   
-  /* Bottom navigation spacing for home indicator */
+  /* Bottom navigation - No safe area padding */
   .bottom-nav {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    height: 60px; /* Height of interactive area */
+    height: 60px; /* Fixed height without safe area */
     background-color: rgba(255, 255, 255, 0.8); /* Same as the existing nav */
     backdrop-filter: blur(12px);
     display: flex;
@@ -567,16 +565,16 @@ body, html {
     align-items: center;
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
     z-index: 10;
-    padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
+    padding-bottom: 0; /* No safe area padding */
   }
   
-  /* Extend background into the safe area */
+  /* Extend background to the bottom */
   .bottom-nav::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -50px; /* Extend well beyond the safe area */
+    bottom: -50px; /* Extend beyond the visible area */
     height: 50px;
     background-color: rgba(255, 255, 255, 0.8); /* Match the nav background */
     backdrop-filter: blur(12px);
@@ -587,13 +585,6 @@ body, html {
   .dark .bottom-nav::after {
     background-color: rgba(17, 24, 39, 0.9); /* Dark mode background */
     backdrop-filter: blur(12px);
-  }
-  
-  @supports (padding: max(0px)) {
-    .bottom-nav {
-        padding-bottom: constant(safe-area-inset-bottom); /* Older iOS support */
-        padding-bottom: env(safe-area-inset-bottom); /* Modern iOS support */
-    }
   }
   
   /* Header spacing - No notch padding */
