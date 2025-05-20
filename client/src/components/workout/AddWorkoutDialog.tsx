@@ -596,7 +596,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                           size="sm"
                           onClick={() => {
                             const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
-                            const currentSetsCount = form.getValues(`exercises.${index}.sets`);
+                            const currentSetsCount = form.getValues(`exercises.${index}.sets`) || 0;
                             const defaultReps = form.getValues(`exercises.${index}.reps`);
                             const defaultWeight = form.getValues(`exercises.${index}.weight`) || 0;
                             
@@ -743,7 +743,10 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                 type="button" 
                 variant="outline" 
                 size="sm" 
-                onClick={addExercise}
+                onClick={(e) => {
+                  e.preventDefault();
+                  addExercise();
+                }}
                 className="mt-2"
               >
                 <Plus className="h-4 w-4 mr-1" /> Add Another Exercise
