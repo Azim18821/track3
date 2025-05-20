@@ -25,6 +25,9 @@ const WorkoutTracker = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
+  // Initialize selectedDate to today's date
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  
   // State for exercise history dialog
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [isExerciseHistoryOpen, setIsExerciseHistoryOpen] = useState(false);
@@ -61,8 +64,6 @@ const WorkoutTracker = () => {
   const handleDeleteWorkout = (workoutId: number) => {
     deleteWorkoutMutation.mutate(workoutId);
   };
-
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
 
   const handleViewWorkout = (workout: Workout) => {
     // Fetch the complete workout data with exercises before showing details
@@ -111,7 +112,7 @@ const WorkoutTracker = () => {
         <div className="mt-3 flex sm:mt-0 sm:ml-4">
           <Button
             onClick={() => {
-              setSelectedDate(format(new Date(), "yyyy-MM-dd"));
+              // Use the currently selected date instead of defaulting to today
               setIsAddWorkoutOpen(true);
             }}
             className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
