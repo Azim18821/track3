@@ -182,15 +182,23 @@ const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
           </header>
         )}
 
-        {/* Page content - Adjust padding based on workout mode */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white ${
-          workoutMode 
-            ? '' // No padding in workout mode 
-            : isMobile 
-              ? 'pb-[80px] mt-header-height' 
-              : 'p-4 md:p-6'
-        }`}>
-          {children}
+        {/* Page content - Adjust padding based on workout mode with safe area support */}
+        <main 
+          className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white ${
+            workoutMode 
+              ? '' // No padding in workout mode 
+              : isMobile 
+                ? 'mt-header-height' 
+                : 'p-4 md:p-6'
+          }`}
+          style={{
+            paddingBottom: workoutMode ? '0' : isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : '0',
+            WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
+          }}
+        >
+          <div className={isMobile && !workoutMode ? 'pb-safe' : ''}>
+            {children}
+          </div>
         </main>
 
         {/* Bottom Navigation - Mobile only and not in workout mode */}
