@@ -965,7 +965,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
 
         {/* Complete workout button or completed status */}
         {workoutState.completed ? (
-          <Card className="border-green-500/20 bg-green-500/5 dark:bg-green-500/10 mb-20">
+          <Card className="border-green-500/20 bg-green-500/5 dark:bg-green-500/10 mb-20 safe-area-bottom">
             <CardContent className="pt-6 pb-6 text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-500" />

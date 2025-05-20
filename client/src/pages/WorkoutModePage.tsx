@@ -49,8 +49,8 @@ const WorkoutModePage = () => {
       // Store the original content to restore later
       const originalContent = viewportMeta.getAttribute('content');
       
-      // Set the content to prevent scaling/zooming for better workout mode UX
-      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      // Set the content to prevent scaling/zooming and handle safe areas for better workout mode UX
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
       
       // Cleanup function to restore original viewport settings when leaving workout mode
       return () => {
