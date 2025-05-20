@@ -4,20 +4,27 @@
 
 /* Ensure the app is always full-height and properly sized */
 html, body, #root {
-  height: calc(100vh - env(safe-area-inset-bottom));
+  height: 100vh; /* Standard height */
+  height: -webkit-fill-available; /* iOS Safari */
+  height: 100svh; /* Modern dynamic viewport height */
   width: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
 }
 
-/* Full width on mobile */
+/* Full width on mobile with proper safe area support */
 body, html {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
+  /* Advanced iOS viewport handling */
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
 }
 
 /* Remove all browser tap highlights for better native feel */
@@ -51,30 +58,41 @@ body, html {
   transform-origin: top center !important;
 }
 
-/* iOS optimizations - No safe area padding */
+/* iOS optimizations with proper safe area handling */
 @supports (-webkit-touch-callout: none) {
   /* iOS only */
   .ios-standalone-mode {
-    padding-top: 0 !important;
+    padding-top: max(env(safe-area-inset-top), 16px) !important;
     margin-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+    /* Prevent scrolling issues in standalone mode */
+    min-height: -webkit-fill-available;
+    height: 100vh;
   }
   
   .ios-standalone-mode .onboarding-stepper {
-    margin-top: -20px !important;
-    margin-bottom: -20px !important;
-  }
-  
-  /* Fix the large gap in standalone mode */
-  .ios-standalone-mode main {
-    padding-top: 0 !important;
-    /* Allow margin-top to be set in the component */
-  }
-  
-  /* Completely remove the title gap */
-  .ios-card {
-    padding-top: 2px !important;
     margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    /* Account for notch area if present */
+    padding-top: env(safe-area-inset-top) !important;
+  }
+  
+  /* Fix the gap in standalone mode */
+  .ios-standalone-mode main {
+    padding-top: env(safe-area-inset-top) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 70px) !important; /* Extra space for bottom nav */
+    /* Ensure content is properly scrollable */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Use dynamic viewport heights */
+    min-height: 100svh;
+  }
+  
+  /* Fix card spacing */
+  .ios-card {
+    padding-top: 8px !important;
+    margin-top: 0 !important;
+    margin-bottom: 8px !important;
   }
 }
 
@@ -89,17 +107,7 @@ body, html {
   --background: rgba(255, 255, 255, 0.8);
 }
 
-/* Fix for iOS home indicator bar */
-body::after {
-  content: '';
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 34px; /* Height of the home indicator area */
-  background-color: #000000;
-  z-index: 9999;
-}
+/* Remove iOS home indicator bar fix as we'll handle it properly with safe areas */
 
 .dark {
   --background: rgba(17, 24, 39, 0.8); /* dark:bg-gray-900 with opacity */
