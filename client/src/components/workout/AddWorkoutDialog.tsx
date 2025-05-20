@@ -363,7 +363,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                     )}
                   />
                   
-                  {/* Exercise Type Selector */}
+                  {/* Exercise Type Selection */}
                   <FormField
                     control={form.control}
                     name={`exercises.${index}.exerciseType`}
@@ -371,14 +371,29 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                       <FormItem className="mb-3">
                         <FormLabel>Exercise Type</FormLabel>
                         <Select
-                          value={field.value}
-                          onValueChange={(value: ExerciseType) => {
-                            // Update the form field
+                          value={field.value || 'strength'}
+                          onValueChange={(value: string) => {
+                            // Update the exercise type
                             field.onChange(value);
-                            // Update our tracking state
-                            setExerciseTypes(prev => ({ ...prev, [index]: value }));
-                            
-                            // Reset fields based on exercise type
+                            // Save type in our state tracker
+                            setExerciseTypes(prev => ({ ...prev, [index]: value as ExerciseType }));
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="strength">Strength</SelectItem>
+                            <SelectItem value="cardio">Cardio</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Hidden field for tracking sets count */}
+                  <FormField
                             if (value === 'cardio') {
                               // Set cardio defaults
                               form.setValue(`exercises.${index}.duration`, 20);
