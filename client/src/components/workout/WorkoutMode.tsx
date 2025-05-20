@@ -551,9 +551,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container">
-      {/* Header - fixed at top */}
-      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 pb-safe shadow-sm">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col h-full overflow-hidden workout-modal-container safe-area-left safe-area-right">
+      {/* Header - fixed at top with safe area for notch */}
+      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-background z-10 shadow-sm safe-area-top">
         <div className="flex items-center">
           <Button 
             variant="ghost" 
