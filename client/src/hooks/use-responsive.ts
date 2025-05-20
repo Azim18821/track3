@@ -57,8 +57,6 @@ export const useResponsive = () => {
   // iOS device category state
   const [iOSDeviceCategory, setIOSDeviceCategory] = useState<IOSDeviceCategory>('other');
 
-  // No safe area insets in full-screen mode
-
   // Update dimensions and device info on resize or orientation change
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -164,8 +162,6 @@ export const useResponsive = () => {
     }
   };
 
-  // Safe area function removed for full-screen experience
-
   return {
     deviceType,
     orientation,
@@ -179,6 +175,8 @@ export const useResponsive = () => {
     isIPad: iOSDeviceCategory.includes('iPad'),
     isIPhone: iOSDeviceCategory.includes('iPhone'),
     hasHomeButton: ['iPhoneSE', 'iPhone8', 'iPhone8Plus'].includes(iOSDeviceCategory as string),
+    // Add empty safe area object to maintain compatibility
+    safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 }
   };
 };
 
