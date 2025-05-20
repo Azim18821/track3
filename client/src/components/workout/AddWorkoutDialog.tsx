@@ -44,21 +44,53 @@ const setDataSchema = z.object({
   completed: z.boolean().default(false)
 });
 
+// Define schema for cardio data
+const cardioDataSchema = z.object({
+  distance: z.coerce.number().nonnegative("Distance cannot be negative").optional(),
+  duration: z.coerce.number().positive("Duration must be positive"),
+  intensity: z.string().optional(),
+  caloriesBurned: z.coerce.number().nonnegative("Calories cannot be negative").optional(),
+  completed: z.boolean().default(false)
+});
+
 // Form schema
 const createExerciseSchema = (isPlanMode: boolean) => {
   return z.object({
     name: z.string().min(1, "Exercise name is required"),
-    sets: z.coerce.number().positive("Sets must be positive"),
+    exerciseType: z.enum(["strength", "cardio"]).default("strength"),
+    // Strength-specific fields
+    sets: z.coerce.number().positive("Sets must be positive").optional(),
     reps: isPlanMode 
       ? z.coerce.number().optional() 
-      : z.coerce.number().positive("Reps must be positive"),
+      : z.coerce.number().positive("Reps must be positive").optional(),
     weight: isPlanMode 
       ? z.coerce.number().optional() 
       : z.coerce.number().nonnegative("Weight cannot be negative").optional(),
-    unit: z.string().default("kg"),
+    unit: z.string().default("kg").optional(),
     setsData: isPlanMode 
       ? z.array(setDataSchema).optional().or(z.undefined()) 
-      : z.array(setDataSchema).optional()
+      : z.array(setDataSchema).optional(),
+    // Cardio-specific fields
+    cardioData: z.object({
+      distance: z.coerce.number().nonnegative("Distance cannot be negative").optional(),
+      duration: z.coerce.number().positive("Duration must be positive").optional(),
+      distanceUnit: z.string().default("km").optional(),
+      intensity: z.string().optional(),
+      caloriesBurned: z.coerce.number().nonnegative("Calories cannot be negative").optional(),
+    }).optional(),
+  }).refine(data => {
+    // Validate that strength exercises have sets defined
+    if (data.exerciseType === "strength") {
+      return data.sets !== undefined && data.sets > 0;
+    }
+    // Validate that cardio exercises have cardioData defined with at least duration
+    if (data.exerciseType === "cardio") {
+      return data.cardioData !== undefined && data.cardioData.duration !== undefined && data.cardioData.duration > 0;
+    }
+    return true;
+  }, {
+    message: "Strength exercises need sets, and cardio exercises need duration",
+    path: ["exerciseType"],
   });
 };
 
@@ -86,6 +118,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isPlanMode, setIsPlanMode] = useState(false);
+  const [hasCardio, setHasCardio] = useState(false);
 
   // Create a memoized form schema based on the current plan mode state
   const currentFormSchema = useMemo(() => createFormSchema(isPlanMode), [isPlanMode]);
@@ -151,21 +184,38 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
     addWorkoutMutation.mutate(data);
   };
 
-  const addExercise = () => {
-    if (isPlanMode) {
-      append({ 
-        name: "", 
-        sets: 3, 
-        unit: "kg"
-      });
+  const addExercise = (type: "strength" | "cardio" = "strength") => {
+    if (type === "strength") {
+      if (isPlanMode) {
+        append({ 
+          name: "", 
+          exerciseType: "strength",
+          sets: 3, 
+          unit: "kg"
+        });
+      } else {
+        append({ 
+          name: "", 
+          exerciseType: "strength",
+          sets: 3, 
+          reps: 10, 
+          weight: 0, 
+          unit: "kg",
+          setsData: Array(3).fill({ reps: 10, weight: 0, completed: false }) 
+        });
+      }
     } else {
-      append({ 
-        name: "", 
-        sets: 3, 
-        reps: 10, 
-        weight: 0, 
-        unit: "kg",
-        setsData: Array(3).fill({ reps: 10, weight: 0, completed: false }) 
+      // Add cardio exercise
+      append({
+        name: "",
+        exerciseType: "cardio",
+        cardioData: {
+          duration: 30,
+          distance: 5,
+          distanceUnit: "km",
+          intensity: "moderate",
+          caloriesBurned: 300,
+        }
       });
     }
   };
