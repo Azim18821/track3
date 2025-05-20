@@ -20,6 +20,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Plus, X, Search } from "lucide-react";
 import { format } from "date-fns";
 
@@ -466,10 +473,141 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                         />
                       </div>
                     ) : (
-                      // Normal mode - show full set configuration
-                      <>
-                        <h5 className="text-sm font-medium mb-2">Set Configuration</h5>
-                        <p className="text-xs text-muted-foreground mb-3">Configure each set with different weights and reps</p>
+                      // Normal mode - show either strength or cardio configuration based on exercise type
+                      exerciseTypes[index] === 'cardio' ? (
+                        // Cardio exercise configuration
+                        <>
+                          <h5 className="text-sm font-medium mb-2">Cardio Configuration</h5>
+                          <p className="text-xs text-muted-foreground mb-3">Set distance, duration and other cardio metrics</p>
+                          
+                          <div className="grid grid-cols-2 gap-3 mb-3">
+                            {/* Duration field */}
+                            <FormField
+                              control={form.control}
+                              name={`exercises.${index}.duration`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Duration (minutes)</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      min="1" 
+                                      {...field} 
+                                      onChange={(e) => {
+                                        const value = parseInt(e.target.value);
+                                        field.onChange(isNaN(value) ? '' : value);
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            {/* Distance field with unit */}
+                            <div>
+                              <FormField
+                                control={form.control}
+                                name={`exercises.${index}.distance`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">Distance</FormLabel>
+                                    <div className="flex space-x-2">
+                                      <FormControl className="flex-1">
+                                        <Input 
+                                          type="number" 
+                                          min="0" 
+                                          step="0.1"
+                                          {...field} 
+                                          onChange={(e) => {
+                                            const value = parseFloat(e.target.value);
+                                            field.onChange(isNaN(value) ? '' : value);
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormField
+                                        control={form.control}
+                                        name={`exercises.${index}.distanceUnit`}
+                                        render={({ field }) => (
+                                          <Select
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                          >
+                                            <SelectTrigger className="w-20">
+                                              <SelectValue placeholder="Unit" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="km">km</SelectItem>
+                                              <SelectItem value="mi">mi</SelectItem>
+                                              <SelectItem value="m">m</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        )}
+                                      />
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Optional calories field */}
+                            <FormField
+                              control={form.control}
+                              name={`exercises.${index}.calories`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Calories</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      min="0" 
+                                      placeholder="Calories burned"
+                                      {...field} 
+                                      onChange={(e) => {
+                                        const value = parseInt(e.target.value);
+                                        field.onChange(isNaN(value) ? '' : value);
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            {/* Optional average speed field */}
+                            <FormField
+                              control={form.control}
+                              name={`exercises.${index}.speed`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Avg. Speed</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      type="number" 
+                                      min="0" 
+                                      step="0.1"
+                                      placeholder="km/h or mph"
+                                      {...field} 
+                                      onChange={(e) => {
+                                        const value = parseFloat(e.target.value);
+                                        field.onChange(isNaN(value) ? '' : value);
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        // Strength exercise configuration
+                        <>
+                          <h5 className="text-sm font-medium mb-2">Set Configuration</h5>
+                          <p className="text-xs text-muted-foreground mb-3">Configure each set with different weights and reps</p>
                         
                         {(form.watch(`exercises.${index}.setsData`) || []).map((set: SetData, setIndex: number) => (
                           <div key={setIndex} className="mb-3 p-3 border rounded-md">
