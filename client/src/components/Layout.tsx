@@ -153,11 +153,11 @@ const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
         )}
 
         {/* Page content - Adjust padding based on workout mode */}
-        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white ${
           workoutMode 
-            ? 'pt-safe-area pb-safe-area' // Full screen in workout mode with safe area padding
+            ? '' // No padding in workout mode 
             : isMobile 
-              ? 'pb-[calc(80px+env(safe-area-inset-bottom))] mt-header-height' 
+              ? 'pb-[80px] mt-header-height' 
               : 'p-4 md:p-6'
         }`}>
           {children}
