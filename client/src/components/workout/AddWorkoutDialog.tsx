@@ -104,15 +104,20 @@ const createExerciseSchema = (isPlanMode: boolean, exerciseType: ExerciseType) =
 
 // We'll create the actual schema in the component based on the plan mode state
 
-// Create a dynamic form schema based on plan mode
-const createFormSchema = (isPlanMode: boolean) => {
+// Create a dynamic form schema based on plan mode and exercise types
+const createFormSchema = (isPlanMode: boolean, exerciseTypes: Record<number, ExerciseType>) => {
   return z.object({
     name: z.string().min(1, "Workout name is required"),
     date: z.string().min(1, "Date is required"),
     duration: z.coerce.number().positive("Duration must be positive"),
     notes: z.string().optional(),
     isPlanMode: z.boolean().optional(),
-    exercises: z.array(createExerciseSchema(isPlanMode)).min(1, "Add at least one exercise"),
+    exercises: z.array(
+      z.union([
+        createExerciseSchema(isPlanMode, 'strength'),
+        createExerciseSchema(isPlanMode, 'cardio')
+      ])
+    ).min(1, "Add at least one exercise"),
   });
 };
 
@@ -126,9 +131,14 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isPlanMode, setIsPlanMode] = useState(false);
+  // Track exercise types for each exercise (default to strength)
+  const [exerciseTypes, setExerciseTypes] = useState<Record<number, ExerciseType>>({0: 'strength'});
 
-  // Create a memoized form schema based on the current plan mode state
-  const currentFormSchema = useMemo(() => createFormSchema(isPlanMode), [isPlanMode]);
+  // Create a memoized form schema based on the current plan mode state and exercise types
+  const currentFormSchema = useMemo(() => 
+    createFormSchema(isPlanMode, exerciseTypes), 
+    [isPlanMode, exerciseTypes]
+  );
   
   const form = useForm<z.infer<typeof currentFormSchema>>({
     resolver: zodResolver(currentFormSchema),
@@ -140,6 +150,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
       isPlanMode: isPlanMode,
       exercises: [{ 
         name: "", 
+        exerciseType: 'strength',
         sets: 3, 
         reps: isPlanMode ? undefined : 10, 
         weight: isPlanMode ? undefined : 0, 
@@ -185,15 +196,22 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   };
 
   const addExercise = () => {
+    // Get the next index for exercise type tracking
+    const nextIndex = form.getValues().exercises.length;
+    // Default to strength exercise
+    setExerciseTypes(prev => ({ ...prev, [nextIndex]: 'strength' }));
+    
     if (isPlanMode) {
       append({ 
-        name: "", 
+        name: "",
+        exerciseType: 'strength', 
         sets: 3, 
         unit: "kg"
       });
     } else {
       append({ 
-        name: "", 
+        name: "",
+        exerciseType: 'strength', 
         sets: 3, 
         reps: 10, 
         weight: 0, 
@@ -333,6 +351,48 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                             <Search className="h-4 w-4" />
                           </Button>
                         </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Exercise Type Selector */}
+                  <FormField
+                    control={form.control}
+                    name={`exercises.${index}.exerciseType`}
+                    render={({ field }) => (
+                      <FormItem className="mb-3">
+                        <FormLabel>Exercise Type</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={(value: ExerciseType) => {
+                            // Update the form field
+                            field.onChange(value);
+                            // Update our tracking state
+                            setExerciseTypes(prev => ({ ...prev, [index]: value }));
+                            
+                            // Reset fields based on exercise type
+                            if (value === 'cardio') {
+                              // Set cardio defaults
+                              form.setValue(`exercises.${index}.duration`, 20);
+                              form.setValue(`exercises.${index}.distance`, 2);
+                              form.setValue(`exercises.${index}.distanceUnit`, 'km');
+                              form.setValue(`exercises.${index}.calories`, 200);
+                            } else {
+                              // Set strength defaults
+                              form.setValue(`exercises.${index}.reps`, 10);
+                              form.setValue(`exercises.${index}.weight`, 0);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select exercise type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="strength">Strength</SelectItem>
+                            <SelectItem value="cardio">Cardio</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
