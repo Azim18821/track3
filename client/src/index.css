@@ -51,25 +51,13 @@ body, html {
   transform-origin: top center !important;
 }
 
-/* iOS optimizations - Full screen with no bottom indicator padding */
+/* iOS optimizations - No safe area padding */
 @supports (-webkit-touch-callout: none) {
   /* iOS only */
   .ios-standalone-mode {
     padding-top: 0 !important;
     margin-top: 0 !important;
     padding-bottom: 0 !important;
-  }
-  
-  /* Fix for white bar at bottom of screen (home indicator) */
-  html::after {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 34px; /* Height of the home indicator area */
-    background-color: black;
-    z-index: 9999;
   }
   
   .ios-standalone-mode .onboarding-stepper {
@@ -99,6 +87,18 @@ body, html {
 :root {
   /* Removed all safe area variables */
   --background: rgba(255, 255, 255, 0.8);
+}
+
+/* Fix for iOS home indicator bar */
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 34px; /* Height of the home indicator area */
+  background-color: #000000;
+  z-index: 9999;
 }
 
 .dark {
