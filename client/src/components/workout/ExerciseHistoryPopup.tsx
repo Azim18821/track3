@@ -97,12 +97,15 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
         
         const data = await response.json();
         
-        // Filter out any entries that might be from today's workout session
-        // This ensures we're only showing previous workout history, not the current one
-        const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        // Filter out any entries that might be from today's workout session or future dates
+        // This ensures we're only showing previous workout history, not the current one or any scheduled future workouts
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to beginning of today
+        
         const filteredHistory = data.filter((item: ExerciseHistory) => {
-          const itemDate = new Date(item.date).toISOString().split('T')[0];
-          return itemDate !== today;
+          const itemDate = new Date(item.date);
+          itemDate.setHours(0, 0, 0, 0); // Normalize time portion
+          return itemDate < today; // Only include dates strictly before today
         });
         
         setHistory(filteredHistory);
