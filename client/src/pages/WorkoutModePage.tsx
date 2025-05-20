@@ -40,6 +40,27 @@ const WorkoutModePage = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
+  // Set the viewport meta tag for better mobile display
+  useEffect(() => {
+    // Find the existing viewport meta tag
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    
+    if (viewportMeta) {
+      // Store the original content to restore later
+      const originalContent = viewportMeta.getAttribute('content');
+      
+      // Set the content to prevent scaling/zooming for better workout mode UX
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      
+      // Cleanup function to restore original viewport settings when leaving workout mode
+      return () => {
+        if (originalContent) {
+          viewportMeta.setAttribute('content', originalContent);
+        }
+      };
+    }
+  }, []);
+  
   // Get workout ID from URL parameters
   const workoutId = match && params.id ? parseInt(params.id) : null;
   
