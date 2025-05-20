@@ -1068,7 +1068,8 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+              }
               
               {/* Add Extra Set Button */}
               <Button 
