@@ -51,13 +51,13 @@ body, html {
   transform-origin: top center !important;
 }
 
-/* Additional iOS optimizations */
+/* iOS optimizations - No safe area padding */
 @supports (-webkit-touch-callout: none) {
   /* iOS only */
   .ios-standalone-mode {
     padding-top: 0 !important;
     margin-top: 0 !important;
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    padding-bottom: 0 !important;
   }
   
   .ios-standalone-mode .onboarding-stepper {
@@ -85,10 +85,7 @@ body, html {
 }
 
 :root {
-  --sat-safe-area-top: env(safe-area-inset-top);
-  --sat-safe-area-bottom: env(safe-area-inset-bottom);
-  --sat-safe-area-left: env(safe-area-inset-left);
-  --sat-safe-area-right: env(safe-area-inset-right);
+  /* Removed all safe area variables */
   --background: rgba(255, 255, 255, 0.8);
 }
 
@@ -437,11 +434,11 @@ body, html {
       background-color: rgba(17, 24, 39, 0.9); /* Match dark mode navbar color */
     }
     
-    /* iOS-specific container styling */
+    /* iOS-specific container styling - No safe area */
     .ios-container {
       /* Better spacing for iOS */
-      padding-top: max(16px, env(safe-area-inset-top));
-      margin-bottom: env(safe-area-inset-bottom);
+      padding-top: 16px;
+      margin-bottom: 0;
       
       /* Smoother transitions */
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -451,9 +448,9 @@ body, html {
       -moz-osx-font-smoothing: grayscale;
     }
     
-    /* Transparent header styling for image-based headers on iOS */
+    /* Transparent header styling for image-based headers on iOS - No safe area */
     .ios-transparent-header {
-      padding-top: calc(env(safe-area-inset-top) + 60px);
+      padding-top: 60px;
     }
     
     /* iOS-style buttons */
@@ -485,27 +482,20 @@ body, html {
       }
     }
     
-    /* Refined padding for iOS home indicator - not too much, not too little */
-    .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom) !important;
-    }
-    
-    /* Make sure content doesn't ever get cut off on any device */
+    /* iOS-specific containers - No safe area padding */
     .ios-screen-container {
       min-height: 100vh;
       height: 100vh;
-      /* Ensure proper content boundaries */
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+      /* Remove all safe area insets */
+      padding-top: 0;
+      padding-bottom: 0;
     }
     
-    /* Ensure bottom nav extends all the way to the bottom of the screen */
-    @supports (padding: env(safe-area-inset-bottom)) {
-      .bottom-nav {
-        padding-bottom: calc(env(safe-area-inset-bottom) + 5px) !important;
-        margin-bottom: -5px !important; /* Ensure no gap at the bottom */
-        background-color: var(--background) !important; /* Ensure consistent background color */
-      }
+    /* Bottom nav styles - No safe area */
+    .bottom-nav {
+      padding-bottom: 0 !important;
+      margin-bottom: 0 !important;
+      background-color: var(--background) !important;
     }
     
     /* iOS-specific touch feedback */
@@ -516,10 +506,10 @@ body, html {
       }
     }
     
-    /* iOS-specific top navbar */
+    /* iOS-specific top navbar - No safe area */
     .top-nav {
-      padding-top: env(safe-area-inset-top) !important;
-      height: calc(3.5rem + env(safe-area-inset-top)) !important;
+      padding-top: 0 !important;
+      height: 3.5rem !important;
     }
     
     /* iOS standalone mode specific classes */
@@ -530,42 +520,9 @@ body, html {
       flex-direction: column;
     }
     
-    /* Safe area inset utility classes */
-    .pt-safe {
-      padding-top: env(safe-area-inset-top) !important;
-    }
-    
-    .pr-safe {
-      padding-right: env(safe-area-inset-right) !important;
-    }
-    
-    .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom) !important;
-    }
-    
-    .pl-safe {
-      padding-left: env(safe-area-inset-left) !important;
-    }
-    
-    .top-safe {
-      top: env(safe-area-inset-top) !important;
-    }
-    
-    /* Onboarding specific iOS adjustments */
-    .ios-standalone-mode .onboarding-stepper {
-      margin-top: env(safe-area-inset-top) !important;
-    }
-    
-    /* iOS specific stepper class */
+    /* iOS specific stepper class - No safe area padding */
     .ios-stepper {
       padding-top: 8px !important;
-    }
-    
-    /* Fix for iOS in standalone mode to prevent content from being hidden under the notch */
-    @supports (padding-top: env(safe-area-inset-top)) {
-      .ios-standalone-mode .onboarding-stepper {
-        padding-top: env(safe-area-inset-top) !important;
-      }
     }
     
     /* For any touch-targeted elements */
@@ -639,12 +596,12 @@ body, html {
     }
   }
   
-  /* Header spacing for notch */
+  /* Header spacing - No notch padding */
   .app-header {
-    padding-top: max(0.5rem, env(safe-area-inset-top));
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
-    min-height: calc(3rem + env(safe-area-inset-top));
+    padding-top: 0.5rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    min-height: 3rem;
     position: fixed;
     top: 0;
     left: 0;
@@ -662,17 +619,17 @@ body, html {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
   
-  /* For fixed header spacing */
+  /* For fixed header spacing - No safe area */
   .mt-header-height {
-    margin-top: calc(3rem + env(safe-area-inset-top, 0px));
+    margin-top: 3rem;
     padding-top: 0.5rem;
     padding-bottom: 4rem;
-    height: calc(100vh - 3rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(100vh - 3rem);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Full screen container */
+  /* Full screen container - No safe area */
   .full-screen-container {
     min-height: 100vh;
     min-height: 100dvh; /* Modern viewport height units */
@@ -683,7 +640,7 @@ body, html {
     flex-direction: column;
     overflow-x: hidden; /* Prevent horizontal scrolling */
     position: relative; /* Ensure proper stacking context */
-    padding-bottom: env(safe-area-inset-bottom); /* iOS safe area */
+    padding-bottom: 0; /* No iOS safe area */
   }
   
   /* Workout mode modal specific fixes - No safe area */
