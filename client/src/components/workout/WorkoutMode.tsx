@@ -18,6 +18,9 @@ import {
   Play,
   Pause,
   HistoryIcon,
+  Circle,
+  RotateCw,
+  Copy,
   Award,
   BarChart3,
 } from "lucide-react";
@@ -850,7 +853,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-medium flex items-center text-blue-700 dark:text-blue-400">
-                        <ArrowRepeat className="h-3.5 w-3.5 mr-1.5" /> 
+                        <RotateCw className="h-3.5 w-3.5 mr-1.5" /> 
                         Reps
                       </label>
                       <Input
