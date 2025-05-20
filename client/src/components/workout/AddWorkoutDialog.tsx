@@ -23,11 +23,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, X, Search } from "lucide-react";
 import { format } from "date-fns";
 
+// Define the exercise types
+type ExerciseType = 'strength' | 'cardio';
+
 // Define the SetData interface for tracking per-set information
 interface SetData {
-  reps: number;
-  weight: number;
+  reps?: number;
+  weight?: number;
+  distance?: number;
+  duration?: number;
+  calories?: number;
+  speed?: number;
   completed: boolean;
+  notes?: string;
 }
 
 interface AddWorkoutDialogProps {
@@ -37,29 +45,61 @@ interface AddWorkoutDialogProps {
   initialDate?: string;
 }
 
-// Define schema for individual set data
+// Define schema for individual set data - supports both strength and cardio
 const setDataSchema = z.object({
-  reps: z.coerce.number().positive("Reps must be positive"),
-  weight: z.coerce.number().nonnegative("Weight cannot be negative"),
-  completed: z.boolean().default(false)
+  reps: z.coerce.number().positive("Reps must be positive").optional(),
+  weight: z.coerce.number().nonnegative("Weight cannot be negative").optional(),
+  distance: z.coerce.number().nonnegative("Distance cannot be negative").optional(),
+  duration: z.coerce.number().nonnegative("Duration cannot be negative").optional(),
+  calories: z.coerce.number().nonnegative("Calories cannot be negative").optional(),
+  speed: z.coerce.number().nonnegative("Speed cannot be negative").optional(),
+  completed: z.boolean().default(false),
+  notes: z.string().optional()
 });
 
-// Form schema
-const createExerciseSchema = (isPlanMode: boolean) => {
-  return z.object({
+// Form schema with exercise type support
+const createExerciseSchema = (isPlanMode: boolean, exerciseType: ExerciseType) => {
+  // Base schema common to all exercise types
+  const baseSchema = {
     name: z.string().min(1, "Exercise name is required"),
+    exerciseType: z.enum(['strength', 'cardio']).default('strength'),
     sets: z.coerce.number().positive("Sets must be positive"),
-    reps: isPlanMode 
-      ? z.coerce.number().optional() 
-      : z.coerce.number().positive("Reps must be positive"),
-    weight: isPlanMode 
-      ? z.coerce.number().optional() 
-      : z.coerce.number().nonnegative("Weight cannot be negative").optional(),
     unit: z.string().default("kg"),
-    setsData: isPlanMode 
-      ? z.array(setDataSchema).optional().or(z.undefined()) 
-      : z.array(setDataSchema).optional()
-  });
+  };
+  
+  // Add strength-specific fields when needed
+  if (exerciseType === 'strength') {
+    return z.object({
+      ...baseSchema,
+      reps: isPlanMode 
+        ? z.coerce.number().optional() 
+        : z.coerce.number().positive("Reps must be positive"),
+      weight: isPlanMode 
+        ? z.coerce.number().optional() 
+        : z.coerce.number().nonnegative("Weight cannot be negative").optional(),
+      setsData: isPlanMode 
+        ? z.array(setDataSchema).optional().or(z.undefined()) 
+        : z.array(setDataSchema).optional()
+    });
+  } 
+  // Add cardio-specific fields
+  else {
+    return z.object({
+      ...baseSchema,
+      distance: isPlanMode
+        ? z.coerce.number().optional()
+        : z.coerce.number().nonnegative("Distance cannot be negative").optional(),
+      duration: isPlanMode
+        ? z.coerce.number().optional()
+        : z.coerce.number().positive("Duration is required for cardio").optional(),
+      calories: z.coerce.number().nonnegative("Calories cannot be negative").optional(),
+      speed: z.coerce.number().nonnegative("Speed cannot be negative").optional(),
+      distanceUnit: z.string().default("km"),
+      setsData: isPlanMode 
+        ? z.array(setDataSchema).optional().or(z.undefined()) 
+        : z.array(setDataSchema).optional()
+    });
+  }
 };
 
 // We'll create the actual schema in the component based on the plan mode state
