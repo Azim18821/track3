@@ -213,32 +213,30 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex justify-between items-center gap-2">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden border-0 shadow-lg">
+        <DialogHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-lg">
+          <DialogTitle className="flex justify-between items-center gap-2 text-white">
             <div className="flex items-center gap-2">
-              <Dumbbell className="h-5 w-5 text-primary" />
-              <span>Exercise History</span>
+              <Dumbbell className="h-5 w-5 text-white" />
+              <span className="font-bold">Exercise History</span>
             </div>
             {nextExercise && (
               <Tabs value={activeTab} onValueChange={handleTabChange} className="mr-0">
-                <TabsList className="grid grid-cols-2 h-8">
-                  <TabsTrigger value="current" className="text-xs px-3">Current</TabsTrigger>
-                  <TabsTrigger value="next" className="text-xs px-3">Next</TabsTrigger>
+                <TabsList className="grid grid-cols-2 h-8 bg-white/20">
+                  <TabsTrigger value="current" className="text-xs px-3 data-[state=active]:bg-white/30 data-[state=active]:text-white text-white/80">Current</TabsTrigger>
+                  <TabsTrigger value="next" className="text-xs px-3 data-[state=active]:bg-white/30 data-[state=active]:text-white text-white/80">Next</TabsTrigger>
                 </TabsList>
               </Tabs>
             )}
           </DialogTitle>
-          <DialogDescription>
-            {selectedExercise && (
-              <div className="flex items-center gap-1">
-                <span>Your performance data for</span> 
-                <Badge variant="secondary" className="font-medium">
-                  {selectedExercise.name}
-                </Badge>
-              </div>
-            )}
-          </DialogDescription>
+          {selectedExercise && (
+            <div className="mt-2 flex items-center gap-1 text-white/90">
+              <span>Performance data for</span> 
+              <Badge variant="secondary" className="font-medium bg-white/30 text-white hover:bg-white/40 border-0">
+                {selectedExercise.name}
+              </Badge>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -435,7 +433,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
           )}
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4">
+        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4 p-4 border-t">
           {nextExercise && activeTab === 'current' ? (
             <Button 
               onClick={() => {
@@ -443,20 +441,20 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
                 setSelectedExercise(nextExercise);
               }}
               variant="outline"
-              className="w-full sm:w-auto justify-start sm:justify-center"
+              className="w-full sm:w-auto justify-start sm:justify-center border-gray-300 dark:border-gray-600"
             >
               <SkipForward className="h-4 w-4 mr-1.5" />
               View Next Exercise 
             </Button>
           ) : (
-            <div className="hidden sm:block" /> // Empty div for alignment on larger screens
+            <div className="hidden sm:block"></div>
           )}
           
           <div className="w-full sm:w-auto flex">
             {activeTab === 'next' ? (
               <Button 
                 onClick={onStartNextExercise} 
-                className="w-full sm:w-auto flex items-center justify-center"
+                className="w-full sm:w-auto flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <Dumbbell className="h-4 w-4 mr-1.5" />
                 Start Next Exercise
@@ -464,7 +462,7 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
             ) : (
               <Button 
                 onClick={onClose} 
-                className="w-full sm:w-auto flex items-center justify-center"
+                className="w-full sm:w-auto flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               >
                 <Clock className="h-4 w-4 mr-1.5" />
                 Continue Workout
