@@ -30,9 +30,8 @@ export type IOSDeviceCategory =
  * - Device type (mobile, tablet, desktop)
  * - Device orientation (portrait, landscape)
  * - iOS-specific device category
+ * - Safe area insets
  * - Screen dimensions
- * 
- * Note: Safe area insets have been removed for a full-screen experience
  */
 export const useResponsive = () => {
   // Device platform
@@ -56,6 +55,14 @@ export const useResponsive = () => {
   
   // iOS device category state
   const [iOSDeviceCategory, setIOSDeviceCategory] = useState<IOSDeviceCategory>('other');
+
+  // Safe area insets state
+  const [safeAreaInsets, setSafeAreaInsets] = useState({
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  });
 
   // Update dimensions and device info on resize or orientation change
   useEffect(() => {
@@ -84,7 +91,8 @@ export const useResponsive = () => {
         determineIOSDeviceCategory(width, height);
       }
 
-      // No safe area insets in full-screen mode
+      // Fetch safe area insets
+      updateSafeAreaInsets();
     };
 
     // Initial size check
@@ -162,6 +170,20 @@ export const useResponsive = () => {
     }
   };
 
+  // Helper function to update safe area insets
+  const updateSafeAreaInsets = () => {
+    if (typeof window === 'undefined' || !isIOS) return;
+
+    const computedStyle = getComputedStyle(document.documentElement);
+    
+    const top = parseInt(computedStyle.getPropertyValue('--sat') || '0', 10);
+    const right = parseInt(computedStyle.getPropertyValue('--sar') || '0', 10);
+    const bottom = parseInt(computedStyle.getPropertyValue('--sab') || '0', 10);
+    const left = parseInt(computedStyle.getPropertyValue('--sal') || '0', 10);
+
+    setSafeAreaInsets({ top, right, bottom, left });
+  };
+
   return {
     deviceType,
     orientation,
@@ -170,13 +192,12 @@ export const useResponsive = () => {
     isAndroid,
     isNative,
     isWeb,
+    safeAreaInsets,
     iOSDeviceCategory,
-    isNotched: false, // No notch detection in full-screen mode
+    isNotched: safeAreaInsets.top > 20,
     isIPad: iOSDeviceCategory.includes('iPad'),
     isIPhone: iOSDeviceCategory.includes('iPhone'),
     hasHomeButton: ['iPhoneSE', 'iPhone8', 'iPhone8Plus'].includes(iOSDeviceCategory as string),
-    // Add empty safe area object to maintain compatibility
-    safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 }
   };
 };
 

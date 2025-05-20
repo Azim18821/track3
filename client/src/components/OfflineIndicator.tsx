@@ -50,9 +50,9 @@ export default function OfflineIndicator() {
         showIndicator ? 'translate-y-0' : 'translate-y-full'
       }`}
       style={{ 
-        paddingBottom: '0',
-        paddingLeft: '0',
-        paddingRight: '0'
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
       }}
     >
       <div 

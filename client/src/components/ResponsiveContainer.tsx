@@ -47,8 +47,9 @@ const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
       ? 'px-8 py-6' 
       : 'px-6 py-4';
 
-  // No safe area padding - full screen experience
-  const safeAreaPaddingClass = 'pb-32';
+  const safeAreaPaddingClass = padSafeArea 
+    ? 'pt-safe pb-safe pl-safe pr-safe pb-32' 
+    : '';
 
   return (
     <div

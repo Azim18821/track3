@@ -114,18 +114,8 @@ export function BottomNavNew() {
   const rightItems = finalItems.slice(2, 4);
 
   return (
-    <div 
-      className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav transition-all duration-200"
-      style={{
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        height: 'calc(80px + env(safe-area-inset-bottom))',
-        borderTopLeftRadius: '16px',
-        borderTopRightRadius: '16px',
-        transform: 'translateZ(0)',
-        willChange: 'transform'
-      }}
-    >
-      {/* iOS safe area padding bottom is handled via inline styles */}
+    <div className="fixed bottom-0 left-0 z-50 w-full backdrop-blur-lg bg-white/80 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 shadow-lg bottom-nav pb-safe transition-all duration-200">
+      {/* iOS safe area padding bottom is handled with pb-safe class */}
       <div className="grid h-20 grid-cols-5 px-1">
         {/* Left side items */}
         {leftItems.map((item, index) => (

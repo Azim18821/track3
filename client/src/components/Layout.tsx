@@ -47,27 +47,11 @@ const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div 
-      className="flex h-full min-h-[100dvh] w-screen overflow-hidden bg-background full-screen-container"
-      style={{
-        // Ensure safe areas are respected
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingLeft: 'env(safe-area-inset-left)',
-        paddingRight: 'env(safe-area-inset-right)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
-      }}
-    >
+    <div className="flex h-full min-h-[100dvh] w-screen overflow-hidden bg-background full-screen-container">
       {/* Mobile sidebar backdrop - only visible when sidebar is open on mobile */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-          style={{
-            // Ensure notch area is covered
-            top: 'env(safe-area-inset-top)',
-            right: 'env(safe-area-inset-right)',
-            bottom: 'env(safe-area-inset-bottom)',
-            left: 'env(safe-area-inset-left)'
-          }}
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden notch-friendly-container"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -85,24 +69,10 @@ const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
       )}
 
       {/* Main content area with fixed header and scrollable content */}
-      <div 
-        className="fixed inset-0 flex flex-col"
-        style={{
-          // Respect safe areas
-          top: 'env(safe-area-inset-top)',
-          right: 'env(safe-area-inset-right)',
-          bottom: 'env(safe-area-inset-bottom)',
-          left: 'env(safe-area-inset-left)'
-        }}
-      >
+      <div className="fixed inset-0 flex flex-col">
         {/* Mobile Header - Fixed at top, non-scrollable (hidden in workout mode) */}
         {!workoutMode && (
-          <header 
-            className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14"
-            style={{
-              paddingTop: 'max(0.5rem, env(safe-area-inset-top))'
-            }}
-          >
+          <header className="flex items-center justify-between border-b border-border bg-white/90 dark:bg-gray-900/90 backdrop-blur-md dark:text-white px-4 app-header h-14">
             <div className="flex items-center">
               <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 TrackMadeEazE
@@ -182,23 +152,15 @@ const Layout: React.FC<LayoutProps> = ({ children, workoutMode }) => {
           </header>
         )}
 
-        {/* Page content - Adjust padding based on workout mode with safe area support */}
-        <main 
-          className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white ${
-            workoutMode 
-              ? '' // No padding in workout mode 
-              : isMobile 
-                ? 'mt-header-height' 
-                : 'p-4 md:p-6'
-          }`}
-          style={{
-            paddingBottom: workoutMode ? '0' : isMobile ? 'calc(80px + env(safe-area-inset-bottom))' : '0',
-            WebkitOverflowScrolling: 'touch' // Smooth scrolling on iOS
-          }}
-        >
-          <div className={isMobile && !workoutMode ? 'pb-safe' : ''}>
-            {children}
-          </div>
+        {/* Page content - Adjust padding based on workout mode */}
+        <main className={`flex-1 overflow-y-auto bg-white dark:bg-gray-950 dark:text-white notch-friendly-container ${
+          workoutMode 
+            ? 'pt-safe-area pb-safe-area' // Full screen in workout mode with safe area padding
+            : isMobile 
+              ? 'pb-[calc(80px+env(safe-area-inset-bottom))] mt-header-height' 
+              : 'p-4 md:p-6'
+        }`}>
+          {children}
         </main>
 
         {/* Bottom Navigation - Mobile only and not in workout mode */}
