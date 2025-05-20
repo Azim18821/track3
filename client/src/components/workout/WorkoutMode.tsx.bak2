@@ -887,24 +887,21 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           </CardContent>
         </Card>
 
-        {/* Enhanced navigation controls */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        {/* Navigation buttons with improved styling */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <Button 
             variant="outline" 
-            className="flex items-center justify-center gap-3 h-16 text-base transition-all border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 group"
+            className="flex items-center justify-center gap-1 h-14 text-base transition-all"
             onClick={() => {
               // Navigate to previous exercise
               setActiveExerciseIndex(prev => Math.max(0, prev - 1));
             }}
             disabled={activeExerciseIndex === 0}
           >
-            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-100 dark:bg-slate-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
-              <ChevronLeft className="h-5 w-5 text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-            </div>
-            
+            <ChevronLeft className="h-5 w-5" />
             <div className="flex flex-col items-start">
-              <span className="text-xs text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">Previous Exercise</span>
-              <span className="font-medium truncate max-w-[100px] text-slate-800 dark:text-slate-200">
+              <span className="text-xs text-muted-foreground">Previous</span>
+              <span className="font-medium truncate max-w-[100px]">
                 {activeExerciseIndex > 0 
                   ? workoutState.exercises[activeExerciseIndex - 1].name
                   : "None"}
@@ -913,18 +910,15 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
           </Button>
           
           <Button 
-            variant={activeExerciseIndex < workoutState.exercises.length - 1 ? "default" : "outline"}
-            className={`flex items-center justify-center gap-3 h-16 text-base transition-all shadow-sm ${
-              activeExerciseIndex < workoutState.exercises.length - 1
-                ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"
-            } group`}
+            variant="default"
+            className="flex items-center justify-center gap-1 h-14 text-base transition-all"
             onClick={() => {
               // Navigate to next exercise
               setActiveExerciseIndex(prev => {
                 const newIndex = Math.min(workoutState.exercises.length - 1, prev + 1);
                 // Only show history popup if we actually changed exercises
                 if (newIndex !== prev) {
+                  // Show exercise history for the next exercise
                   setIsHistoryPopupOpen(true);
                 }
                 return newIndex;
@@ -933,33 +927,14 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             disabled={activeExerciseIndex === workoutState.exercises.length - 1}
           >
             <div className="flex flex-col items-end">
-              <span className={`text-xs ${
-                activeExerciseIndex < workoutState.exercises.length - 1 
-                  ? "text-white/70" 
-                  : "text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400"
-              }`}>Next Exercise</span>
-              <span className={`font-medium truncate max-w-[100px] ${
-                activeExerciseIndex < workoutState.exercises.length - 1 
-                  ? "text-white" 
-                  : "text-slate-800 dark:text-slate-200"
-              }`}>
+              <span className="text-xs text-white/80">Next</span>
+              <span className="font-medium truncate max-w-[100px]">
                 {activeExerciseIndex < workoutState.exercises.length - 1 
                   ? workoutState.exercises[activeExerciseIndex + 1].name
                   : "None"}
               </span>
             </div>
-            
-            <div className={`flex items-center justify-center h-10 w-10 rounded-full ${
-              activeExerciseIndex < workoutState.exercises.length - 1
-                ? "bg-white/20 group-hover:bg-white/30" 
-                : "bg-slate-100 dark:bg-slate-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30"
-            } transition-colors`}>
-              <ChevronRight className={`h-5 w-5 ${
-                activeExerciseIndex < workoutState.exercises.length - 1
-                  ? "text-white" 
-                  : "text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400"
-              }`} />
-            </div>
+            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
 
