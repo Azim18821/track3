@@ -20,29 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2, Plus, X, Search } from "lucide-react";
 import { format } from "date-fns";
 
-// Define the exercise types
-type ExerciseType = 'strength' | 'cardio';
-
 // Define the SetData interface for tracking per-set information
 interface SetData {
-  reps?: number;
-  weight?: number;
-  distance?: number;
-  duration?: number;
-  calories?: number;
-  speed?: number;
+  reps: number;
+  weight: number;
   completed: boolean;
-  notes?: string;
 }
 
 interface AddWorkoutDialogProps {
@@ -52,79 +37,42 @@ interface AddWorkoutDialogProps {
   initialDate?: string;
 }
 
-// Define schema for individual set data - supports both strength and cardio
+// Define schema for individual set data
 const setDataSchema = z.object({
-  reps: z.coerce.number().positive("Reps must be positive").optional(),
-  weight: z.coerce.number().nonnegative("Weight cannot be negative").optional(),
-  distance: z.coerce.number().nonnegative("Distance cannot be negative").optional(),
-  duration: z.coerce.number().nonnegative("Duration cannot be negative").optional(),
-  calories: z.coerce.number().nonnegative("Calories cannot be negative").optional(),
-  speed: z.coerce.number().nonnegative("Speed cannot be negative").optional(),
-  completed: z.boolean().default(false),
-  notes: z.string().optional()
+  reps: z.coerce.number().positive("Reps must be positive"),
+  weight: z.coerce.number().nonnegative("Weight cannot be negative"),
+  completed: z.boolean().default(false)
 });
 
-// Form schema with exercise type support
-const createExerciseSchema = (isPlanMode: boolean, exerciseType: ExerciseType) => {
-  // Base schema common to all exercise types
-  const baseSchema = {
+// Form schema
+const createExerciseSchema = (isPlanMode: boolean) => {
+  return z.object({
     name: z.string().min(1, "Exercise name is required"),
-    exerciseType: z.enum(['strength', 'cardio']).default('strength'),
     sets: z.coerce.number().positive("Sets must be positive"),
+    reps: isPlanMode 
+      ? z.coerce.number().optional() 
+      : z.coerce.number().positive("Reps must be positive"),
+    weight: isPlanMode 
+      ? z.coerce.number().optional() 
+      : z.coerce.number().nonnegative("Weight cannot be negative").optional(),
     unit: z.string().default("kg"),
-  };
-  
-  // Add strength-specific fields when needed
-  if (exerciseType === 'strength') {
-    return z.object({
-      ...baseSchema,
-      reps: isPlanMode 
-        ? z.coerce.number().optional() 
-        : z.coerce.number().positive("Reps must be positive"),
-      weight: isPlanMode 
-        ? z.coerce.number().optional() 
-        : z.coerce.number().nonnegative("Weight cannot be negative").optional(),
-      setsData: isPlanMode 
-        ? z.array(setDataSchema).optional().or(z.undefined()) 
-        : z.array(setDataSchema).optional()
-    });
-  } 
-  // Add cardio-specific fields
-  else {
-    return z.object({
-      ...baseSchema,
-      distance: isPlanMode
-        ? z.coerce.number().optional()
-        : z.coerce.number().nonnegative("Distance cannot be negative").optional(),
-      duration: isPlanMode
-        ? z.coerce.number().optional()
-        : z.coerce.number().positive("Duration is required for cardio").optional(),
-      calories: z.coerce.number().nonnegative("Calories cannot be negative").optional(),
-      speed: z.coerce.number().nonnegative("Speed cannot be negative").optional(),
-      distanceUnit: z.string().default("km"),
-      setsData: isPlanMode 
-        ? z.array(setDataSchema).optional().or(z.undefined()) 
-        : z.array(setDataSchema).optional()
-    });
-  }
+    setsData: isPlanMode 
+      ? z.array(setDataSchema).optional().or(z.undefined()) 
+      : z.array(setDataSchema).optional()
+  });
 };
 
 // We'll create the actual schema in the component based on the plan mode state
 
-// Create a dynamic form schema based on plan mode and exercise types
-const createFormSchema = (isPlanMode: boolean, exerciseTypes: Record<number, ExerciseType>) => {
+// Create a dynamic form schema based on plan mode
+const createFormSchema = (isPlanMode: boolean) => {
   return z.object({
     name: z.string().min(1, "Workout name is required"),
     date: z.string().min(1, "Date is required"),
     duration: z.coerce.number().positive("Duration must be positive"),
     notes: z.string().optional(),
     isPlanMode: z.boolean().optional(),
-    exercises: z.array(
-      z.union([
-        createExerciseSchema(isPlanMode, 'strength'),
-        createExerciseSchema(isPlanMode, 'cardio')
-      ])
-    ).min(1, "Add at least one exercise"),
+    exercises: z.array(createExerciseSchema(isPlanMode)).min(1, "Add at least one exercise"),
   });
 };
 
@@ -138,14 +86,9 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   const [isExerciseSelectorOpen, setIsExerciseSelectorOpen] = useState(false);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [isPlanMode, setIsPlanMode] = useState(false);
-  // Track exercise types for each exercise (default to strength)
-  const [exerciseTypes, setExerciseTypes] = useState<Record<number, ExerciseType>>({0: 'strength'});
 
-  // Create a memoized form schema based on the current plan mode state and exercise types
-  const currentFormSchema = useMemo(() => 
-    createFormSchema(isPlanMode, exerciseTypes), 
-    [isPlanMode, exerciseTypes]
-  );
+  // Create a memoized form schema based on the current plan mode state
+  const currentFormSchema = useMemo(() => createFormSchema(isPlanMode), [isPlanMode]);
   
   const form = useForm<z.infer<typeof currentFormSchema>>({
     resolver: zodResolver(currentFormSchema),
@@ -157,7 +100,6 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
       isPlanMode: isPlanMode,
       exercises: [{ 
         name: "", 
-        exerciseType: 'strength',
         sets: 3, 
         reps: isPlanMode ? undefined : 10, 
         weight: isPlanMode ? undefined : 0, 
@@ -203,22 +145,15 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
   };
 
   const addExercise = () => {
-    // Get the next index for exercise type tracking
-    const nextIndex = form.getValues().exercises.length;
-    // Default to strength exercise
-    setExerciseTypes(prev => ({ ...prev, [nextIndex]: 'strength' }));
-    
     if (isPlanMode) {
       append({ 
-        name: "",
-        exerciseType: 'strength', 
+        name: "", 
         sets: 3, 
         unit: "kg"
       });
     } else {
       append({ 
-        name: "",
-        exerciseType: 'strength', 
+        name: "", 
         sets: 3, 
         reps: 10, 
         weight: 0, 
@@ -363,63 +298,6 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                     )}
                   />
                   
-                  {/* Exercise Type Selection */}
-                  <FormField
-                    control={form.control}
-                    name={`exercises.${index}.exerciseType`}
-                    render={({ field }) => (
-                      <FormItem className="mb-3">
-                        <FormLabel>Exercise Type</FormLabel>
-                        <Select
-                          value={field.value || 'strength'}
-                          onValueChange={(value: string) => {
-                            // Update the exercise type
-                            field.onChange(value);
-                            // Save type in our state tracker
-                            setExerciseTypes(prev => ({ ...prev, [index]: value as ExerciseType }));
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="strength">Strength</SelectItem>
-                            <SelectItem value="cardio">Cardio</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Hidden field for tracking sets count */}
-                  <FormField
-                            if (value === 'cardio') {
-                              // Set cardio defaults
-                              form.setValue(`exercises.${index}.duration`, 20);
-                              form.setValue(`exercises.${index}.distance`, 2);
-                              form.setValue(`exercises.${index}.distanceUnit`, 'km');
-                              form.setValue(`exercises.${index}.calories`, 200);
-                            } else {
-                              // Set strength defaults
-                              form.setValue(`exercises.${index}.reps`, 10);
-                              form.setValue(`exercises.${index}.weight`, 0);
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select exercise type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="strength">Strength</SelectItem>
-                            <SelectItem value="cardio">Cardio</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
                   {/* Hidden field to track sets count */}
                   <FormField
                     control={form.control}
@@ -488,141 +366,10 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                         />
                       </div>
                     ) : (
-                      // Normal mode - show either strength or cardio configuration based on exercise type
-                      exerciseTypes[index] === 'cardio' ? (
-                        // Cardio exercise configuration
-                        <>
-                          <h5 className="text-sm font-medium mb-2">Cardio Configuration</h5>
-                          <p className="text-xs text-muted-foreground mb-3">Set distance, duration and other cardio metrics</p>
-                          
-                          <div className="grid grid-cols-2 gap-3 mb-3">
-                            {/* Duration field */}
-                            <FormField
-                              control={form.control}
-                              name={`exercises.${index}.duration`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">Duration (minutes)</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      type="number" 
-                                      min="1" 
-                                      {...field} 
-                                      onChange={(e) => {
-                                        const value = parseInt(e.target.value);
-                                        field.onChange(isNaN(value) ? '' : value);
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            {/* Distance field with unit */}
-                            <div>
-                              <FormField
-                                control={form.control}
-                                name={`exercises.${index}.distance`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">Distance</FormLabel>
-                                    <div className="flex space-x-2">
-                                      <FormControl className="flex-1">
-                                        <Input 
-                                          type="number" 
-                                          min="0" 
-                                          step="0.1"
-                                          {...field} 
-                                          onChange={(e) => {
-                                            const value = parseFloat(e.target.value);
-                                            field.onChange(isNaN(value) ? '' : value);
-                                          }}
-                                        />
-                                      </FormControl>
-                                      <FormField
-                                        control={form.control}
-                                        name={`exercises.${index}.distanceUnit`}
-                                        render={({ field }) => (
-                                          <Select
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                          >
-                                            <SelectTrigger className="w-20">
-                                              <SelectValue placeholder="Unit" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="km">km</SelectItem>
-                                              <SelectItem value="mi">mi</SelectItem>
-                                              <SelectItem value="m">m</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        )}
-                                      />
-                                    </div>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-3">
-                            {/* Optional calories field */}
-                            <FormField
-                              control={form.control}
-                              name={`exercises.${index}.calories`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">Calories</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      type="number" 
-                                      min="0" 
-                                      placeholder="Calories burned"
-                                      {...field} 
-                                      onChange={(e) => {
-                                        const value = parseInt(e.target.value);
-                                        field.onChange(isNaN(value) ? '' : value);
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            
-                            {/* Optional average speed field */}
-                            <FormField
-                              control={form.control}
-                              name={`exercises.${index}.speed`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="text-xs">Avg. Speed</FormLabel>
-                                  <FormControl>
-                                    <Input 
-                                      type="number" 
-                                      min="0" 
-                                      step="0.1"
-                                      placeholder="km/h or mph"
-                                      {...field} 
-                                      onChange={(e) => {
-                                        const value = parseFloat(e.target.value);
-                                        field.onChange(isNaN(value) ? '' : value);
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        // Strength exercise configuration
-                        <>
-                          <h5 className="text-sm font-medium mb-2">Set Configuration</h5>
-                          <p className="text-xs text-muted-foreground mb-3">Configure each set with different weights and reps</p>
+                      // Normal mode - show full set configuration
+                      <>
+                        <h5 className="text-sm font-medium mb-2">Set Configuration</h5>
+                        <p className="text-xs text-muted-foreground mb-3">Configure each set with different weights and reps</p>
                         
                         {(form.watch(`exercises.${index}.setsData`) || []).map((set: SetData, setIndex: number) => (
                           <div key={setIndex} className="mb-3 p-3 border rounded-md">
