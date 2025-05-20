@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Use dynamic import for ExerciseHistoryPopup to avoid type conflicts
+// This ensures both components have their own independent type definitions
 const ExerciseHistoryPopup = React.lazy(() => import("./ExerciseHistoryPopup"));
 
 interface SetData {
