@@ -319,7 +319,9 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                     type="button" 
                     size="sm" 
                     variant="outline" 
-                    onClick={() => addExercise("strength")}
+                    onClick={() => {
+                      addExercise("strength");
+                    }}
                     className="text-xs h-8"
                   >
                     Add Strength
@@ -328,7 +330,9 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                     type="button" 
                     size="sm" 
                     variant="outline" 
-                    onClick={() => addExercise("cardio")}
+                    onClick={() => {
+                      addExercise("cardio");
+                    }}
                     className="text-xs h-8"
                   >
                     Add Cardio
@@ -617,6 +621,121 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                       </>
                     )}
                   </div>
+                ) : (
+                  // Cardio exercise configuration
+                  <div className="pt-3">
+                    <h5 className="text-sm font-medium mb-2">Cardio Details</h5>
+                    <p className="text-xs text-muted-foreground mb-3">Configure your cardio workout metrics</p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      <FormField
+                        control={form.control}
+                        name={`exercises.${index}.cardioData.duration`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Duration (minutes)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="1" 
+                                {...field} 
+                                value={field.value || ''}
+                                className="h-9 text-sm"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`exercises.${index}.cardioData.distance`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Distance</FormLabel>
+                            <div className="flex gap-2">
+                              <FormControl className="flex-1">
+                                <Input 
+                                  type="number" 
+                                  min="0" 
+                                  step="0.01"
+                                  {...field} 
+                                  value={field.value || ''}
+                                  className="h-9 text-sm"
+                                />
+                              </FormControl>
+                              <FormField
+                                control={form.control}
+                                name={`exercises.${index}.cardioData.distanceUnit`}
+                                render={({ field: unitField }) => (
+                                  <FormItem className="w-16">
+                                    <FormControl>
+                                      <select
+                                        className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                                        {...unitField}
+                                      >
+                                        <option value="km">km</option>
+                                        <option value="miles">mi</option>
+                                        <option value="meters">m</option>
+                                      </select>
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name={`exercises.${index}.cardioData.intensity`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Intensity</FormLabel>
+                            <FormControl>
+                              <select
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                                {...field}
+                                value={field.value || ''}
+                              >
+                                <option value="low">Low</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="high">High</option>
+                                <option value="interval">Interval Training</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`exercises.${index}.cardioData.caloriesBurned`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Est. Calories Burned</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="0"
+                                {...field} 
+                                value={field.value || ''}
+                                className="h-9 text-sm"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
                 </div>
               ))}
               
