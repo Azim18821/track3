@@ -1236,16 +1236,37 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                   const completedWorkout = {
                     ...workoutState,
                     completed: true,
-                    exercises: workoutState.exercises.map(ex => ({
-                      ...ex,
-                      setsData: ex.setsData?.map(set => ({
-                        ...set,
-                        completed: true,
-                        // If weight or reps is null or undefined, set to 0
-                        weight: set.weight !== null && set.weight !== undefined ? set.weight : 0,
-                        reps: set.reps !== null && set.reps !== undefined ? set.reps : 0
-                      }))
-                    }))
+                    exercises: workoutState.exercises.map(ex => {
+                      if (ex.exerciseType === "cardio") {
+                        // Handle cardio exercise
+                        return {
+                          ...ex,
+                          cardioData: {
+                            ...ex.cardioData!,
+                            completed: true,
+                            // If any values are null or undefined, set to sensible defaults
+                            duration: ex.cardioData?.duration ?? 30,
+                            distance: ex.cardioData?.distance ?? 0,
+                            caloriesBurned: ex.cardioData?.caloriesBurned ?? 0,
+                            intensity: ex.cardioData?.intensity ?? "moderate",
+                            distanceUnit: ex.cardioData?.distanceUnit ?? "km"
+                          }
+                        };
+                      } else {
+                        // Handle strength exercise
+                        return {
+                          ...ex,
+                          exerciseType: "strength",
+                          setsData: ex.setsData?.map(set => ({
+                            ...set,
+                            completed: true,
+                            // If weight or reps is null or undefined, set to 0
+                            weight: set.weight !== null && set.weight !== undefined ? set.weight : 0,
+                            reps: set.reps !== null && set.reps !== undefined ? set.reps : 0
+                          }))
+                        };
+                      }
+                    })
                   };
                   
                   // Instead of using the mutation, make a direct fetch request
