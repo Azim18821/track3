@@ -23,83 +23,101 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, X, Search, Calculator } from "lucide-react";
 import { format } from "date-fns";
 
-// MET values for common cardio exercises
-// Function to calculate calories burned
-const calculateCaloriesBurned = (
-  exercise: string, 
+// Function to calculate calories burned based on MET values
+function calculateCaloriesBurned(
+  exerciseName: string,
   intensity: string,
   weightKg: number,
   durationMinutes: number
-): number => {
-  // Normalize exercise name to match our MET values
-  const normalizedExercise = Object.keys(CARDIO_MET_VALUES).find(
-    key => exercise.toLowerCase().includes(key)
-  ) || 'default';
-  
-  // Get appropriate MET value
-  const metValue = CARDIO_MET_VALUES[normalizedExercise][intensity as keyof typeof CARDIO_MET_VALUES['default']] 
-    || CARDIO_MET_VALUES['default'][intensity as keyof typeof CARDIO_MET_VALUES['default']]
-    || CARDIO_MET_VALUES['default']['moderate'];
-  
-  // Convert duration from minutes to hours
-  const durationHours = durationMinutes / 60;
-  
-  // Calculate calories burned: MET × Weight (kg) × Duration (hours)
-  const caloriesBurned = Math.round(metValue * weightKg * durationHours);
-  
-  return caloriesBurned;
-};
-
-const CARDIO_MET_VALUES = {
-  'walking': {
-    low: 2.8,
-    moderate: 3.5, 
-    high: 5.0,
-    interval: 6.0
-  },
-  'running': {
-    low: 6.0,
-    moderate: 9.8,
-    high: 12.3,
-    interval: 14.0
-  },
-  'cycling': {
-    low: 4.0,
-    moderate: 8.0,
-    high: 12.0,
-    interval: 13.0
-  },
-  'swimming': {
-    low: 6.0,
-    moderate: 8.0,
-    high: 10.0,
-    interval: 11.0
-  },
-  'elliptical': {
-    low: 5.0,
-    moderate: 7.0,
-    high: 9.0,
-    interval: 10.0
-  },
-  'rowing': {
-    low: 4.0,
-    moderate: 7.0,
-    high: 12.0,
-    interval: 14.0
-  },
-  'stair climbing': {
-    low: 4.0,
-    moderate: 8.0,
-    high: 12.0,
-    interval: 13.0
-  },
-  'default': {
+): number {
+  // Default MET values if we can't match the exercise
+  const defaultMets = {
     low: 4.0,
     moderate: 7.0,
     high: 10.0,
     interval: 12.0
+  };
+
+  // Get the appropriate intensity level, default to moderate
+  const intensityLevel = (intensity === 'low' || 
+                         intensity === 'moderate' || 
+                         intensity === 'high' || 
+                         intensity === 'interval') 
+                         ? intensity : 'moderate';
+  
+  // Find the exercise type or use default
+  let metValue = defaultMets[intensityLevel as keyof typeof defaultMets];
+  
+  // Try to match exercise name with our known types
+  const exerciseLower = exerciseName.toLowerCase();
+  
+  if (exerciseLower.includes('walk') || exerciseLower.includes('walking')) {
+    const walkingMets = {
+      low: 2.8,
+      moderate: 3.5,
+      high: 5.0,
+      interval: 6.0
+    };
+    metValue = walkingMets[intensityLevel as keyof typeof walkingMets];
+  } 
+  else if (exerciseLower.includes('run') || exerciseLower.includes('running') || exerciseLower.includes('jog')) {
+    const runningMets = {
+      low: 6.0,
+      moderate: 9.8,
+      high: 12.3,
+      interval: 14.0
+    };
+    metValue = runningMets[intensityLevel as keyof typeof runningMets];
   }
-};
+  else if (exerciseLower.includes('cycle') || exerciseLower.includes('cycling') || exerciseLower.includes('bike')) {
+    const cyclingMets = {
+      low: 4.0,
+      moderate: 8.0,
+      high: 12.0,
+      interval: 13.0
+    };
+    metValue = cyclingMets[intensityLevel as keyof typeof cyclingMets];
+  }
+  else if (exerciseLower.includes('swim') || exerciseLower.includes('swimming')) {
+    const swimmingMets = {
+      low: 6.0,
+      moderate: 8.0,
+      high: 10.0,
+      interval: 11.0
+    };
+    metValue = swimmingMets[intensityLevel as keyof typeof swimmingMets];
+  }
+  else if (exerciseLower.includes('row') || exerciseLower.includes('rowing')) {
+    const rowingMets = {
+      low: 4.0,
+      moderate: 7.0,
+      high: 12.0,
+      interval: 14.0
+    };
+    metValue = rowingMets[intensityLevel as keyof typeof rowingMets];
+  }
+  
+  // Convert duration to hours
+  const durationHours = durationMinutes / 60;
+  
+  // Calculate and round the calories burned
+  return Math.round(metValue * weightKg * durationHours);
+}
+
+// MET values for common cardio exercises
+// Common cardio exercises for suggestions
+const COMMON_CARDIO_EXERCISES = [
+  'Walking',
+  'Running',
+  'Jogging',
+  'Cycling',
+  'Swimming',
+  'Rowing',
+  'Elliptical Training',
+  'Stair Climbing',
+  'Jump Rope',
+  'HIIT Cardio'
+];
 
 // Define the SetData interface for tracking per-set information
 interface SetData {
@@ -503,20 +521,38 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                       <FormItem className="mb-3">
                         <FormLabel>Exercise Name</FormLabel>
                         <div className="flex gap-2">
-                          <FormControl className="flex-1">
-                            <Input {...field} placeholder={form.watch(`exercises.${index}.exerciseType`) === "cardio" ? "Running" : "Bench Press"} />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            onClick={() => {
-                              setCurrentExerciseIndex(index);
-                              setIsExerciseSelectorOpen(true);
-                            }}
-                          >
-                            <Search className="h-4 w-4" />
-                          </Button>
+                          {form.watch(`exercises.${index}.exerciseType`) === "cardio" ? (
+                            <div className="flex-1">
+                              <select
+                                {...field}
+                                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                              >
+                                <option value="">Select a cardio exercise</option>
+                                {COMMON_CARDIO_EXERCISES.map((exercise, i) => (
+                                  <option key={i} value={exercise}>{exercise}</option>
+                                ))}
+                                <option value="Other">Other Cardio Activity</option>
+                              </select>
+                            </div>
+                          ) : (
+                            <FormControl className="flex-1">
+                              <Input {...field} placeholder="Bench Press" />
+                            </FormControl>
+                          )}
+                          
+                          {form.watch(`exercises.${index}.exerciseType`) !== "cardio" && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="outline"
+                              onClick={() => {
+                                setCurrentExerciseIndex(index);
+                                setIsExerciseSelectorOpen(true);
+                              }}
+                            >
+                              <Search className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                         <FormMessage />
                       </FormItem>
@@ -798,20 +834,85 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                         name={`exercises.${index}.cardioData.caloriesBurned`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Est. Calories Burned</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                min="0"
-                                {...field} 
-                                value={field.value || ''}
-                                className="h-9 text-sm"
-                              />
-                            </FormControl>
+                            <div className="flex justify-between items-center">
+                              <FormLabel className="text-xs">Est. Calories Burned</FormLabel>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-xs flex items-center gap-1"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const exerciseName = form.getValues(`exercises.${index}.name`) || 'default';
+                                  const intensity = form.getValues(`exercises.${index}.cardioData.intensity`) || 'moderate';
+                                  const duration = form.getValues(`exercises.${index}.cardioData.duration`) || 0;
+                                  
+                                  if (duration > 0) {
+                                    // Use our calculation function
+                                    const calories = calculateCaloriesBurned(
+                                      exerciseName,
+                                      intensity,
+                                      userWeight,
+                                      duration
+                                    );
+                                    form.setValue(`exercises.${index}.cardioData.caloriesBurned`, calories);
+                                    
+                                    toast({
+                                      title: "Calories Calculated",
+                                      description: `Estimated ${calories} calories burned for this activity`,
+                                      duration: 3000,
+                                    });
+                                  } else {
+                                    toast({
+                                      title: "Missing Information",
+                                      description: "Please enter a duration first",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                              >
+                                <Calculator className="h-3 w-3" /> Calculate
+                              </Button>
+                            </div>
+                            <div className="flex gap-2">
+                              <FormControl className="flex-1">
+                                <Input 
+                                  type="number" 
+                                  min="0"
+                                  {...field} 
+                                  value={field.value || ''}
+                                  className="h-9 text-sm"
+                                />
+                              </FormControl>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Based on a body weight of {userWeight}kg
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      
+                      {/* Body weight input for calorie calculations */}
+                      <FormItem className="col-span-2 mt-3">
+                        <div className="flex justify-between items-center">
+                          <FormLabel className="text-xs">Your Weight (for calorie calculation)</FormLabel>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            type="number"
+                            min="30"
+                            max="200"
+                            value={userWeight}
+                            onChange={(e) => setUserWeight(Number(e.target.value) || 70)}
+                            className="h-9 text-sm w-24"
+                          />
+                          <span className="text-sm">kg</span>
+                          <p className="text-xs text-muted-foreground ml-2">
+                            Used for calorie calculations
+                          </p>
+                        </div>
+                      </FormItem>
                     </div>
                   </div>
                 )}
