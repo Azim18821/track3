@@ -251,81 +251,100 @@ const ExerciseHistoryPopup: React.FC<ExerciseHistoryPopupProps> = ({
             </div>
           ) : (
             <div className="space-y-4 px-1">
-              {/* Enhanced Recommended values card */}
+              {/* Compact Recommended values card */}
               {recommendedValues && (
-                <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/10 border-blue-200 dark:border-blue-800/30 mx-4 mb-6 shadow-sm overflow-hidden">
-                  <div className="border-b border-blue-200 dark:border-blue-800/30 bg-blue-100/50 dark:bg-blue-900/30 px-4 py-3 flex items-center">
-                    <div className="bg-blue-500 text-white p-1.5 rounded-full mr-2">
-                      <Trophy className="h-4 w-4" />
+                <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/10 border-blue-200 dark:border-blue-800/30 mx-3 mb-4 shadow-sm overflow-hidden">
+                  <div className="border-b border-blue-200 dark:border-blue-800/30 bg-blue-100/50 dark:bg-blue-900/30 px-3 py-2 flex items-center">
+                    <div className="bg-blue-500 text-white p-1 rounded-full mr-2">
+                      <Trophy className="h-3.5 w-3.5" />
                     </div>
-                    <CardTitle className="text-base font-bold text-blue-800 dark:text-blue-300">
+                    <p className="text-sm font-bold text-blue-800 dark:text-blue-300">
                       Today's Recommended Values
-                    </CardTitle>
+                    </p>
                   </div>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-3 flex items-center">
-                      <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                      Based on your last workout on {recommendedValues.date}
+                  <CardContent className="py-2 px-3">
+                    <p className="text-xs text-blue-700 dark:text-blue-400 mb-2 flex items-center">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Based on {recommendedValues.date}
                     </p>
                     
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="bg-white dark:bg-blue-900/20 rounded-lg p-3 shadow-sm">
-                        <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1 flex items-center">
-                          <Dumbbell className="h-3.5 w-3.5 mr-1.5" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white dark:bg-blue-900/20 rounded p-2 shadow-sm">
+                        <p className="text-xs text-blue-700 dark:text-blue-400 font-medium flex items-center">
+                          <Dumbbell className="h-3 w-3 mr-1" />
                           Weight
                         </p>
-                        <p className="font-semibold text-lg text-blue-900 dark:text-blue-200">{recommendedValues.weight} kg</p>
+                        <p className="font-semibold text-blue-900 dark:text-blue-200">{recommendedValues.weight} kg</p>
                       </div>
-                      <div className="bg-white dark:bg-blue-900/20 rounded-lg p-3 shadow-sm">
-                        <p className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1 flex items-center">
-                          <RotateCw className="h-3.5 w-3.5 mr-1.5" />
+                      <div className="bg-white dark:bg-blue-900/20 rounded p-2 shadow-sm">
+                        <p className="text-xs text-blue-700 dark:text-blue-400 font-medium flex items-center">
+                          <RotateCw className="h-3 w-3 mr-1" />
                           Reps
                         </p>
-                        <p className="font-semibold text-lg text-blue-900 dark:text-blue-200">{recommendedValues.reps}</p>
+                        <p className="font-semibold text-blue-900 dark:text-blue-200">{recommendedValues.reps}</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Personal records card */}
+              {/* Compact Personal records card */}
               {personalRecords && (
-                <Card className="border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10">
-                  <CardContent className="p-4">
-                    <h3 className="text-sm font-medium flex items-center mb-3">
-                      <TrendingUp className="h-4 w-4 mr-1.5 text-amber-500" />
+                <Card className="bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-900/10 border-amber-200 dark:border-amber-800/30 mx-3 mb-4 shadow-sm overflow-hidden">
+                  <div className="border-b border-amber-200 dark:border-amber-800/30 bg-amber-100/50 dark:bg-amber-900/30 px-3 py-2 flex items-center">
+                    <div className="bg-amber-500 text-white p-1 rounded-full mr-2">
+                      <Award className="h-3.5 w-3.5" />
+                    </div>
+                    <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
                       Personal Records
-                    </h3>
-                    
+                    </p>
+                  </div>
+                  <CardContent className="py-2 px-3">
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-background/90 rounded p-2 border border-border/60">
-                        <p className="text-xs text-muted-foreground">Max Weight</p>
-                        <p className="font-medium">{personalRecords.maxWeight} kg × {personalRecords.maxWeightReps} reps</p>
+                      <div className="bg-white dark:bg-amber-900/20 rounded p-2 shadow-sm">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center">
+                          <Dumbbell className="h-3 w-3 mr-1" />
+                          Max Weight
+                        </p>
+                        <p className="font-medium text-xs text-amber-900 dark:text-amber-200">{personalRecords.maxWeight} kg × {personalRecords.maxWeightReps} reps</p>
                       </div>
-                      <div className="bg-background/90 rounded p-2 border border-border/60">
-                        <p className="text-xs text-muted-foreground">Max Reps</p>
-                        <p className="font-medium">{personalRecords.maxReps} reps × {personalRecords.maxRepsWeight} kg</p>
+                      <div className="bg-white dark:bg-amber-900/20 rounded p-2 shadow-sm">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center">
+                          <RotateCw className="h-3 w-3 mr-1" />
+                          Max Reps
+                        </p>
+                        <p className="font-medium text-xs text-amber-900 dark:text-amber-200">{personalRecords.maxReps} reps × {personalRecords.maxRepsWeight} kg</p>
                       </div>
-                      <div className="bg-background/90 rounded p-2 border border-border/60">
-                        <p className="text-xs text-muted-foreground">Best Set Volume</p>
-                        <p className="font-medium">{personalRecords.maxVolumeSet} kg</p>
+                      <div className="bg-white dark:bg-amber-900/20 rounded p-2 shadow-sm">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          Best Set
+                        </p>
+                        <p className="font-medium text-xs text-amber-900 dark:text-amber-200">{personalRecords.maxVolumeSet} kg</p>
                       </div>
-                      <div className="bg-background/90 rounded p-2 border border-border/60">
-                        <p className="text-xs text-muted-foreground">Best Workout Volume</p>
-                        <p className="font-medium">{personalRecords.maxVolumeWorkout} kg</p>
+                      <div className="bg-white dark:bg-amber-900/20 rounded p-2 shadow-sm">
+                        <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center">
+                          <BarChart3 className="h-3 w-3 mr-1" />
+                          Best Workout
+                        </p>
+                        <p className="font-medium text-xs text-amber-900 dark:text-amber-200">{personalRecords.maxVolumeWorkout} kg</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* History table with Accordion */}
-              <Card>
-                <CardContent className="p-4">
-                  <h3 className="text-sm font-medium flex items-center mb-3">
-                    <Calendar className="h-4 w-4 mr-1.5 text-primary" />
+              {/* History table with enhanced styling */}
+              <Card className="mx-3 border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-2 flex items-center">
+                  <div className="bg-blue-500 text-white p-1 rounded-full mr-2">
+                    <Calendar className="h-3.5 w-3.5" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                     Recent History
-                  </h3>
+                  </p>
+                </div>
+                <CardContent className="py-3 px-3">
                   
                   {history.length === 0 ? (
                     <div className="text-center py-6 text-muted-foreground">
