@@ -743,77 +743,97 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             </div>
           </div>
           
-          <CardContent className="pt-2">
-            {/* Rest timer buttons */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border-t border-blue-100 dark:border-blue-800/30">
+            {/* Rest timer buttons - Enhanced design */}
+            <div className="grid grid-cols-3 gap-3">
               <Button 
                 variant="outline"
-                className="h-10 sm:h-12 bg-primary/5 text-primary border-primary/20 hover:bg-primary/10"
+                className="h-11 sm:h-12 bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-700 shadow-sm"
                 onClick={() => startRestTimer(60)}
               >
-                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 <span className="hidden sm:inline">60s Rest</span>
                 <span className="sm:hidden">60s</span>
               </Button>
               <Button 
                 variant="outline"
-                className="h-10 sm:h-12 bg-amber-500/5 text-amber-500 border-amber-500/20 hover:bg-amber-500/10"
+                className="h-11 sm:h-12 bg-white dark:bg-slate-800 border-amber-200 dark:border-amber-700/70 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-700 shadow-sm"
                 onClick={() => startRestTimer(90)}
               >
-                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 <span className="hidden sm:inline">90s Rest</span>
                 <span className="sm:hidden">90s</span>
               </Button>
               <Button 
                 variant="outline"
-                className="h-10 sm:h-12 bg-purple-500/5 text-purple-500 border-purple-500/20 hover:bg-purple-500/10"
+                className="h-11 sm:h-12 bg-white dark:bg-slate-800 border-purple-200 dark:border-purple-700/70 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-slate-700 shadow-sm"
                 onClick={() => startRestTimer(120)}
               >
-                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <TimerIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 <span className="hidden sm:inline">120s Rest</span>
                 <span className="sm:hidden">120s</span>
               </Button>
             </div>
+          </div>
+          
+          <CardContent className="pt-5">
 
-            {/* Info message for plan mode */}
+            {/* Enhanced Info message for plan mode */}
             {isPlanModeWorkout && (
-              <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-md text-sm flex items-start">
-                <InfoIcon className="h-4 w-4 mt-0.5 mr-2 flex-shrink-0 text-primary" />
-                <span>Enter your actual weight and reps for each set. Mark sets as completed as you perform them.</span>
+              <div className="mb-5 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg text-sm flex items-start shadow-sm">
+                <InfoIcon className="h-4 w-4 mt-0.5 mr-3 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                <span className="text-blue-800 dark:text-blue-200">Enter your actual weight and reps for each set. Mark sets as completed as you perform them.</span>
               </div>
             )}
 
-            {/* Sets tracking with per-set weight and reps */}
-            <div className="space-y-3">
+            {/* Sets tracking with enhanced visual design */}
+            <div className="space-y-4">
               {activeExercise.setsData?.map((setData, setIndex) => (
-                <div key={setIndex} className={`border rounded-md overflow-hidden transition-colors ${
+                <div key={setIndex} className={`border rounded-xl overflow-hidden transition-all shadow-sm ${
                   setData.completed 
-                    ? "border-green-500/30 bg-green-500/5 dark:bg-green-500/10"
-                    : "border-border hover:border-border/80 bg-background"
+                    ? "border-green-300 dark:border-green-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30"
+                    : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-200 dark:hover:border-blue-700"
                 }`}>
-                  <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border">
-                    <h3 className="font-medium text-sm">Set {setIndex + 1}</h3>
+                  <div className={`flex justify-between items-center px-4 py-3 border-b ${
+                    setData.completed 
+                      ? 'bg-gradient-to-r from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-900/20 border-green-200 dark:border-green-800/50' 
+                      : 'bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-800/80 border-slate-100 dark:border-slate-700/50'
+                    }`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${
+                        setData.completed 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                        }`}>
+                        {setIndex + 1}
+                      </div>
+                      <h3 className="font-medium text-sm">Set {setIndex + 1}</h3>
+                    </div>
+                    
                     <Button
                       variant={setData.completed ? "default" : "outline"}
                       size="sm"
-                      className={`h-7 text-xs ${
+                      className={`h-8 text-xs shadow-sm ${
                         setData.completed 
-                          ? "bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 dark:text-white" 
-                          : "border-border"
+                          ? "bg-green-500 hover:bg-green-600 text-white border-green-400" 
+                          : "bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-600"
                       }`}
                       onClick={() => toggleSetCompletion(activeExerciseIndex, setIndex)}
                     >
                       {setData.completed ? (
-                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Completed</>
+                        <><CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Completed</>
                       ) : (
-                        "Mark Complete"
+                        <><Circle className="h-3.5 w-3.5 mr-1.5" /> Mark Complete</>
                       )}
                     </Button>
                   </div>
                   
-                  <div className="p-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Weight ({activeExercise.unit || 'kg'})</label>
+                  <div className="p-4 grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium flex items-center text-blue-700 dark:text-blue-400">
+                        <Dumbbell className="h-3.5 w-3.5 mr-1.5" /> 
+                        Weight ({activeExercise.unit || 'kg'})
+                      </label>
                       <Input
                         type="number"
                         value={setData.weight === null || setData.weight === undefined ? '' : setData.weight}
@@ -822,12 +842,17 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                           const newWeight = e.target.value === '' ? null : parseFloat(e.target.value);
                           updateSetWeight(activeExerciseIndex, setIndex, newWeight);
                         }}
-                        className={`h-10 ${setData.completed ? "bg-background/90" : ""}`}
+                        className={`h-10 border-slate-200 dark:border-slate-600 focus:ring-blue-500 ${
+                          setData.completed ? "bg-white/90 dark:bg-slate-700/90" : ""
+                        }`}
                         placeholder={typeof activeExercise.weight === 'number' ? activeExercise.weight.toString() : "Weight"}
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-medium mb-1 block text-muted-foreground">Reps</label>
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium flex items-center text-blue-700 dark:text-blue-400">
+                        <ArrowRepeat className="h-3.5 w-3.5 mr-1.5" /> 
+                        Reps
+                      </label>
                       <Input
                         type="number"
                         value={setData.reps === null || setData.reps === undefined ? '' : setData.reps}
@@ -836,7 +861,9 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                           const newReps = e.target.value === '' ? null : parseInt(e.target.value);
                           updateSetReps(activeExerciseIndex, setIndex, newReps);
                         }}
-                        className={`h-10 ${setData.completed ? "bg-background/90" : ""}`}
+                        className={`h-10 border-slate-200 dark:border-slate-600 focus:ring-blue-500 ${
+                          setData.completed ? "bg-white/90 dark:bg-slate-700/90" : ""
+                        }`}
                         placeholder={typeof activeExercise.reps === 'number' ? activeExercise.reps.toString() : "Reps"}
                       />
                     </div>
@@ -844,10 +871,10 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
                 </div>
               ))}
               
-              {/* Add Extra Set Button */}
+              {/* Add Extra Set Button - Enhanced design */}
               <Button 
                 variant="outline" 
-                className="w-full flex items-center justify-center gap-2 py-3 h-auto border-dashed border-2 mt-4 text-muted-foreground hover:text-foreground hover:bg-muted/10"
+                className="w-full flex items-center justify-center gap-2 py-3 h-auto border-dashed border-2 mt-4 border-blue-200 dark:border-blue-800/70 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 shadow-sm"
                 onClick={() => addExtraSet(activeExerciseIndex)}
               >
                 <Plus className="h-4 w-4 mr-1" />
