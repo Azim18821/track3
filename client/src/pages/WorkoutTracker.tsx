@@ -184,7 +184,7 @@ const WorkoutTracker = () => {
       <div className="fixed right-4 bottom-24 sm:hidden z-10">
         <Button
           onClick={() => {
-            setSelectedDate(format(new Date(), "yyyy-MM-dd"));
+            // Use the currently selected date instead of defaulting to today
             setIsAddWorkoutOpen(true);
           }}
           size="lg"
