@@ -151,27 +151,29 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Weekly Workout Log</h2>
-        <div className="flex items-center space-x-1">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          Weekly Workout Schedule
+        </h2>
+        <div className="flex items-center bg-white dark:bg-gray-800 p-1 rounded-lg border dark:border-gray-700 shadow-sm">
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm" 
             onClick={() => navigateWeek('prev')}
             disabled={isAtOldestWeek}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 rounded-md"
             title={isAtOldestWeek ? "Can't go back more than 3 weeks" : "Previous week"}
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Previous Week</span>
           </Button>
-          <span className="text-sm px-2">{getWeekDateRange()}</span>
+          <span className="text-sm px-3 font-medium text-gray-700 dark:text-gray-300">{getWeekDateRange()}</span>
           <Button 
-            variant="outline" 
+            variant="ghost" 
             size="sm" 
             onClick={() => navigateWeek('next')}
             disabled={isAtCurrentWeek}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 rounded-md"
             title={isAtCurrentWeek ? "Can't go into the future" : "Next week"}
           >
             <ChevronRight className="h-4 w-4" />
@@ -180,7 +182,134 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-3 overflow-hidden">
+      {/* Mobile view - one day at a time with horizontal scroll */}
+      <div className="md:hidden overflow-x-auto pb-2 -mx-3 px-3">
+        <div className="flex space-x-3 min-w-max">
+          {daysOfWeek.map((day, index) => {
+            const dateStr = format(day, "yyyy-MM-dd");
+            const dayWorkouts = weeklyWorkouts[dateStr] || [];
+            const isToday = dateStr === getTodayString();
+            
+            return (
+              <Card 
+                key={index} 
+                className={`overflow-hidden w-[280px] ${isToday ? 'border-primary shadow-md' : ''}`}
+              >
+                <CardHeader className={`p-3 ${isToday ? 'bg-primary/10 dark:bg-primary/20' : 'bg-muted/30 dark:bg-gray-800/50'}`}>
+                  <CardTitle className="text-sm flex justify-between items-center">
+                    <span className={isToday ? 'text-primary' : ''}>{format(day, "EEEE")}</span>
+                    <span className={`font-medium ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>{format(day, "MMM d")}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 min-h-[180px] max-h-[300px] overflow-y-auto">
+                  {dayWorkouts.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center pt-6">
+                      <Calendar className="h-10 w-10 text-muted-foreground/40 mb-2" />
+                      <p className="text-xs text-muted-foreground">No workouts scheduled</p>
+                      <Button 
+                        variant="outline"
+                        size="sm" 
+                        className="mt-3 text-xs h-8"
+                        onClick={() => handleAddWorkout(dateStr)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" /> 
+                        Add Workout
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {dayWorkouts.map((workout) => (
+                        <div 
+                          key={workout.id} 
+                          className={`p-3 rounded-lg text-xs hover:bg-accent dark:hover:bg-gray-700 transition-colors ${
+                            workout.completed 
+                              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30' 
+                              : 'bg-card shadow-sm border dark:border-gray-800'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center">
+                            <div className="font-medium text-sm mb-1">{workout.name}</div>
+                            {onDeleteWorkout && !workout.completed && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 ml-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteWorkout(workout.id);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-muted-foreground mt-2">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3 w-3" />
+                              <span>{workout.duration} min</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Dumbbell className="h-3 w-3" />
+                              <span>{workout.exercises?.length || 0} exercises</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mt-3">
+                            {onStartWorkout && !workout.completed && (
+                              <Button 
+                                size="sm" 
+                                className="h-8 px-3 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onStartWorkout(workout);
+                                }}
+                              >
+                                <Play className="h-3.5 w-3.5 mr-1.5" />
+                                Start Workout
+                              </Button>
+                            )}
+                            <Button 
+                              size="sm" 
+                              className="h-8 px-3 text-xs w-full dark:border-gray-700"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewWorkout(workout);
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                          {workout.completed && (
+                            <div className="mt-2">
+                              <Badge className="bg-green-500 hover:bg-green-600">
+                                Completed
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full h-8 text-xs mt-2"
+                        onClick={() => handleAddWorkout(dateStr)}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1.5" /> 
+                        Add Another Workout
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Desktop view - grid layout */}
+      <div className="hidden md:grid md:grid-cols-7 gap-3 overflow-hidden">
         {daysOfWeek.map((day, index) => {
           const dateStr = format(day, "yyyy-MM-dd");
           const dayWorkouts = weeklyWorkouts[dateStr] || [];
@@ -190,15 +319,15 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
           return (
             <Card 
               key={index} 
-              className={`overflow-hidden ${isToday ? 'border-primary' : ''}`}
+              className={`overflow-hidden ${isToday ? 'border-primary shadow-md' : ''}`}
             >
-              <CardHeader className="p-3 bg-muted/30 dark:bg-gray-800/50">
+              <CardHeader className={`p-3 ${isToday ? 'bg-primary/10 dark:bg-primary/20' : 'bg-muted/30 dark:bg-gray-800/50'}`}>
                 <CardTitle className="text-sm flex justify-between items-center">
-                  <span>{format(day, "EEE")}</span>
-                  <span className="text-xs text-muted-foreground">{format(day, "MMM d")}</span>
+                  <span className={isToday ? 'text-primary' : ''}>{format(day, "EEE")}</span>
+                  <span className={`text-xs ${isToday ? 'text-primary font-medium' : 'text-muted-foreground'}`}>{format(day, "MMM d")}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-2 min-h-[100px] max-h-[300px] overflow-y-auto">
+              <CardContent className="p-2 min-h-[120px] max-h-[300px] overflow-y-auto">
                 {dayWorkouts.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
                     <p className="text-xs text-muted-foreground">No workouts</p>
@@ -209,7 +338,9 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
                       <div 
                         key={workout.id} 
                         className={`p-2 rounded-md text-xs cursor-pointer hover:bg-accent dark:hover:bg-gray-700 transition-colors ${
-                          workout.completed ? 'bg-green-50 dark:bg-green-950/20' : 'bg-muted/50 dark:bg-gray-800/70'
+                          workout.completed 
+                            ? 'bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/30' 
+                            : 'bg-card shadow-sm border dark:border-gray-800'
                         }`}
                       >
                         <div className="flex justify-between items-center">
@@ -218,13 +349,13 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-5 w-5 ml-1"
+                              className="h-5 w-5 ml-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteWorkout(workout.id);
                               }}
                             >
-                              <Trash2 className="h-3 w-3 text-red-500" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           )}
                         </div>
@@ -240,26 +371,26 @@ const WeeklyWorkoutView: React.FC<WeeklyWorkoutViewProps> = ({
                           {onStartWorkout && !workout.completed && (
                             <Button 
                               size="sm" 
-                              className="h-6 px-2 text-[10px] bg-green-600 hover:bg-green-700 w-full"
+                              className="h-6 px-2 text-[10px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 w-full"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onStartWorkout(workout);
                               }}
                             >
                               <Play className="h-3 w-3 mr-1" />
-                              Start Workout
+                              Start
                             </Button>
                           )}
                           <Button 
                             size="sm" 
-                            className="h-6 px-2 text-[10px] w-full dark:border-gray-600"
+                            className="h-6 px-2 text-[10px] w-full dark:border-gray-700"
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
                               onViewWorkout(workout);
                             }}
                           >
-                            View Details
+                            View
                           </Button>
                         </div>
                         {workout.completed && (

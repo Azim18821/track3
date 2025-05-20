@@ -101,20 +101,20 @@ const WorkoutTracker = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-3 sm:py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
         <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold leading-7 sm:text-3xl sm:truncate">
+          <h2 className="text-xl font-bold leading-7 sm:text-2xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Workout Tracker
           </h2>
         </div>
-        <div className="mt-4 flex sm:mt-0 sm:ml-4">
+        <div className="mt-3 flex sm:mt-0 sm:ml-4">
           <Button
             onClick={() => {
               setSelectedDate(format(new Date(), "yyyy-MM-dd"));
               setIsAddWorkoutOpen(true);
             }}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           >
             <PlusCircle className="h-4 w-4" />
             Add Workout
@@ -122,60 +122,77 @@ const WorkoutTracker = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="weekly" value={activeTab} onValueChange={setActiveTab} className="mt-6">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="weekly" className="flex items-center gap-2">
+      <Tabs defaultValue="weekly" value={activeTab} onValueChange={setActiveTab} className="mt-4">
+        <TabsList className="grid w-full grid-cols-2 mb-4 rounded-xl bg-muted/60 dark:bg-gray-800/50 p-1">
+          <TabsTrigger value="weekly" className="flex items-center gap-2 rounded-lg">
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Weekly View</span>
             <span className="inline sm:hidden">Weekly</span>
           </TabsTrigger>
-          <TabsTrigger value="list" className="flex items-center gap-2">
+          <TabsTrigger value="list" className="flex items-center gap-2 rounded-lg">
             <ListChecks className="h-4 w-4" />
             <span className="hidden sm:inline">List View</span>
             <span className="inline sm:hidden">List</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="weekly" className="space-y-6">
-          <WeeklyWorkoutView 
-            workouts={workouts} 
-            onViewWorkout={handleViewWorkout}
-            onAddWorkout={handleAddWorkout}
-            onStartWorkout={handleStartWorkout}
-            onDeleteWorkout={handleDeleteWorkout}
-          />
-        </TabsContent>
+        <div className="bg-white dark:bg-gray-950 rounded-xl shadow-sm border dark:border-gray-800 p-3 sm:p-4">
+          <TabsContent value="weekly" className="space-y-4 mt-0">
+            <WeeklyWorkoutView 
+              workouts={workouts} 
+              onViewWorkout={handleViewWorkout}
+              onAddWorkout={handleAddWorkout}
+              onStartWorkout={handleStartWorkout}
+              onDeleteWorkout={handleDeleteWorkout}
+            />
+          </TabsContent>
 
-        <TabsContent value="list" className="space-y-6">
-          {/* Exercise History Card - Shows exercises and last weight used */}
-          <ExerciseHistoryCard 
-            workouts={workouts} 
-            onExerciseClick={(exerciseName) => {
-              // Open the exercise history dialog
-              setSelectedExercise(exerciseName);
-              setIsExerciseHistoryOpen(true);
-              
-              // Add a toast notification to indicate the dialog is opening
-              toast({
-                title: "Loading Exercise History",
-                description: `Viewing all "${exerciseName}" workout history`,
-              });
-            }}
-          />
-          
-          {/* Workout Progress */}
-          <ExerciseProgress workouts={workouts} />
+          <TabsContent value="list" className="space-y-5 mt-0">
+            {/* Exercise History Card - Shows exercises and last weight used */}
+            <ExerciseHistoryCard 
+              workouts={workouts} 
+              onExerciseClick={(exerciseName) => {
+                // Open the exercise history dialog
+                setSelectedExercise(exerciseName);
+                setIsExerciseHistoryOpen(true);
+                
+                // Add a toast notification to indicate the dialog is opening
+                toast({
+                  title: "Loading Exercise History",
+                  description: `Viewing all "${exerciseName}" workout history`,
+                });
+              }}
+            />
+            
+            {/* Workout Progress */}
+            <ExerciseProgress workouts={workouts} />
 
-          {/* Recent Workouts */}
-          <WorkoutList 
-            workouts={workouts} 
-            isLoading={isLoading} 
-            onDeleteWorkout={handleDeleteWorkout}
-            onStartWorkout={handleStartWorkout}
-            onViewWorkout={handleViewWorkout}
-          />
-        </TabsContent>
+            {/* Recent Workouts */}
+            <WorkoutList 
+              workouts={workouts} 
+              isLoading={isLoading} 
+              onDeleteWorkout={handleDeleteWorkout}
+              onStartWorkout={handleStartWorkout}
+              onViewWorkout={handleViewWorkout}
+            />
+          </TabsContent>
+        </div>
       </Tabs>
+
+      {/* Fixed Action Button on mobile */}
+      <div className="fixed right-4 bottom-24 sm:hidden z-10">
+        <Button
+          onClick={() => {
+            setSelectedDate(format(new Date(), "yyyy-MM-dd"));
+            setIsAddWorkoutOpen(true);
+          }}
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+        >
+          <PlusCircle className="h-6 w-6" />
+          <span className="sr-only">Add Workout</span>
+        </Button>
+      </div>
 
       {/* Add Workout Dialog */}
       <AddWorkoutDialog 
