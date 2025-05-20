@@ -57,6 +57,7 @@ interface CardioData {
   completed: boolean;
 }
 
+// Define the main Exercise interface
 interface Exercise {
   id?: number;
   name: string;
@@ -68,6 +69,8 @@ interface Exercise {
   setsData?: SetData[]; // Per-set data for strength exercises
   cardioData?: CardioData; // Cardio-specific data
 }
+
+// Remove the duplicate interface and add type assertions where needed
 
 interface Workout {
   id: number;
@@ -350,13 +353,13 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
       };
       
       // Add the new set to the setsData array
-      const updatedSetsData = [...currentExercise.setsData!, newSet];
+      const updatedSetsData = [...(currentExercise.setsData || []), newSet];
       
       // Update the exercise object
       updatedExercises[exerciseIndex] = {
         ...currentExercise,
         // Increment the sets count
-        sets: currentExercise.sets + 1,
+        sets: (currentExercise.sets || 0) + 1,
         setsData: updatedSetsData
       };
       
