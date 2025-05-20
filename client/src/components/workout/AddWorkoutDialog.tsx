@@ -312,11 +312,39 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
             </div>
 
             <div>
-              <Label className="block mb-2">Exercises</Label>
+              <div className="flex justify-between items-center mb-4">
+                <Label className="block">Exercises</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => addExercise("strength")}
+                    className="text-xs h-8"
+                  >
+                    Add Strength
+                  </Button>
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => addExercise("cardio")}
+                    className="text-xs h-8"
+                  >
+                    Add Cardio
+                  </Button>
+                </div>
+              </div>
+              
               {fields.map((field, index) => (
-                <div key={field.id} className="mb-4 border border-gray-200 rounded-md p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-sm font-medium">Exercise {index + 1}</h4>
+                <div key={field.id} className="mb-4 border border-gray-200 dark:border-gray-700 rounded-md p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-sm font-medium">Exercise {index + 1}</h4>
+                      <div className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-800">
+                        {form.watch(`exercises.${index}.exerciseType`) === "cardio" ? "Cardio" : "Strength"}
+                      </div>
+                    </div>
                     <Button 
                       type="button" 
                       variant="ghost" 
@@ -330,13 +358,70 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                   
                   <FormField
                     control={form.control}
+                    name={`exercises.${index}.exerciseType`}
+                    render={({ field }) => (
+                      <FormItem className="mb-3">
+                        <div className="flex items-center gap-3">
+                          <FormLabel className="text-xs">Type:</FormLabel>
+                          <div className="flex rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={field.value === "strength" ? "default" : "ghost"}
+                              className={`rounded-none text-xs h-7 px-3 ${field.value === "strength" ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : ''}`}
+                              onClick={() => {
+                                form.setValue(`exercises.${index}.exerciseType`, "strength");
+                                // Set up default values for strength if switching from cardio
+                                if (field.value === "cardio") {
+                                  form.setValue(`exercises.${index}.sets`, 3);
+                                  form.setValue(`exercises.${index}.reps`, isPlanMode ? undefined : 10);
+                                  form.setValue(`exercises.${index}.weight`, isPlanMode ? undefined : 0);
+                                  form.setValue(`exercises.${index}.unit`, "kg");
+                                  if (!isPlanMode) {
+                                    form.setValue(`exercises.${index}.setsData`, Array(3).fill({ reps: 10, weight: 0, completed: false }));
+                                  }
+                                }
+                              }}
+                            >
+                              Strength
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={field.value === "cardio" ? "default" : "ghost"}
+                              className={`rounded-none text-xs h-7 px-3 ${field.value === "cardio" ? 'bg-gradient-to-r from-green-600 to-teal-600' : ''}`}
+                              onClick={() => {
+                                form.setValue(`exercises.${index}.exerciseType`, "cardio");
+                                // Set up default values for cardio if switching from strength
+                                if (field.value === "strength") {
+                                  form.setValue(`exercises.${index}.cardioData`, {
+                                    duration: 30,
+                                    distance: 5,
+                                    distanceUnit: "km",
+                                    intensity: "moderate",
+                                    caloriesBurned: 300
+                                  });
+                                }
+                              }}
+                            >
+                              Cardio
+                            </Button>
+                          </div>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
                     name={`exercises.${index}.name`}
                     render={({ field }) => (
                       <FormItem className="mb-3">
                         <FormLabel>Exercise Name</FormLabel>
                         <div className="flex gap-2">
                           <FormControl className="flex-1">
-                            <Input {...field} placeholder="Bench Press" />
+                            <Input {...field} placeholder={form.watch(`exercises.${index}.exerciseType`) === "cardio" ? "Running" : "Bench Press"} />
                           </FormControl>
                           <Button
                             type="button"
@@ -393,9 +478,11 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                     )}
                   />
                   
-                  {/* Per-set configuration */}
-                  <div className="pt-3">
-                    {isPlanMode ? (
+                  {/* Conditional display based on exercise type */}
+                  {form.watch(`exercises.${index}.exerciseType`) === "strength" ? (
+                    // Strength exercise configuration
+                    <div className="pt-3">
+                      {isPlanMode ? (
                       // Plan mode - just show number of sets selector
                       <div>
                         <FormField
@@ -440,7 +527,7 @@ const AddWorkoutDialog: React.FC<AddWorkoutDialogProps> = ({
                                 onClick={() => {
                                   // Get current sets data and sets count
                                   const currentSetsData = form.getValues(`exercises.${index}.setsData`) || [];
-                                  const currentSetsCount = form.getValues(`exercises.${index}.sets`);
+                                  const currentSetsCount = form.getValues(`exercises.${index}.sets`) || 0;
                                   
                                   // Remove this set if we have more than 1 set
                                   if (currentSetsData.length > 1) {
