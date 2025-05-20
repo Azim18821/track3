@@ -985,7 +985,7 @@ const WorkoutMode: React.FC<WorkoutModeProps> = ({ workout, onExit }) => {
             </CardContent>
           </Card>
         ) : (
-          <div className="pb-20">
+          <div className="pb-20 safe-area-bottom">
             <Card className="border-dashed border-2 border-border bg-muted/20 shadow-none mb-4">
               <CardContent className="p-4 flex items-center">
                 <div className="mr-4 p-2 rounded-full bg-primary/10">
